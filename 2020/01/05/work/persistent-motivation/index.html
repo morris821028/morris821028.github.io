@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>可持久化應用雜談 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="可持久化的實際用途到底有哪些？這麼複雜的概念大部分場景都用不上？ 函數式編程其不可變的需求，造就了持久化的使用。如果是可變的特性，函數式展開的一對多操作時，就會造成操作失效，除蟲大概是一輩子的痛。以 Java 的 Stream 為例 1234paths.stream()     .flatMap(path -&amp;gt; &amp;#123;         return Stream.of(path.add">
+<meta name="keywords" content="可持久化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="可持久化應用雜談">
+<meta property="og:url" content="http://morris821028.github.io/2020/01/05/work/persistent-motivation/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="可持久化的實際用途到底有哪些？這麼複雜的概念大部分場景都用不上？ 函數式編程其不可變的需求，造就了持久化的使用。如果是可變的特性，函數式展開的一對多操作時，就會造成操作失效，除蟲大概是一輩子的痛。以 Java 的 Stream 為例 1234paths.stream()     .flatMap(path -&amp;gt; &amp;#123;         return Stream.of(path.add">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-09-13T05:27:20.670Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="可持久化應用雜談">
+<meta name="twitter:description" content="可持久化的實際用途到底有哪些？這麼複雜的概念大部分場景都用不上？ 函數式編程其不可變的需求，造就了持久化的使用。如果是可變的特性，函數式展開的一對多操作時，就會造成操作失效，除蟲大概是一輩子的痛。以 Java 的 Stream 為例 1234paths.stream()     .flatMap(path -&amp;gt; &amp;#123;         return Stream.of(path.add">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-work/persistent-motivation" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/01/05/work/persistent-motivation/" class="article-date">
+  <time datetime="2020-01-05T12:00:00.000Z" itemprop="datePublished">2020-01-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/可持久化/">可持久化</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      可持久化應用雜談
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2020/01/05/work/persistent-motivation/" data-id="ckgyo56t502fs3cvrtd4gjjed" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2020/01/05/work/persistent-motivation/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/可持久化/">可持久化</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#函數式編程"><span class="toc-number">1.</span> <span class="toc-text">函數式編程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#離線算法"><span class="toc-number">2.</span> <span class="toc-text">離線算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#幾何計算"><span class="toc-number">2.1.</span> <span class="toc-text">幾何計算</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#統計方法"><span class="toc-number">3.</span> <span class="toc-text">統計方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#字串處理"><span class="toc-number">4.</span> <span class="toc-text">字串處理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#版本回溯"><span class="toc-number">5.</span> <span class="toc-text">版本回溯</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他"><span class="toc-number">6.</span> <span class="toc-text">其他</span></a></li></ol>
+              
+              </div>
+          
+        
+          <p>可持久化的實際用途到底有哪些？這麼複雜的概念大部分場景都用不上？</p>
+<h2 id="函數式編程"><a href="#函數式編程" class="headerlink" title="函數式編程"></a>函數式編程</h2><p>其不可變的需求，造就了持久化的使用。如果是可變的特性，函數式展開的一對多操作時，就會造成操作失效，除蟲大概是一輩子的痛。以 Java 的 Stream 為例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">paths.stream()</div><div class="line">     .flatMap(path -&gt; &#123;</div><div class="line">         <span class="keyword">return</span> Stream.of(path.add(a), path.add(b));</div><div class="line">      &#125;);</div></pre></td></tr></table></figure>
+<p>這樣的函數還算清晰好懂，一旦包了好幾層函數下去，就不曉得 path 到底是能不能被修改。如果不可被修改，意味著每一次都要回傳一個實例，那麼可想而知效能一定不會太高 (大部分的代碼都是整個數據複製)。別去想什麼黑魔法可以在常數時間解決、相信未來人可以穿越時空幫你完成即時計算。請面對現實，計算機終究還是一行一行去執行的。</p>
+<p>在編程概念的分支中，函數式編程本身需要這一種技術，達到其函數定義的規範。這一種寫法的效能不好，能理解的人也不多，其一原因學校沒有強制要求去學，一開始都是從程序式、命令式、物件導向式著手居多，所以到工作階段也不太可能遇到大型程式的需求，不過一旦遇到就無可取代。</p>
+<h2 id="離線算法"><a href="#離線算法" class="headerlink" title="離線算法"></a>離線算法</h2><p>將離線版本切換成強制在線，不用特別去構造一個全新的資料結構來解決問題，只需要預處理一部份的資料，並犧牲更多的記憶體空間來完成。</p>
+<h3 id="幾何計算"><a href="#幾何計算" class="headerlink" title="幾何計算"></a>幾何計算</h3><p>在幾何計算中，有很多離線算法很容易被找到，一個掃描線掃過去回答所有問題，在時間複雜度分析上總是相當優異的。那如何強迫在線的情況下，每一次都掃描一次，詢問操作的時間複雜度就從對數時間降成線性。為了解決這一種情況，持久化技術給了另一種思維，我們將掃描線的時間軸作為一個變動依據，持久化相關的結構，只要我們能將詢問在對數時間內穿梭於這個時間軸，必能動態解決先前的問題。</p>
+<ul>
+<li>參考資料 <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-854j-advanced-algorithms-fall-2005/lecture-notes/persistent.pdf" target="_blank" rel="external">MIT 6.854  Advanced  Algorithms - Persistent Data Structures Notes</a></li>
+</ul>
+<h2 id="統計方法"><a href="#統計方法" class="headerlink" title="統計方法"></a>統計方法</h2><p>在 OI 界的經典問題，區間 K 大、攤平成一維陣列的相關計算，問題本身不帶修改操作，只詢問統計於此的統計操作。通常可以透過持久化結構來完成，區間就相當於時間軸，我們能針對兩個時間戳記之間的差異變化來完成統計。</p>
+<h2 id="字串處理"><a href="#字串處理" class="headerlink" title="字串處理"></a>字串處理</h2><p>為了達到非常高效率的合併操作，防止大量重複性字串的生成伴隨的效能退化，使得各方面的操作都能遠低於線性操作。如 C++ rope 就是一個持久化的資料結構，</p>
+<p>不只是字串操作，若處理類型有大量重複的情況，持久化的概念便能派上用場。</p>
+<h2 id="版本回溯"><a href="#版本回溯" class="headerlink" title="版本回溯"></a>版本回溯</h2><p>實際上就是對應大部分的應用軟體中的 redo/undo。如果資料庫/操作變動為了高效率操作而會配上複雜的結構 (並不像 hash, set 反轉操作只需要常數或對數時間)，那麼為了快速回推變動結果，持久化結構就是要減少 redo/undo 的花費。</p>
+<p>根據工作上遇到的經驗，資料庫本身可以常數回推，紀錄變動的部分情況即可。而應用層的計算，大部分實作都是砍掉快取，並且重新計算出一份新的結構，有時候回推的變動大小為 m，為了重新計算結構而消耗了 n+m，如果 n 和 m 的差距非常大，那連續回推的體感就很糟糕。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>更強硬一點的叫做 Confluent Persistence，可以讓兩個不同的版本合併一個版本，感覺起來就相當於兩個平行宇宙要合併，實際的應用更少一些，大部分應該是在兩個資料結構的合併，如兩個堆如何合併，兩棵伸展樹的合併 … 等的底層定義所需。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/01/06/mproblem-persistent-array/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          可持久化陣列 Persistent Array 始
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/01/05/mproblem-persistent-deque-pre-evaluation/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">可持久化雙向隊列 Persistent Deque 續</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2020/01/05/work/persistent-motivation/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</body>
+</html>

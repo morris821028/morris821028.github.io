@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>資料庫正規化 Database BCNF | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Problemstackoverflow : Decomposing a relation into BCNF. 資料庫講到正規化，針對 1NF, 2NF, 3NF 的做法。正規化的目的－要避免資料重複或相互矛盾的情形，並使資料庫在使用時能更有效率、更容易維護。 關於 1NF, 2NF, 3NF 的細節操作就上網查吧。也就是在還沒正規化前，可能會遭遇到  修改一個 f(x) = y 值時，可能修改">
+<meta name="keywords" content="資料庫系統,鬼畜">
+<meta property="og:type" content="article">
+<meta property="og:title" content="資料庫正規化 Database BCNF">
+<meta property="og:url" content="http://morris821028.github.io/2014/12/30/lesson/database-bcnf/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="Problemstackoverflow : Decomposing a relation into BCNF. 資料庫講到正規化，針對 1NF, 2NF, 3NF 的做法。正規化的目的－要避免資料重複或相互矛盾的情形，並使資料庫在使用時能更有效率、更容易維護。 關於 1NF, 2NF, 3NF 的細節操作就上網查吧。也就是在還沒正規化前，可能會遭遇到  修改一個 f(x) = y 值時，可能修改">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-20T11:50:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="資料庫正規化 Database BCNF">
+<meta name="twitter:description" content="Problemstackoverflow : Decomposing a relation into BCNF. 資料庫講到正規化，針對 1NF, 2NF, 3NF 的做法。正規化的目的－要避免資料重複或相互矛盾的情形，並使資料庫在使用時能更有效率、更容易維護。 關於 1NF, 2NF, 3NF 的細節操作就上網查吧。也就是在還沒正規化前，可能會遭遇到  修改一個 f(x) = y 值時，可能修改">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-lesson/database-bcnf" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/12/30/lesson/database-bcnf/" class="article-date">
+  <time datetime="2014-12-29T23:48:51.000Z" itemprop="datePublished">2014-12-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      資料庫正規化 Database BCNF
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/12/30/lesson/database-bcnf/" data-id="ckgyo56nq02bf3cvrofhl59f1" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/12/30/lesson/database-bcnf/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/資料庫系統/">資料庫系統</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/鬼畜/">鬼畜</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Problem"><span class="toc-number">1.</span> <span class="toc-text">Problem</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sample-Input"><span class="toc-number">2.</span> <span class="toc-text">Sample Input</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sample-Output"><span class="toc-number">3.</span> <span class="toc-text">Sample Output</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">4.</span> <span class="toc-text">Solution</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>stackoverflow : Decomposing a relation into BCNF.</p>
+<p>資料庫講到正規化，針對 1NF, 2NF, 3NF 的做法。正規化的目的<br>－要避免資料重複或相互矛盾的情形，並使資料庫在使用時能更有效率、更容易維護。</p>
+<p>關於 1NF, 2NF, 3NF 的細節操作就上網查吧。也就是在還沒正規化前，可能會遭遇到</p>
+<ul>
+<li>修改一個 f(x) = y 值時，可能修改非常大量的 row，因為有可能 f(x, z) = y，無用相依關係的 z 很多。</li>
+<li>刪除某個元素時，造成 y 值沒有被任何相依，導致 y 的資訊無法存入資料庫。 … 如此類推。</li>
+</ul>
+<p>現在給定 relation 和 functional dependencies，正規化它們！</p>
+<p>舉個例子：(直接從 stackoverflow 的例子來說)</p>
+<ul>
+<li>Relation : <em> R(A, C, B, D, E) </em> </li>
+<li>Functional dependencies (FD): <em> A -&gt; B, C -&gt; D </em></li>
+</ul>
+<p>Functional dependencies 簡單來說就是一個決定性的一對多、或者是一對一的相依關係，可以根據 LHS (left hand side) 決策 RHS (right hand side)，當然 function dependencies 的訊息只有部分，也暗示著具有遞移關係。因此例如 <em> A-&gt;B, B-&gt;C </em> 則可以推論出 <em> A-&gt;C </em>。</p>
+<p>定義 X+ 為 X 的遞移閉包，因此假設知道 <em> A-&gt;B, B-&gt;C </em> 則 <em> {A}+ = {A, B, C} </em>，假設知道 <em> AB-&gt;C </em> 則 <em> {A, B}+ = {A, B, C} </em></p>
+<p>回到例子，每一步要找到違反 BCNF 規則 (violates BCNF) 的 R’ 進行拆分。怎麼樣才算違反 BCNF 規則？可以找到一個 <em> X != X+ != [R’ all attributes] </em>，就可以對 R’ 進行拆分。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">Step 1:</div><div class="line">S = &#123;ABCDE&#125;       </div><div class="line">    R&apos; = ABCDE, </div><div class="line">    find &#123;A&#125; != &#123;A, B&#125; != &#123;A, B, C, D, E&#125;, </div><div class="line">    R1 = (X+) = &#123;A, B&#125;</div><div class="line">    R2 = R&apos; - ((X+) - X) = &#123;A, C, D, E&#125;</div><div class="line">Step 2:</div><div class="line">S = &#123;ACDE, AB&#125;</div><div class="line">    R&apos; = ACDE,</div><div class="line">    find &#123;C&#125; != &#123;C, D&#125; != &#123;A, C, D, E&#125;, </div><div class="line">    R1 = (X+) = &#123;C, D&#125;</div><div class="line">    R2 = R&apos; - ((X+) - X) = &#123;A, C, E&#125;</div><div class="line">Step 3:</div><div class="line">S = &#123;ACE, AB, CD&#125;</div><div class="line">    // NOT FOUND END.</div></pre></td></tr></table></figure>
+<p>在程式實作 (非人工) 的時候，如何找到 X 滿足上述的條件很重要，由於 X 是所有變數的 subset 情況，相當於 <em> O(2<sup>n</sup>) </em>，很多項目是無用的。假如 <em> R’ = ABE </em>，針對 <em> X = AC </em> 是無效的操作，基本上只要拿所有 function dependencies 的 X = LHS 進行測試即可？這貪心的做法應該是對的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">BCNF_Decompose(R)</div><div class="line">    find X s.t.: X != (X+) != [all attributes]</div><div class="line">    if (not found) then “R is in BCNF”</div><div class="line">    let Y = (X+) - X</div><div class="line">    let Z = [all attributes] - (X+)</div><div class="line">    decompose R into R1(X union Y) and R2(X union Z) </div><div class="line">    continue to decompose recursively R1 and R2</div></pre></td></tr></table></figure>
+<p>說真的，老師上課講的練習答案還有錯，講算法時也不夠確切，真不知道教授怎麼教的，還是我沒認真上課。當教授發現全班答題有極端的相似錯誤時，到底是我們學不好？還是他沒教好？教授一點都不會反思。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">5 2</div><div class="line">A-&gt;B</div><div class="line">C-&gt;D</div><div class="line">6 3</div><div class="line">AC-&gt;B</div><div class="line">C-&gt;D</div><div class="line">A-&gt;EF</div><div class="line">6 6</div><div class="line">AB-&gt;C</div><div class="line">BC-&gt;AD</div><div class="line">D-&gt;E</div><div class="line">CF-&gt;B</div><div class="line">BC-&gt;A</div><div class="line">BC-&gt;D </div><div class="line">5 3</div><div class="line">AB-&gt;C</div><div class="line">DE-&gt;C</div><div class="line">B-&gt;E</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">A-&gt;B</div><div class="line">S = &#123;AB, ACDE&#125;</div><div class="line">C-&gt;D</div><div class="line">S = &#123;AB, CD, ACE&#125;</div><div class="line">  </div><div class="line">C-&gt;D</div><div class="line">S = &#123;CD, ABCEF&#125;</div><div class="line">A-&gt;EF</div><div class="line">S = &#123;ABC, CD, AEF&#125;</div><div class="line">  </div><div class="line">AB-&gt;C</div><div class="line">S = &#123;ABCDE, ABF&#125;</div><div class="line">D-&gt;E</div><div class="line">S = &#123;ABCD, DE, ABF&#125;</div><div class="line">  </div><div class="line">AB-&gt;C</div><div class="line">S = &#123;ABD, ABCE&#125;</div><div class="line">B-&gt;E</div><div class="line">S = &#123;ABC, ABD, BE&#125;</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;set&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sstream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> INF 0x3f3f3f3f</span></div><div class="line"><span class="comment">// stackoverflow Database: Decomposing a relation into BCNF</span></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">parsingStmt</span><span class="params">(<span class="built_in">string</span> s, <span class="built_in">string</span> &amp;l, <span class="built_in">string</span> &amp;r)</span> </span>&#123;</div><div class="line">    <span class="keyword">size_t</span> pos = s.find(<span class="string">"-&gt;"</span>);</div><div class="line">    l = s.substr(<span class="number">0</span>, pos);</div><div class="line">    r = s.substr(pos + <span class="number">2</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">toBitmask</span><span class="params">(<span class="built_in">string</span> s)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; s.length(); i++) &#123;</div><div class="line">        assert(s[i] &gt;= <span class="string">'A'</span> &amp;&amp; s[i] &lt;= <span class="string">'Z'</span>);</div><div class="line">        ret |= <span class="number">1</span>&lt;&lt;(s[i] - <span class="string">'A'</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">printBitmask</span><span class="params">(<span class="keyword">int</span> state)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; (<span class="number">1</span>&lt;&lt;i) &lt;= state; i++) &#123;</div><div class="line">        <span class="keyword">if</span> ((state&gt;&gt;i)&amp;<span class="number">1</span>)</div><div class="line">            <span class="built_in">putchar</span>(i + <span class="string">'A'</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; LHS, RHS;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">findFD</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ss = i;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; LHS.size(); j++) &#123;</div><div class="line">        <span class="keyword">if</span> ((LHS[j]&amp;i) == LHS[j])</div><div class="line">            ss |= RHS[j];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (ss != i)</div><div class="line">    	<span class="keyword">return</span> findFD(ss);</div><div class="line">    <span class="keyword">return</span> ss;</div><div class="line">&#125;</div><div class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; decomposing(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; state, <span class="keyword">int</span> fdlhs, <span class="keyword">int</span> fdrhs) &#123;</div><div class="line">    <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; ret;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; state.size(); i++) &#123; <span class="comment">// X-&gt;Y</span></div><div class="line">        <span class="keyword">int</span> X = fdlhs, Y = fdrhs&amp;state[i];</div><div class="line">        <span class="keyword">if</span> (Y != state[i] &amp;&amp; (X&amp;state[i]) == X &amp;&amp; Y &amp;&amp; X &amp;&amp; X != Y) &#123;</div><div class="line">            ret.push_back(state[i]^X^Y);</div><div class="line">            ret.push_back(Y);</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            ret.push_back(state[i]);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    sort(ret.begin(), ret.end());</div><div class="line">    ret.resize(unique(ret.begin(), ret.end()) - ret.begin());</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">printResult</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;ret)</span> </span>&#123;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"S = &#123;"</span>);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ret.size(); i++) &#123;</div><div class="line">        printBitmask(ret[i]);</div><div class="line">        <span class="keyword">if</span> (i != ret.size() - <span class="number">1</span>) &#123;</div><div class="line">            <span class="built_in">printf</span>(<span class="string">", "</span>);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">puts</span>(<span class="string">"&#125;"</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> n, m;</div><div class="line">    <span class="built_in">string</span> s;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">cin</span> &gt;&gt; n &gt;&gt; m) &#123;</div><div class="line">        LHS.clear(), RHS.clear();</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="built_in">cin</span> &gt;&gt; s;</div><div class="line">            <span class="built_in">string</span> lhs, rhs;</div><div class="line">            parsingStmt(s, lhs, rhs);</div><div class="line">            LHS.push_back(toBitmask(lhs));</div><div class="line">            RHS.push_back(toBitmask(rhs));</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; ret;</div><div class="line">        <span class="keyword">int</span> update = <span class="number">0</span>;</div><div class="line">        ret.push_back((<span class="number">1</span>&lt;&lt;n) - <span class="number">1</span>);</div><div class="line">        <span class="keyword">do</span> &#123;</div><div class="line">            update = (<span class="keyword">int</span>) ret.size();</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">                ret = decomposing(ret, LHS[i], findFD(LHS[i]));</div><div class="line">                <span class="keyword">if</span> (ret.size() &gt; update) &#123;	</div><div class="line">                    printBitmask(LHS[i]);</div><div class="line">                	<span class="built_in">printf</span>(<span class="string">"-&gt;"</span>);</div><div class="line">                	printBitmask(RHS[i]);</div><div class="line">                	<span class="built_in">puts</span>(<span class="string">""</span>);</div><div class="line">                    printResult(ret);</div><div class="line">                	<span class="keyword">break</span>;</div><div class="line">                &#125;            </div><div class="line">            &#125;</div><div class="line">            update = ret.size() &gt; update;</div><div class="line">        &#125; <span class="keyword">while</span> (update);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/12/30/uva-12876/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          UVa 12876 - City
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/12/28/lesson/geometry-hw5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">計算幾何 - HW05</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2014/12/30/lesson/database-bcnf/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</body>
+</html>

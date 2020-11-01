@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>自然語言處理 論文研讀 2 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="著重目標即使 Unigram 效果已經相當不錯，基於人類日常對話的模式，絕非單詞相依無關，藉由好幾個連詞表示出不同的意思是常有的事情，探討 n-grams (n &amp;gt; 3) 對於當前的語意分類器的強化、優化。 已知問題當 n-grams (n &amp;gt; 3) 時，語意的模糊性質會提高，可能同時把正反兩面的詞放置在一起，如此一來這一組的利用價值並不高，在計算分類上會將精準度稀釋，同時對於記憶體的">
+<meta name="keywords" content="自然語言">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自然語言處理 論文研讀 2">
+<meta property="og:url" content="http://morris821028.github.io/2014/12/05/lesson/NLP-paper2/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="著重目標即使 Unigram 效果已經相當不錯，基於人類日常對話的模式，絕非單詞相依無關，藉由好幾個連詞表示出不同的意思是常有的事情，探討 n-grams (n &amp;gt; 3) 對於當前的語意分類器的強化、優化。 已知問題當 n-grams (n &amp;gt; 3) 時，語意的模糊性質會提高，可能同時把正反兩面的詞放置在一起，如此一來這一組的利用價值並不高，在計算分類上會將精準度稀釋，同時對於記憶體的">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-20T11:50:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自然語言處理 論文研讀 2">
+<meta name="twitter:description" content="著重目標即使 Unigram 效果已經相當不錯，基於人類日常對話的模式，絕非單詞相依無關，藉由好幾個連詞表示出不同的意思是常有的事情，探討 n-grams (n &amp;gt; 3) 對於當前的語意分類器的強化、優化。 已知問題當 n-grams (n &amp;gt; 3) 時，語意的模糊性質會提高，可能同時把正反兩面的詞放置在一起，如此一來這一組的利用價值並不高，在計算分類上會將精準度稀釋，同時對於記憶體的">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-lesson/NLP-paper2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/12/05/lesson/NLP-paper2/" class="article-date">
+  <time datetime="2014-12-05T01:39:42.000Z" itemprop="datePublished">2014-12-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/自然語言/">自然語言</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      自然語言處理 論文研讀 2
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/12/05/lesson/NLP-paper2/" data-id="ckgyo56kl02933cvrteggmtm3" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/12/05/lesson/NLP-paper2/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/自然語言/">自然語言</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#著重目標"><span class="toc-number">1.</span> <span class="toc-text">著重目標</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#已知問題"><span class="toc-number">2.</span> <span class="toc-text">已知問題</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#分類器"><span class="toc-number">3.</span> <span class="toc-text">分類器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#類神經網路"><span class="toc-number">3.1.</span> <span class="toc-text">類神經網路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Passive-Aggressive-Algorithm"><span class="toc-number">3.1.1.</span> <span class="toc-text">Passive-Aggressive Algorithm</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自然語言"><span class="toc-number">3.2.</span> <span class="toc-text">自然語言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Language-Modeling"><span class="toc-number">3.2.1.</span> <span class="toc-text">Language Modeling</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#機器學習"><span class="toc-number">3.3.</span> <span class="toc-text">機器學習</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Winnow-algorithm"><span class="toc-number">3.3.1.</span> <span class="toc-text">Winnow algorithm</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#調和"><span class="toc-number">4.</span> <span class="toc-text">調和</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#結論"><span class="toc-number">5.</span> <span class="toc-text">結論</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h1 id="著重目標"><a href="#著重目標" class="headerlink" title="著重目標"></a>著重目標</h1><p>即使 Unigram 效果已經相當不錯，基於人類日常對話的模式，絕非單詞相依無關，藉由好幾個連詞表示出不同的意思是常有的事情，探討 n-grams (n &gt; 3) 對於當前的語意分類器的強化、優化。</p>
+<h1 id="已知問題"><a href="#已知問題" class="headerlink" title="已知問題"></a>已知問題</h1><p>當 n-grams (n &gt; 3) 時，語意的模糊性質會提高，可能同時把正反兩面的詞放置在一起，如此一來這一組的利用價值並不高，在計算分類上會將精準度稀釋，同時對於記憶體的負荷也會增加 (必須記錄各種組合，例如化學元素與化合物的數量大小關係)。</p>
+<p>接著 n-grams 通常是用在英文處理精準度比較好，因為 <strong> 單詞分明 </strong> (藉由空白隔開)，對於機器而言中文句子並不存在詞 (token)，都是一堆字元 (character)。</p>
+<p>研究顯示：<strong> 漢字順序並不一定影響閱讀 </strong></p>
+<blockquote>
+<p>請看下述文字－研究顯示：漢字序順並不定一影閱響讀。</p>
+</blockquote>
+<p>對於中文自然語言處理，斷詞的重要性、語意處理上有額外的研究領域，在這裡暫時不談論這些。也許可以談談看不考慮順序的 n-grams，型態從 tuple 變成 dag。</p>
+<h1 id="分類器"><a href="#分類器" class="headerlink" title="分類器"></a>分類器</h1><p>分類器分成線上訓練、離線訓練，就已知得到目前 SVM 仍然在實務上的效果是最好的，在這裡不談論 SVM，一部分原因是 SVM 太慢。</p>
+<p>下面是在不同領域的分類器構思，線上訓練、線性調整。大多數的分類器都必須定義特徵，對於每一個要分辨的項目是否存有這一個特徵 (boolean)，而在部分可允許模糊的模型，可以利用權重 (float) 表示特徵強弱。</p>
+<h2 id="類神經網路"><a href="#類神經網路" class="headerlink" title="類神經網路"></a>類神經網路</h2><h3 id="Passive-Aggressive-Algorithm"><a href="#Passive-Aggressive-Algorithm" class="headerlink" title="Passive-Aggressive Algorithm"></a>Passive-Aggressive Algorithm</h3><p>對於感知機的內容所知不多，每加入一筆結果，將劃分的依準疊加上預期的法向量，成為新的劃分依準線。大多依靠數學的微積分來完成，並非完全相信新加入的結果，因此會有一個計算的權重，來權衡影響的大小。</p>
+<p>訓練流程：</p>
+<span>$$\begin{align}
+&amp; \text{INITIALIZE : } w_{1} = (0 ... 0) \text{ as parameters of the classifier} \\
+&amp; \text{For } t = 1, 2, ... \\
+
+&amp; \text{receive instance : } x_{t} \in R^{n} \\
+&amp; \text{predict : } \hat{y_{t}} = sign(w_{t}, x_{t}) \\
+&amp; \text{receive correct label : } y_{t} \in {-1, +1} \\
+&amp; \text{suffer loss : } l_{t} = max\left \{  0, 1 - y_{t}(w_{t} \cdot x_{t}) \right \} \\
+&amp; \text{update-1: set : } \tau_{t} = \frac{l_{t}}{\left \| x_{t} \right \|^{2}} \\
+&amp; \text{update-2: update : } w_{t+1} = w_{t} + \tau_{t} y_{t} x_{t}
+\end{align}$$</span><!-- Has MathJax -->
+<h2 id="自然語言"><a href="#自然語言" class="headerlink" title="自然語言"></a>自然語言</h2><h3 id="Language-Modeling"><a href="#Language-Modeling" class="headerlink" title="Language Modeling"></a>Language Modeling</h3><p>就如上課內容所講的</p>
+<span>$$\begin{align}
+P(s) = \prod_{i = 1}^{l} P(w_{i}|w_{1}^{i-1})
+\end{align}$$</span><!-- Has MathJax -->
+<p>用 Good Turing 的方式去 smoothing 那些從未在模型中出現的詞語，它們是有機會的，絕非是機率 0。</p>
+<h2 id="機器學習"><a href="#機器學習" class="headerlink" title="機器學習"></a>機器學習</h2><h3 id="Winnow-algorithm"><a href="#Winnow-algorithm" class="headerlink" title="Winnow algorithm"></a>Winnow algorithm</h3><p>設定一個閥值作為是否存在此分類的依據，隨後根據閥值調整相關數據的參數大小。</p>
+<span>$h(x) = \sum_{w \in V}^{} f_{w}c_{w}(x)$</span><!-- Has MathJax -->
+<span>$f_{w}$</span><!-- Has MathJax --> 是需要調整的參數<span>$c_{w}(x)$</span><!-- Has MathJax --> 為資料在每一個特徵的權重向量，運算內積值為<span>$h(x)$</span><!-- Has MathJax -->。<br><br>訓練流程：<br><br><span>$$\begin{align}
+&amp; \text{Initialize all } f_{w} \text{ to 1.} \\
+&amp; \text{For each labeled revies x in the training set : } \\
+&amp; \text{Step 1. Calculate } h(x) \\
+&amp; \text{Step 2-1. If the revies is positive but Winnow predicts it as negative } \\ 
+&amp; h(x) &lt; V \text{ , update the weight} f_{w} \text{ where } c_{w}(x) = 1 \text{ by } f&apos;_{w} = f_{w} \times 2 \\
+&amp; \text{Step 2-2. If the revies is negative but Winnow predicts it as positive } \\ 
+&amp; h(x) &gt; V \text{ , update the weight} f_{w} \text{ where } c_{w}(x) = 1 \text{ by } f&apos;_{w} = f_{w} / 2 \\
+\end{align}$$</span><!-- Has MathJax -->
+<p>簡單來說，當判斷錯誤時，將相關的 (它有的) 特徵係數權重調整，將其變大使得納入分類中、或者將其變小踢出分類中。</p>
+<h1 id="調和"><a href="#調和" class="headerlink" title="調和"></a>調和</h1><p>為了加入 n-grams (n &gt; 3) 的機制，必然要學習 <strong> 忘記 </strong>、 <strong> 無視 </strong> 的才能，才能將垃圾訊息給捨去掉。同時也是降低記憶體的耗存的方法，這裡無法像人類有辦法根據時間將單詞組合抽象化，等到哪天 <strong> HTM 腦皮質學習算法 </strong> 成功實作，相信在取捨上會更為流暢。</p>
+<p>對於每一個特徵給予分數，保留前 K 好的特徵進行訓練，其餘特徵捨去，至於要保留的 K 大小將由實驗結果進行測試。</p>
+<p>分數計算：</p>
+<ul>
+<li>A：同一分類下，該屬性使用的資料筆數</li>
+<li>B：在其他分類下，該屬性被使用的資料筆數</li>
+<li>C：同一分類下，該屬性不使用的資料筆數</li>
+<li>D：在其他分類下，該屬性不被使用的資料筆數</li>
+<li>t：屬性</li>
+<li>c：分類</li>
+</ul>
+<span>$$\begin{align}
+x^{2}(t, c) = \frac{N \times (AD - CB)^{2} }{(A+C)\times (B + D) \times (A + B) \times (C + D)}
+\end{align}$$</span><!-- Has MathJax -->
+<h1 id="結論"><a href="#結論" class="headerlink" title="結論"></a>結論</h1><p>論文中提到，分別去了 50K、100K、200K 個分數高的 n-grams，又分別在 n = 3, 4, 5, 6 下進行測試，效果有那麼一點點地提升。</p>
+<p>接著就是考驗我們期末 Project 要怎麼體現這篇論文的思路、擴充。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/12/05/lesson/civilization-w11/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          [通識] 文明的進程 Week 11
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/12/05/uva-12873/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">UVa 12873 - The Programmers</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2014/12/05/lesson/NLP-paper2/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

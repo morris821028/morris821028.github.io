@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>探討平行與優化技術於熱輻射法 (下) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="接續上一篇  平行設計 Parallel Design回顧原始算法，為了加快收斂速度，每一次會挑選單位面積能量最多的三角形 $f$ ，之後便拿所有三角形 $t$ 進行傳導，直到傳導能量小於閥值，迭代將停止。算法如下所述： 123456while (not converge) &amp;#123;  f = PickMaxRadiosityTriangle()  foreach triangle t in">
+<meta name="keywords" content="計算機圖學,平行">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探討平行與優化技術於熱輻射法 (下)">
+<meta property="og:url" content="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="接續上一篇  平行設計 Parallel Design回顧原始算法，為了加快收斂速度，每一次會挑選單位面積能量最多的三角形 $f$ ，之後便拿所有三角形 $t$ 進行傳導，直到傳導能量小於閥值，迭代將停止。算法如下所述： 123456while (not converge) &amp;#123;  f = PickMaxRadiosityTriangle()  foreach triangle t in">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://i.imgur.com/qd2QlKk.png">
+<meta property="og:image" content="http://i.imgur.com/cI7z6Jx.png">
+<meta property="og:image" content="http://i.imgur.com/vQFsQ3K.png">
+<meta property="og:image" content="http://i.imgur.com/ZyLbimO.png">
+<meta property="og:image" content="http://i.imgur.com/4I3U5zd.png">
+<meta property="og:image" content="http://i.imgur.com/ATsDg8e.png">
+<meta property="og:image" content="http://i.imgur.com/j6KNvT0.png">
+<meta property="og:image" content="http://i.imgur.com/Squ2W0v.png">
+<meta property="og:image" content="http://i.imgur.com/qcJfMW7.png">
+<meta property="og:image" content="http://i.imgur.com/GKBUCrB.png">
+<meta property="og:updated_time" content="2017-01-24T03:53:08.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="探討平行與優化技術於熱輻射法 (下)">
+<meta name="twitter:description" content="接續上一篇  平行設計 Parallel Design回顧原始算法，為了加快收斂速度，每一次會挑選單位面積能量最多的三角形 $f$ ，之後便拿所有三角形 $t$ 進行傳導，直到傳導能量小於閥值，迭代將停止。算法如下所述： 123456while (not converge) &amp;#123;  f = PickMaxRadiosityTriangle()  foreach triangle t in">
+<meta name="twitter:image" content="http://i.imgur.com/qd2QlKk.png">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-icg-final-project-radiosity-2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/24/icg-final-project-radiosity-2/" class="article-date">
+  <time datetime="2017-01-24T03:01:19.000Z" itemprop="datePublished">2017-01-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      探討平行與優化技術於熱輻射法 (下)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckgyo55bs004z3cvr1j3dggff" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/平行/">平行</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計算機圖學/">計算機圖學</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#平行設計-Parallel-Design"><span class="toc-number">1.</span> <span class="toc-text">平行設計 Parallel Design</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Single-Source-Parallel-Algorithm"><span class="toc-number">1.1.</span> <span class="toc-text">Single-Source Parallel Algorithm</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Multi-Source-Parallel-Algorithm"><span class="toc-number">1.2.</span> <span class="toc-text">Multi-Source Parallel Algorithm</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#展示結果-Demo"><span class="toc-number">2.</span> <span class="toc-text">展示結果 Demo</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#平行效能比較"><span class="toc-number">2.1.</span> <span class="toc-text">平行效能比較</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考論文-Reference"><span class="toc-number">3.</span> <span class="toc-text">參考論文 Reference</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#後記-Note"><span class="toc-number">4.</span> <span class="toc-text">後記 Note</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#致謝-Thanks"><span class="toc-number">5.</span> <span class="toc-text">致謝 Thanks</span></a></li></ol>
+              
+              </div>
+          
+        
+          <blockquote>
+<p>接續上一篇</p>
+</blockquote>
+<h2 id="平行設計-Parallel-Design"><a href="#平行設計-Parallel-Design" class="headerlink" title="平行設計 Parallel Design"></a>平行設計 Parallel Design</h2><p>回顧原始算法，為了加快收斂速度，每一次會挑選單位面積能量最多的三角形 <span>$f$</span><!-- Has MathJax --> ，之後便拿所有三角形 <span>$t$</span><!-- Has MathJax --> 進行傳導，直到傳導能量小於閥值，迭代將停止。算法如下所述：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converge) &#123;</div><div class="line">  f = PickMaxRadiosityTriangle()</div><div class="line">  foreach triangle t in model</div><div class="line">      shader(f, t);</div><div class="line">  clearRadiosity(f)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在嘗試傳遞的過程中，若三角形 <span>$f$</span><!-- Has MathJax --> 的三頂點的能量差異大，則選擇自適應切割三角形，直到三頂點能量差異小，這麼計算 Form-Factor 才會正確。在自適應部份，切割方法如下圖所示：</p>
+<p><img src="http://i.imgur.com/qd2QlKk.png" alt=""></p>
+<p>當偵測到綠色三角形 <span>$A$</span><!-- Has MathJax --> 頂點之間的 Form-Factor 差異過大時，使用最長邊的中點切割，這麼做是盡可能產生銳角三角形，為了圖形完整，必然也要對鄰居切割。為減少計算量，只算新增中心點 <span>$P$</span><!-- Has MathJax --> 的 Form-Factor。對於下方的三角形 <span>$B$</span><!-- Has MathJax --> 而言，分成兩種情況，已在這一輪完成計算，則重新計算 Form-Factor；相反地，不做任何事。</p>
+<h3 id="Single-Source-Parallel-Algorithm"><a href="#Single-Source-Parallel-Algorithm" class="headerlink" title="Single-Source Parallel Algorithm"></a>Single-Source Parallel Algorithm</h3><p>我們發現計算 Form-Factor 相當獨立的，但自適應處理需要遞迴切割，因此選用多核心平台，而非通用圖形處理器平台，因為目前的 GPU 實作遞迴所需的 stack 使用 global memory 作為存取位址，所以一般多核心平台效果會更好。在這一次報告中，我們選用 OpenMP 這套跨平台多執行緒 API 進行實驗。</p>
+<p>著手將多個三角形平行處理，意即每一個執行緒負責多個三角形的 Form-Factor 計算。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Single-Source Parallel Algorithm</span></div><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converage) &#123;</div><div class="line">  f = PickMaxRadiosityTriangle()</div><div class="line">  parallel foreach triangle t in model</div><div class="line">      shader(s, t);</div><div class="line">  clearRadiosity(f)</div></pre></td></tr></table></figure>
+<h3 id="Multi-Source-Parallel-Algorithm"><a href="#Multi-Source-Parallel-Algorithm" class="headerlink" title="Multi-Source Parallel Algorithm"></a>Multi-Source Parallel Algorithm</h3><p>從原始算法中，我們發現到每一次迭代將只有一個熱源輻射到場景中，當場景有多個高能量熱源時，場景必須經過好幾次迭代才能近似最終結果。藉由平行處理的效能，我們可以一次迭代多熱源，便可將低執行緒之間分配工作不均的情況，不僅僅前幾次迭代就能近似最終結果，同時也能加速運算。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Multi-Source Parallel Algorithm</span></div><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converge) &#123;</div><div class="line">  <span class="built_in">set</span>&lt;Triangle&gt; f = RadiosityTriangleCandiateCandidate();</div><div class="line">  parallel foreach triangle t in model</div><div class="line">      <span class="keyword">if</span> (f.find(t))</div><div class="line">          <span class="keyword">continue</span>;</div><div class="line">      foreach s in f</div><div class="line">          shader(s, t);</div><div class="line">  clearRadiosity(f);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我們所用的平行方無法搭配上述自適應的切割方案，其原因在於分裂過程中，同時也要對鄰居三角形分裂，整個圖形產生的節點與邊的關係才會正確，無法保證鄰居在同一執行緒內處理，若沒有做好空間切割，我們便無法處理這部份。若模型格式會是數個獨立的物體，而非單純的三角形資訊，可分配每一個執行緒處理多個獨立物體，我們預期可以達到更好的效果。</p>
+<p>平行過程中每一個執行緒共享和衝突的區段越少越好，這意味著我們必須在運行輻射前就必須將模型切得相當細緻。特別注意到，切得細緻與否對於光線投射 (Ray Casting) 複雜度不變，因為邏輯上他們處理同一平面。</p>
+<p>一旦切得細緻，傳遞的效果就不是這麼好，在邊界的陰影更加顯著。根據理論和實作層面推測，其一原因是能傳遞的總能量隨著迭代減少，那麼從分裂過程中傳遞能量採用較多的加法完成，相較於多個 32-bit floating point 誤差就少了許多。</p>
+<p>我們也試著使用獨立的切割方案─重心切割，切割的結果不依賴鄰居，只需要在加入三角形清單部份使用 critical section 即可，效能影響並不大。</p>
+<p><img src="http://i.imgur.com/cI7z6Jx.png" alt=""></p>
+<p>根據重心切割，下述實驗中，從 156 個三角形，自動分裂到 30000 個三角形後進行輻射的結果如下圖所示：</p>
+<p>明顯地，根據重心的切割方法容易產生鈍角三角形，看起來就會像很多紡錘體。在眾多數學性質中，只使用重心也許不是好的解決方案，這是値得探討的一部份，由於製作上的時間限制，我們並沒有去探討各個不同切割方案，所對應的自適應的效果如何。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Longest Edge</th>
+<th style="text-align:center">Center</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/vQFsQ3K.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/ZyLbimO.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h2 id="展示結果-Demo"><a href="#展示結果-Demo" class="headerlink" title="展示結果 Demo"></a>展示結果 Demo</h2><p>只使用優化技術渲染結果</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">blocks</th>
+<th style="text-align:center">room</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/4I3U5zd.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/ATsDg8e.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">hall</th>
+<th style="text-align:center">church</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/j6KNvT0.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/Squ2W0v.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h3 id="平行效能比較"><a href="#平行效能比較" class="headerlink" title="平行效能比較"></a>平行效能比較</h3><p>在 Intel Xeon E5-2620 v3 上，我們測試不同平行度帶來的影響，由於只有兩個實體 CPU，每一個 CPU 有 6 個核心，每個核心皆有 Hyper-threading 技術，故可產生 24 個執行緒。</p>
+<p><img src="http://i.imgur.com/qcJfMW7.png" alt="Single-Source Parallel Algorithm - Scalability"></p>
+<p>我們對模型 room.tri 以預先切割 14977 個三角形後，根據先前提到的平行算法 Single-Source Parallel Algorithm，即是迭代一次只取一個熱源，平行計算所有三角形到此熱源的 Form-Factor 値，針對不同的執行緒個數和運行時間記錄，結果如上圖。在由於過多的執行緒可能會帶來更多的 false sharing，造成資料在不同的 CPU 之間運行 data transmission，所以效果就逐漸不明顯。</p>
+<p><img src="http://i.imgur.com/GKBUCrB.png" alt="Multi-Source Parallel Algorithm - Scalability"></p>
+<p>接著，我們測試 Multi-Source Parallel Algorithm，以 room.tri 預先切割 50017 個三角形後，每次迭代皆取數個熱源，平行計算所有三角形到所有被選取熱源的 Form-Factor 的總和。同樣地，因為查找的資料重複存取的模式造成不好的影響，類似上述所提到的 false sharing 影響，故會呈現一種陡坡。</p>
+<h2 id="參考論文-Reference"><a href="#參考論文-Reference" class="headerlink" title="參考論文 Reference"></a>參考論文 Reference</h2><ul>
+<li>Fast conversion of floating-point values to string, Wojciech Muła:<br><a href="http://0x80.pl/notesen/2015-12-29-float-to-string.html" target="_blank" rel="external">http://0x80.pl/notesen/2015-12-29-float-to-string.html</a><br>我們使用這一篇討論中，在輸出 Triangle 格式部份加速浮點數轉文字加快 4 倍速。</li>
+</ul>
+<h2 id="後記-Note"><a href="#後記-Note" class="headerlink" title="後記 Note"></a>後記 Note</h2><p>當我們進行平行效能比較時，要特別小心編譯器行為的差異，意即平行處理 <span>$P$</span><!-- Has MathJax --> 控制時，當 <span>$P=1$</span><!-- Has MathJax --> 時，使用平行版本比較合適。因為有時候，平行部分的函數被編譯器偵測到，由於分享記憶體的關係，部分代碼無法優化，導致效能瞬間慢個四到五倍都是有可能的，再加上 false sharing 的關係，更有可能在發生密集計算時，效能更加低落。</p>
+<p>在不同平台上的情況也有所不同，例如在一般 server 上運行時，CPU 頻率通常都會比一般 PC 慢上許多，又因為很多個 CPU 導致總共的快取大小遠比一般 PC 多，所以平行效能將會受限於運行的應用行為，是否需要時常存取大量的資料。</p>
+<h2 id="致謝-Thanks"><a href="#致謝-Thanks" class="headerlink" title="致謝 Thanks"></a>致謝 Thanks</h2><p>一開始在挑選主題相當困惑，畢竟使用 Unity 可以做出更生動的作品，但作品的元素和創意相當重要，相當迷惘於要選哪一種類型才好。如果要兩人以上一起做，那麼主題又不能太過狹隘。百般思慮下，還是由我拉選了這個主題下來做。</p>
+<blockquote>
+<p>「我可能會扯你後腿，還是我們各別做？」組員擔心地說道</p>
+</blockquote>
+<p>不用擔心，我自己也沒信心將所有程序都看完且修改更好更快，每天都焦頭爛額地煩惱整份程序的運作，深怕來不及在時限內完成足夠的報告份量。</p>
+<blockquote>
+<p>「快來幫幫我啊，在身邊一起 trace 程序也好，咱的記憶體不足啊。」內心如此吶喊</p>
+</blockquote>
+<p>一起修課的博班學長給了我們一些意見與鼓勵，而學弟們只會在一旁扯後腿問「學姊今天會來嗎？」最後，我們完成了整份程序的理解與討論。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/04/09/2017-google-code-jam-qr/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          2017 Google Code Jam Round QR
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/01/22/icg-final-project-radiosity/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">探討平行與優化技術於熱輻射法 (上)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

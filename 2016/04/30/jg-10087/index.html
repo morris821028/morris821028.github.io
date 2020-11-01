@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10087. Sparse Matrix Multiplication (OpenMP) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述稀疏矩陣為大部份元素皆為零的矩陣，在科學與工程領域中求解線性模型時經常出現大型的稀疏矩陣。現在給予最常見的 Coordinate Format (簡稱 COO 格式)，請問兩個矩陣相乘結果為何。 給予矩陣 $A_{n, m}$ 和 $B_{m, r}$，請計算稀疏矩陣相乘。 $$A_{4,4} = \begin{bmatrix} 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 \\ 5">
+<meta name="keywords" content="OpenMP,批改娘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10087. Sparse Matrix Multiplication (OpenMP)">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10087/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述稀疏矩陣為大部份元素皆為零的矩陣，在科學與工程領域中求解線性模型時經常出現大型的稀疏矩陣。現在給予最常見的 Coordinate Format (簡稱 COO 格式)，請問兩個矩陣相乘結果為何。 給予矩陣 $A_{n, m}$ 和 $B_{m, r}$，請計算稀疏矩陣相乘。 $$A_{4,4} = \begin{bmatrix} 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 \\ 5">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-30T06:23:48.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10087. Sparse Matrix Multiplication (OpenMP)">
+<meta name="twitter:description" content="題目描述稀疏矩陣為大部份元素皆為零的矩陣，在科學與工程領域中求解線性模型時經常出現大型的稀疏矩陣。現在給予最常見的 Coordinate Format (簡稱 COO 格式)，請問兩個矩陣相乘結果為何。 給予矩陣 $A_{n, m}$ 和 $B_{m, r}$，請計算稀疏矩陣相乘。 $$A_{4,4} = \begin{bmatrix} 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 \\ 5">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10087" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10087/" class="article-date">
+  <time datetime="2016-04-30T05:52:42.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10087. Sparse Matrix Multiplication (OpenMP)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10087/" data-id="ckgyo55cr006q3cvr6lq2klyj" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10087/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#COO-of-Matrix-A"><span class="toc-number">1.1.</span> <span class="toc-text">COO of Matrix $A$</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#COO-of-Matrix-B"><span class="toc-number">1.2.</span> <span class="toc-text">COO of Matrix $B$</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入"><span class="toc-number">4.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出"><span class="toc-number">5.</span> <span class="toc-text">範例輸出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例解釋"><span class="toc-number">6.</span> <span class="toc-text">範例解釋</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">7.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#傳統處理"><span class="toc-number">7.1.</span> <span class="toc-text">傳統處理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#AOS"><span class="toc-number">7.1.1.</span> <span class="toc-text">AOS</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SOA"><span class="toc-number">7.1.2.</span> <span class="toc-text">SOA</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#額外空間"><span class="toc-number">7.2.</span> <span class="toc-text">額外空間</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#AOS-1"><span class="toc-number">7.2.1.</span> <span class="toc-text">AOS</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SOA-1"><span class="toc-number">7.2.2.</span> <span class="toc-text">SOA</span></a></li></ol></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>稀疏矩陣為大部份元素皆為零的矩陣，在科學與工程領域中求解線性模型時經常出現大型的稀疏矩陣。現在給予最常見的 Coordinate Format (簡稱 COO 格式)，請問兩個矩陣相乘結果為何。</p>
+<p>給予矩陣 <span>$A_{n, m}$</span><!-- Has MathJax --> 和 <span>$B_{m, r}$</span><!-- Has MathJax -->，請計算稀疏矩陣相乘。</p>
+<span>$$A_{4,4} = \begin{bmatrix}
+0 &amp; 0 &amp; 0 &amp; 0 \\
+5 &amp; 8 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 3 &amp; 0 \\
+0 &amp; 6 &amp; 0 &amp; 0 \\
+\end{bmatrix}, \qquad
+B_{4,4} = \begin{bmatrix}
+0 &amp; 0 &amp; 1 &amp; 3 \\
+0 &amp; 5 &amp; 2 &amp; 0 \\
+3 &amp; 5 &amp; 0 &amp; 0 \\
+0 &amp; 2 &amp; 0 &amp; 0 \\
+\end{bmatrix}$$</span><!-- Has MathJax -->
+<p>根據 COO 格式，分別轉換矩陣 $A$ 和 $B$ 的所有非零元素，如下表所示</p>
+<h3 id="COO-of-Matrix-A"><a href="#COO-of-Matrix-A" class="headerlink" title="COO of Matrix $A$"></a>COO of Matrix $A$</h3><table>
+<thead>
+<tr>
+<th><code>row_index</code></th>
+<th><code>col_index</code></th>
+<th><code>value</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>5</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>8</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>3</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<h3 id="COO-of-Matrix-B"><a href="#COO-of-Matrix-B" class="headerlink" title="COO of Matrix $B$"></a>COO of Matrix $B$</h3><table>
+<thead>
+<tr>
+<th><code>row_index</code></th>
+<th><code>col_index</code></th>
+<th><code>value</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>0</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>5</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>5</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>測資只有一組，第一行會有三個整數 $N, \; M, \; R$，分別表示矩陣 $A, \; B$ 的大小。下一行會有兩個整數 $N_A, \; N_B$，接下來會有 $N_A$ 行，每一行表示矩陣 $A$ 的 COO 格式，隨後會有 $N_B$ 行，每一行表示矩陣 $B$ 的 COO 格式。</p>
+<ul>
+<li>$0 &lt; N, \; M, \; R \le 10^6$</li>
+<li>$0 &lt; N_A, \; N_B \le 10^6$</li>
+</ul>
+<p>給予 COO 格式時，先按照 <code>row_index</code> 由小到大，相同情況由 <code>col_index</code> 由小到大的方式給定，保證不會有重複，每一個元素值 $v$ 介於 $1$ 到 $2^{31}-1$ 之間。</p>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>輸出 <span>$C_{n, r} = A_{n, m} \times B_{m, r}$</span><!-- Has MathJax --> 的雜湊值。</p>
+<p>定義 <span>$\mathit{hash}(C_{n, r}) = \sum\nolimits_{e_{i, j} \in C \text{ and } e_{i, j} \neq 0} \mathit{encrypt}((i+1)*(j+1), e_{i, j})$</span><!-- Has MathJax -->，實際運作的 <strong>流程</strong> 可參考以下作法，當然你沒辦法宣告 $N \times M$ 的空間使用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1024</span></div><div class="line"><span class="keyword">uint32_t</span> A[MAXN][MAXN], B[MAXN][MAXN];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> x, y, v;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R);</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;x, &amp;y, &amp;v), A[x][y] = v;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;x, &amp;y, &amp;v), B[x][y] = v;</div><div class="line">    </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; R; j++) &#123;</div><div class="line">            <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; M; k++)</div><div class="line">                sum += A[i][k] * B[k][j];</div><div class="line">            <span class="keyword">if</span> (sum)</div><div class="line">                hash += encrypt((i+<span class="number">1</span>)*(j+<span class="number">1</span>), sum);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">4 4 4</div><div class="line">4 7</div><div class="line"></div><div class="line">1 0 5</div><div class="line">1 1 8</div><div class="line">2 2 3</div><div class="line">3 1 6</div><div class="line"></div><div class="line">0 2 1</div><div class="line">0 3 3</div><div class="line">1 1 5</div><div class="line">1 2 2</div><div class="line">2 0 3</div><div class="line">2 1 5</div><div class="line">3 1 2</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">13093438</div></pre></td></tr></table></figure>
+<h2 id="範例解釋"><a href="#範例解釋" class="headerlink" title="範例解釋"></a>範例解釋</h2><span>$$A_{n, m} \times B_{m, r} = C_{4,4}=\begin{bmatrix}
+0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 40 &amp; 21 &amp; 15 \\
+9 &amp; 15 &amp; 0 &amp; 0 \\
+0 &amp; 30 &amp; 12 &amp; 0 \\
+\end{bmatrix}$$</span><!-- Has MathJax -->
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><ul>
+<li>傳統處理 Array of Structure: Accepted (14964 ms, 29104 KB)</li>
+<li>傳統處理 Structure of Array: Accepted (12537 ms, 45568 KB)</li>
+<li>額外空間 Array of Structure: Accepted (5711 ms, 29152 KB)</li>
+<li>額外空間 Structure of Array: Accepted (5202 ms, 29056 KB)</li>
+</ul>
+<p>Array of Structure 簡稱 AOS，而 Structure of Array 簡稱 SOA，這兩種寫法的差異在於運用 structure 時的寫法，根據 cache line 的設計，有時候一個 struct 下會有很多變數，然而我們只需要使用部分的變數，這時候沒有使用的變數仍會跟著一起進入 cache，很容易造成 cache 效率偏低，因此回歸原始寫出 SOA 的版本。</p>
+<h3 id="傳統處理"><a href="#傳統處理" class="headerlink" title="傳統處理"></a>傳統處理</h3><p>如果是兩個稀疏方陣，用 COO 格式需要先對後面那個矩陣轉置，接著在三欄 $(i, j, v)$ 的表格下，按照字典順序排序。此時會有兩個三欄 $A(i, j, v), \; B(i, j, v)$ (別忘記 $B$ 矩陣已經轉置過)，要計算 $A \times B = C$，為得到 <span>$C_{i, j}$</span><!-- Has MathJax -->，<span>$C_{i, j} = \sum A(i, k, v) B(j, k, v)$</span><!-- Has MathJax -->，由於已經排序好，那麼找到共同的 $k$ 不是難事，按照合併排序的手法，能在 $\mathcal{O}(N)$ 完成。</p>
+<p>因此在最稠密的矩陣下，仍需要 $\mathcal{O}(N^3)$ 才能完成。</p>
+<h4 id="AOS"><a href="#AOS" class="headerlink" title="AOS"></a>AOS</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (MAXN&lt;&lt;2)</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i, j;</div><div class="line">    <span class="keyword">uint32_t</span> v;</div><div class="line">&#125; ELE;</div><div class="line">ELE LA[MAXL], LB[MAXL];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE LA[], <span class="keyword">int</span> na, ELE LB[], <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ma = <span class="number">0</span>, mb = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> aoff[MAXN], boff[MAXN];</div><div class="line"> </div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LA[i].i != p)</div><div class="line">            aoff[ma++] = i, p = LA[i].i;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; nb; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LB[i].i != p)</div><div class="line">            boff[mb++] = i, p = LB[i].i;</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    aoff[ma] = na, boff[mb] = nb;</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ma; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; mb; j++) &#123;</div><div class="line">            <span class="keyword">int</span> idx1 = aoff[i], idx2 = boff[j];</div><div class="line">            <span class="keyword">int</span> top1 = aoff[i+<span class="number">1</span>], top2 = boff[j+<span class="number">1</span>];</div><div class="line">            <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">            <span class="keyword">int</span> r = LA[idx1].i, c = LB[idx2].i;</div><div class="line">            <span class="keyword">while</span> (idx1 &lt; top1 &amp;&amp; idx2 &lt; top2) &#123;</div><div class="line">                <span class="keyword">if</span> (LA[idx1].j == LB[idx2].j)</div><div class="line">                    sum += LA[idx1].v * LB[idx2].v, idx1++, idx2++;</div><div class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (LA[idx1].j &lt; LB[idx2].j)</div><div class="line">                    idx1++;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    idx2++;                    </div><div class="line">            &#125;</div><div class="line"> </div><div class="line">            <span class="keyword">if</span> (sum)</div><div class="line">                hash += encrypt((r+<span class="number">1</span>)*(c+<span class="number">1</span>), sum);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp</span><span class="params">(<span class="keyword">const</span> ELE &amp;a, <span class="keyword">const</span> ELE &amp;b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (a.i != b.i)</div><div class="line">        <span class="keyword">return</span> a.i &lt; b.i;</div><div class="line">    <span class="keyword">return</span> a.j &lt; b.j;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LA[i].i, &amp;LA[i].j, &amp;LA[i].v);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LB[i].j, &amp;LB[i].i, &amp;LB[i].v);</div><div class="line">        sort(LB, LB+nB, cmp);</div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="SOA"><a href="#SOA" class="headerlink" title="SOA"></a>SOA</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (MAXN&lt;&lt;2)</span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i[MAXL], j[MAXL];</div><div class="line">    <span class="keyword">uint32_t</span> v[MAXL];</div><div class="line">&#125; ELE;</div><div class="line">ELE LA, LB, LT;</div><div class="line"><span class="keyword">int</span> D[MAXL];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE &amp;LA, <span class="keyword">int</span> na, ELE &amp;LB, <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ma = <span class="number">0</span>, mb = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> aoff[MAXN], boff[MAXN];</div><div class="line"> </div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LA.i[i] != p)</div><div class="line">            aoff[ma++] = i, p = LA.i[i];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; nb; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LB.i[i] != p)</div><div class="line">            boff[mb++] = i, p = LB.i[i];</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    aoff[ma] = na, boff[mb] = nb;</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ma; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; mb; j++) &#123;</div><div class="line">            <span class="keyword">int</span> idx1 = aoff[i], idx2 = boff[j];</div><div class="line">            <span class="keyword">int</span> top1 = aoff[i+<span class="number">1</span>], top2 = boff[j+<span class="number">1</span>];</div><div class="line">            <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">            <span class="keyword">int</span> r = LA.i[idx1], c = LB.i[idx2];</div><div class="line">            <span class="keyword">while</span> (idx1 &lt; top1 &amp;&amp; idx2 &lt; top2) &#123;</div><div class="line">                <span class="keyword">if</span> (LA.j[idx1] &lt; LB.j[idx2])</div><div class="line">                    idx1++;</div><div class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (LA.j[idx1] &gt; LB.j[idx2])</div><div class="line">                    idx2++;                    </div><div class="line">                <span class="keyword">else</span></div><div class="line">                    sum += LA.v[idx1] * LB.v[idx2], idx1++, idx2++;</div><div class="line">            &#125;</div><div class="line"> </div><div class="line">            <span class="keyword">if</span> (sum)</div><div class="line">                hash += encrypt((r+<span class="number">1</span>)*(c+<span class="number">1</span>), sum);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (LT.i[a] != LT.i[b])</div><div class="line">        <span class="keyword">return</span> LT.i[a] &lt; LT.i[b];</div><div class="line">    <span class="keyword">return</span> LT.j[a] &lt; LT.j[b];</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LA.i[i], &amp;LA.j[i], &amp;LA.v[i]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &lt;.j[i], &lt;.i[i], &lt;.v[i]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            D[i] = i;</div><div class="line">        sort(D, D+nB, cmp);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            LB.i[i] = LT.i[D[i]], LB.j[i] = LT.j[D[i]], LB.v[i] = LT.v[D[i]];</div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="額外空間"><a href="#額外空間" class="headerlink" title="額外空間"></a>額外空間</h3><p>若採用額外空間處理，一開始就不用對 $B$ 轉置，<span>$C_{i, j} = \sum A(i, k, v) B(k, j, v)$</span><!-- Has MathJax -->。每一次解決 $C$ 的第 $i$ 列上的所有元素值，此時 $A(i, k, v)$ 按照 $k$ 遞增排列，$B(k, j, v)$ 要配對 $A(i, k, v)$，會恰好掃描完整的 $B$，累加元素值會不按照順序累加到 <span>$C_{i, j}$</span><!-- Has MathJax -->。</p>
+<p>因此在最稠密的矩陣下，仍需要 $\mathcal{O}(N^3)$ 才能完成。</p>
+<h4 id="AOS-1"><a href="#AOS-1" class="headerlink" title="AOS"></a>AOS</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL 1048576</span></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i, j;</div><div class="line">    <span class="keyword">uint32_t</span> v;</div><div class="line">&#125; ELE;</div><div class="line">ELE LA[MAXL], LB[MAXL];</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE LA[], <span class="keyword">int</span> na, ELE LB[], <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ma = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> aoff[MAXN];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LA[i].i != p)</div><div class="line">            aoff[ma++] = i, p = LA[i].i;</div><div class="line">    &#125;</div><div class="line">    aoff[ma] = na;</div><div class="line"> </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">int</span> chunk = <span class="number">8</span>;</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(dynamic, chunk) reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ma; i++) &#123;</div><div class="line">        <span class="keyword">int</span> idx1 = aoff[i], top1 = aoff[i+<span class="number">1</span>];</div><div class="line">        <span class="keyword">int</span> r = LA[idx1].i;</div><div class="line">        <span class="keyword">uint32_t</span> *C = (<span class="keyword">uint32_t</span> *) <span class="built_in">calloc</span>(R, <span class="keyword">sizeof</span>(<span class="keyword">uint32_t</span>));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> idx2 = <span class="number">0</span>; idx2 &lt; nb &amp;&amp; idx1 &lt; top1; ) &#123;</div><div class="line">            <span class="keyword">if</span> (LA[idx1].j == LB[idx2].i) &#123;</div><div class="line">                C[LB[idx2].j] += LA[idx1].v * LB[idx2].v;</div><div class="line">                idx2++;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> (idx2 &lt; nb &amp;&amp; LA[idx1].j != LB[idx2].i) &#123;</div><div class="line">                <span class="keyword">if</span> (LA[idx1].j &lt; LB[idx2].i)</div><div class="line">                    idx1++;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    idx2++;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; R; j++) &#123;</div><div class="line">            <span class="keyword">if</span> (C[j])</div><div class="line">                hash += encrypt((r+<span class="number">1</span>)*(j+<span class="number">1</span>), C[j]);</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">free</span>(C);</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> N, M, R, nA, nB;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LA[i].i, &amp;LA[i].j, &amp;LA[i].v);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LB[i].i, &amp;LB[i].j, &amp;LB[i].v);</div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="SOA-1"><a href="#SOA-1" class="headerlink" title="SOA"></a>SOA</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL 1048576</span></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i[MAXL], j[MAXL];</div><div class="line">    <span class="keyword">uint32_t</span> v[MAXL];</div><div class="line">&#125; ELE;</div><div class="line">ELE LA, LB;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE &amp;LA, <span class="keyword">int</span> na, ELE &amp;LB, <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ma = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> aoff[MAXN];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LA.i[i] != p)</div><div class="line">            aoff[ma++] = i, p = LA.i[i];</div><div class="line">    &#125;</div><div class="line">    aoff[ma] = na;</div><div class="line"> </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">int</span> chunk = <span class="number">8</span>;</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(dynamic, chunk) reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ma; i++) &#123;</div><div class="line">        <span class="keyword">int</span> idx1 = aoff[i], top1 = aoff[i+<span class="number">1</span>];</div><div class="line">        <span class="keyword">int</span> r = LA.i[idx1];</div><div class="line">        <span class="keyword">uint32_t</span> *C = (<span class="keyword">uint32_t</span> *) <span class="built_in">calloc</span>(R, <span class="keyword">sizeof</span>(<span class="keyword">uint32_t</span>));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> idx2 = <span class="number">0</span>; idx2 &lt; nb &amp;&amp; idx1 &lt; top1; ) &#123;</div><div class="line">            <span class="keyword">if</span> (LA.j[idx1] == LB.i[idx2]) &#123;</div><div class="line">                C[LB.j[idx2]] += LA.v[idx1] * LB.v[idx2];</div><div class="line">                idx2++;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> (idx2 &lt; nb &amp;&amp; LA.j[idx1] != LB.i[idx2]) &#123;</div><div class="line">                <span class="keyword">if</span> (LA.j[idx1] &lt; LB.i[idx2])</div><div class="line">                    idx1++;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    idx2++;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; R; j++) &#123;</div><div class="line">            <span class="keyword">if</span> (C[j])</div><div class="line">                hash += encrypt((r+<span class="number">1</span>)*(j+<span class="number">1</span>), C[j]);</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">free</span>(C);</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> N, M, R, nA, nB;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LA.i[i], &amp;LA.j[i], &amp;LA.v[i]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LB.i[i], &amp;LB.j[i], &amp;LB.v[i]);</div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/30/jg-10027/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10027. Fast Sudoku
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/30/uva-13009/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">UVa 13009 - Fence the vegetables fail</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10087/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

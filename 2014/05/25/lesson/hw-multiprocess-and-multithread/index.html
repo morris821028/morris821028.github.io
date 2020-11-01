@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>作業系統 multiprocess &amp; multithread 作業 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="A 班程式要求請使用所熟悉的程式開發環境設計單一行程產生子行程 ( Child Process ) 與 多執行緒 ( Multi-Thread) 的程式，意即完成下列傳統 for loop 之列印工作，將其改寫成多行程與多執行緒，由不同的行程與執行緒列印不同 i 值。 12for (int i = 0; i &amp;lt; 10; i++)    printf(&quot;output i = %d\n&quot;, i)">
+<meta name="keywords" content="multiprocess,multithread">
+<meta property="og:type" content="article">
+<meta property="og:title" content="作業系統 multiprocess &amp; multithread 作業">
+<meta property="og:url" content="http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="A 班程式要求請使用所熟悉的程式開發環境設計單一行程產生子行程 ( Child Process ) 與 多執行緒 ( Multi-Thread) 的程式，意即完成下列傳統 for loop 之列印工作，將其改寫成多行程與多執行緒，由不同的行程與執行緒列印不同 i 值。 12for (int i = 0; i &amp;lt; 10; i++)    printf(&quot;output i = %d\n&quot;, i)">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-20T11:50:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="作業系統 multiprocess &amp; multithread 作業">
+<meta name="twitter:description" content="A 班程式要求請使用所熟悉的程式開發環境設計單一行程產生子行程 ( Child Process ) 與 多執行緒 ( Multi-Thread) 的程式，意即完成下列傳統 for loop 之列印工作，將其改寫成多行程與多執行緒，由不同的行程與執行緒列印不同 i 值。 12for (int i = 0; i &amp;lt; 10; i++)    printf(&quot;output i = %d\n&quot;, i)">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-lesson/hw-multiprocess-and-multithread" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/05/25/lesson/hw-multiprocess-and-multithread/" class="article-date">
+  <time datetime="2014-05-25T12:15:47.000Z" itemprop="datePublished">2014-05-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/作業系統/">作業系統</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      作業系統 multiprocess &amp; multithread 作業
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/" data-id="ckgyo56oj02c03cvr5728mhkt" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/multiprocess/">multiprocess</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/multithread/">multithread</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#A-班程式要求"><span class="toc-number">1.</span> <span class="toc-text">A 班程式要求</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#注意事項"><span class="toc-number">2.</span> <span class="toc-text">注意事項</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#開始動手"><span class="toc-number">3.</span> <span class="toc-text">開始動手</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#multiprocess"><span class="toc-number">3.1.</span> <span class="toc-text">multiprocess</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#multithread"><span class="toc-number">3.2.</span> <span class="toc-text">multithread</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#後記"><span class="toc-number">3.3.</span> <span class="toc-text">後記</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#執行"><span class="toc-number">4.</span> <span class="toc-text">執行</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#編譯"><span class="toc-number">4.1.</span> <span class="toc-text">編譯</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#運行"><span class="toc-number">4.2.</span> <span class="toc-text">運行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Mac-運行問題"><span class="toc-number">5.</span> <span class="toc-text">Mac 運行問題</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#其他作業"><span class="toc-number">6.</span> <span class="toc-text">其他作業</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h1 id="A-班程式要求"><a href="#A-班程式要求" class="headerlink" title="A 班程式要求"></a>A 班程式要求</h1><p>請使用所熟悉的程式開發環境設計單一行程產生子行程 ( Child Process ) 與 多執行緒 ( Multi-Thread) 的程式，意即完成下列傳統 for loop 之列印工作，將其改寫成多行程與多執行緒，由不同的行程與執行緒列印不同 i 值。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"output i = %d\n"</span>, i);</div></pre></td></tr></table></figure>
+<h1 id="注意事項"><a href="#注意事項" class="headerlink" title="注意事項"></a>注意事項</h1><ul>
+<li><strong> 嚴禁從網路抄襲作業 </strong>。每份程式作業將被程式比對軟體檢查，一旦發現抄襲，該份作業以零分計，並且這學期作業系統作業成績以零分計。</li>
+<li>後略</li>
+</ul>
+<blockquote>
+<p>這種作業不抄來抄去也難。但是作業格式不清楚，所以也有不同理解方式就是了。</p>
+</blockquote>
+<h1 id="開始動手"><a href="#開始動手" class="headerlink" title="開始動手"></a>開始動手</h1><p>對於將 for 迴圈改寫，我們必須認知到幾項</p>
+<ul>
+<li>是否要按照順序輸出？</li>
+<li>平台 M$, Linux, or Max OS？</li>
+</ul>
+<blockquote>
+<p>此篇假設目標是一模一樣的輸出</p>
+</blockquote>
+<h2 id="multiprocess"><a href="#multiprocess" class="headerlink" title="multiprocess"></a>multiprocess</h2><p><code>child process</code> 屬於 multiprocess 中的一種方式。為什麼這麼說呢？multiprocess 只是要求一個 CPU 中有多個工作同時在進行，藉由排程器去進行工作分配。</p>
+<p>先不管這些，要實作 <code>child process</code> 看起來只有走向 <code>fork()</code> 一途。而之前 inker 大神則是走非 child process 使用類似 <code>./nachos -e ../test/test1 -e ../test/test1</code> 的方式去運行。</p>
+<p>為了實作按照順序輸出，我們需要 process 共同擁有的 shared memory，這個 shared memory 將要紀錄原本 for 裡面的 <code>i</code> 值和一個 <code>sem_t</code>，來保證 process 和 process 之間不會同時搶先動作，<code>sem_t</code> 也許是不需要的，這裡留給實驗者去測試。</p>
+<p>為了使輸出一致，在 <code>fork()</code> 完之後，使用 <code>wait()</code> 來等待所有子程序結束。這樣會造成當 for loop 需要跑 n 次，就會總共 n 個 process，也就是一整條鏈下去。</p>
+<ul>
+<li>思考 <code>wait()</code> 和 <code>sem_t</code> 都不是這麼必要？// 這個要看寫法</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/wait.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;semaphore.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span>  MAP_ANONYMOUS</span></div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span>  MAP_ANON</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAP_ANONYMOUS MAP_ANON</span></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> *glob_var;</div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> n = <span class="number">32</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">    glob_var = (<span class="keyword">int</span> *)mmap(<span class="literal">NULL</span>, <span class="keyword">sizeof</span> *glob_var, PROT_READ | PROT_WRITE,</div><div class="line">                    MAP_SHARED | MAP_ANONYMOUS, <span class="number">-1</span>, <span class="number">0</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">sem_t</span> *sema = (<span class="keyword">sem_t</span> *)mmap(<span class="literal">NULL</span>, <span class="keyword">sizeof</span>(sema),</div><div class="line">                       PROT_READ |PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS,</div><div class="line">                       <span class="number">-1</span>, <span class="number">0</span>);</div><div class="line">    sem_init(sema, <span class="number">1</span>, <span class="number">0</span>);</div><div class="line">    *glob_var = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (*glob_var &lt; n) &#123;</div><div class="line">        sem_wait(sema);</div><div class="line">        <span class="keyword">int</span> pid = fork();</div><div class="line">        <span class="keyword">int</span> output = (*glob_var)++;</div><div class="line">        <span class="keyword">if</span> (output &lt; n)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%d, pid = %d\n"</span>, output, pid);</div><div class="line">        sem_post(sema);</div><div class="line">        <span class="keyword">int</span> wpid, status = <span class="number">0</span>;</div><div class="line">        <span class="keyword">while</span> ((wpid = wait(&amp;status)) &gt; <span class="number">0</span>)</div><div class="line">        &#123;</div><div class="line">            <span class="comment">//printf("Exit status of %d was %d (%s)\n", (int)wpid, status, (status &gt; 0) ? "accept" : "reject");</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    munmap(glob_var, <span class="keyword">sizeof</span> *glob_var);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="multithread"><a href="#multithread" class="headerlink" title="multithread"></a>multithread</h2><p>Thread 就相當簡單，因為它們是共用同一個記憶體區段，因此沒有 share memory 的問題。<br>雖然使用 <code>sem_wait(&amp;sem)</code> 和 <code>sem_post(&amp;sem)</code> 來保證區域內的代碼不會同時有多個 thread 在運行，但仍遇到 <code>i = 0</code> 同時在多個 Thread 噴出的情況，這一點百思不得其解，為了解決這一切問題，使用課本提到的 <code>Producer–consumer problem</code> 寫法。</p>
+<p>希望能從代碼中看懂。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;semaphore.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"><span class="keyword">int</span> i = <span class="number">0</span>, n = <span class="number">16</span>;</div><div class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</div><div class="line"><span class="keyword">sem_t</span> sem;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAX_THREAD = <span class="number">4</span>;</div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">Producer</span><span class="params">(<span class="keyword">void</span> *arg)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n;) &#123;</div><div class="line">        sem_wait(&amp;sem);</div><div class="line">        <span class="keyword">if</span>(count == <span class="number">1</span>) &#123;</div><div class="line">            sem_post(&amp;sem);</div><div class="line">            <span class="keyword">continue</span>;</div><div class="line">        &#125;</div><div class="line">        count++;</div><div class="line">        <span class="comment">// printf("\nProducer is :%d\n", count);</span></div><div class="line">        sem_post(&amp;sem);</div><div class="line">        i++;</div><div class="line">    &#125;</div><div class="line">    pthread_exit(<span class="literal">NULL</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">runPrint</span><span class="params">(<span class="keyword">void</span> *arg)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> id = *((<span class="keyword">int</span> *) arg);</div><div class="line">    <span class="keyword">for</span> (; i &lt; n ;) &#123;</div><div class="line">        sem_wait(&amp;sem);</div><div class="line">        <span class="keyword">if</span> (count == <span class="number">0</span>) &#123;</div><div class="line">            sem_post(&amp;sem);</div><div class="line">            <span class="keyword">continue</span>;</div><div class="line">        &#125;</div><div class="line">        count--;</div><div class="line">        i++;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"loop i = %d, thread id %d\n"</span>, i, id);</div><div class="line">        sem_post(&amp;sem);</div><div class="line">    &#125;</div><div class="line">    pthread_exit(<span class="literal">NULL</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">pthread_t</span> *threads;</div><div class="line">    sem_init(&amp;sem, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    threads = (<span class="keyword">pthread_t</span> *) <span class="built_in">malloc</span>(MAX_THREAD * <span class="keyword">sizeof</span>(<span class="keyword">pthread_t</span>));</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; MAX_THREAD; i++) &#123;</div><div class="line">        <span class="keyword">int</span> *p = (<span class="keyword">int</span> *) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line">        *p = i;</div><div class="line">        pthread_create(&amp;threads[i], <span class="literal">NULL</span>, runPrint, (<span class="keyword">void</span> *)(p));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">pthread_t</span> producer;</div><div class="line">    <span class="keyword">int</span> *p = (<span class="keyword">int</span> *) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line">    *p = <span class="number">-1</span>;</div><div class="line">    pthread_create(&amp;producer, <span class="literal">NULL</span>, Producer, (<span class="keyword">void</span> *)(p));</div><div class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; MAX_THREAD; i++) &#123;</div><div class="line">        pthread_join(threads[i], <span class="literal">NULL</span>);</div><div class="line">    &#125;</div><div class="line">    sem_destroy(&amp;sem);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h2 id="後記"><a href="#後記" class="headerlink" title="後記"></a>後記</h2><p>代碼沒有寫得很完整，也就是能達到輸出相同且用符合需求，這一點是有很多漏洞的，前人也是鑽漏洞交作業的。相較之下，我們 B 班的作業略顯兇殘，但是網路上資料還真是少呢，雖然還是找地方抄和理解。</p>
+<p>測試的時候，為了保證輸出是穩定的，記得得多測試幾次，並且把數字範圍作變調，當然能不能讓一個 create thread 跑完整個迴圈呢？畢竟加上 main thread 就算是 multithread？haha</p>
+<h1 id="執行"><a href="#執行" class="headerlink" title="執行"></a>執行</h1><h2 id="編譯"><a href="#編譯" class="headerlink" title="編譯"></a>編譯</h2><ul>
+<li><p>Mac OSX</p>
+<pre><code>$ clang -pthread x.cpp -o x
+</code></pre></li>
+<li><p>Linux</p>
+<pre><code>$ gcc -lpthread x.cpp -o x
+</code></pre><h2 id="運行"><a href="#運行" class="headerlink" title="運行"></a>運行</h2></li>
+<li><p>Linux &amp; Max OSX</p>
+<pre><code>$ ./x
+</code></pre></li>
+</ul>
+<h1 id="Mac-運行問題"><a href="#Mac-運行問題" class="headerlink" title="Mac 運行問題"></a>Mac 運行問題</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">#ifndef  MAP_ANONYMOUS</div><div class="line">#ifdef  MAP_ANON</div><div class="line">#define MAP_ANONYMOUS MAP_ANON</div><div class="line">#endif</div><div class="line">#endif</div></pre></td></tr></table></figure>
+<p>不知道為什麼 clang 中沒有定義 <code>MAP_ANONYMOUS</code>，增加上述代碼後正確運行。</p>
+<h1 id="其他作業"><a href="#其他作業" class="headerlink" title="其他作業"></a>其他作業</h1><p><a href="http://morris821028.github.io/2014/05/18/operating-system-hw-thread/">B 班程式作業 1</a><br><a href="http://morris821028.github.io/2014/05/24/hw-nachos4/">B 班程式作業 2</a></p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/05/26/oj/uva/uva-132/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          UVa 132 - Bumpy Objects
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/05/25/lesson/consumption-item-1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">當代消費文化與社會 (2)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

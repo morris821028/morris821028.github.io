@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10025. Fast Image Match (OpenMP) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="背景圖片匹配和字串匹配有一點不同，字串匹配通常要求其子字串與搜尋字串完全相符，而圖片匹配則用相似度為依據，當圖片大、複雜且具有干擾，或者需要匹配數量非常多，更先進的領域會利用特徵擷取，用機率統計的方式來篩選可能的匹配數量，篩選過後才進行圖片的細節匹配。 題目描述給予兩個圖片 $A, B$，圖片格式為灰階影像，每個像素 $\mathit{pixel}(x, y)$ 採用 8-bits 表示，範圍為">
+<meta name="keywords" content="FFT,OpenMP,批改娘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10025. Fast Image Match (OpenMP)">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10025/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="背景圖片匹配和字串匹配有一點不同，字串匹配通常要求其子字串與搜尋字串完全相符，而圖片匹配則用相似度為依據，當圖片大、複雜且具有干擾，或者需要匹配數量非常多，更先進的領域會利用特徵擷取，用機率統計的方式來篩選可能的匹配數量，篩選過後才進行圖片的細節匹配。 題目描述給予兩個圖片 $A, B$，圖片格式為灰階影像，每個像素 $\mathit{pixel}(x, y)$ 採用 8-bits 表示，範圍為">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-06-24T02:27:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10025. Fast Image Match (OpenMP)">
+<meta name="twitter:description" content="背景圖片匹配和字串匹配有一點不同，字串匹配通常要求其子字串與搜尋字串完全相符，而圖片匹配則用相似度為依據，當圖片大、複雜且具有干擾，或者需要匹配數量非常多，更先進的領域會利用特徵擷取，用機率統計的方式來篩選可能的匹配數量，篩選過後才進行圖片的細節匹配。 題目描述給予兩個圖片 $A, B$，圖片格式為灰階影像，每個像素 $\mathit{pixel}(x, y)$ 採用 8-bits 表示，範圍為">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10025" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10025/" class="article-date">
+  <time datetime="2016-04-30T02:36:39.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10025. Fast Image Match (OpenMP)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10025/" data-id="ckgyo55c2005h3cvre27opkna" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10025/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/FFT/">FFT</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">2.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">3.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">4.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入"><span class="toc-number">5.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出"><span class="toc-number">6.</span> <span class="toc-text">範例輸出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">7.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#樸素平行"><span class="toc-number">7.1.</span> <span class="toc-text">樸素平行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FFT"><span class="toc-number">7.2.</span> <span class="toc-text">FFT</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>圖片匹配和字串匹配有一點不同，字串匹配通常要求其子字串與搜尋字串完全相符，而圖片匹配則用相似度為依據，當圖片大、複雜且具有干擾，或者需要匹配數量非常多，更先進的領域會利用特徵擷取，用機率統計的方式來篩選可能的匹配數量，篩選過後才進行圖片的細節匹配。</p>
+<h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>給予兩個圖片 $A, B$，圖片格式為灰階影像，每個像素 $\mathit{pixel}(x, y)$ 採用 8-bits 表示，範圍為 $\mathit{pixel}(x, y) \in [0, 255]$。</p>
+<p> 舉一個例子，有一個 $3 \times 3$ 的圖片 $A$ 和一個 $2 \times 2$ 的圖片 $B$，用矩陣表示如下：</p>
+<span>$$A := \begin{bmatrix}
+a1 &amp; a2 &amp; a3 \\
+a4 &amp; a5 &amp; a6 \\
+a7 &amp; a8 &amp; a9
+\end{bmatrix} ,\; B := \begin{bmatrix}
+b1 &amp; b2\\
+b3 &amp; b4\\
+\end{bmatrix}$$</span><!-- Has MathJax -->
+<p>假設左上角座標 $(1, 1)$ 即 $a1$ 的位置、$(1, 2)$ 即 $a2$ 的位置。</p>
+<ul>
+<li>若把影像 $B$ 左上角對齊 $A$ 的 $(1, 1)$ 位置，其差異程度 $\mathit{diff}(A, B) = (a1 - b1)^2 + (a2 - b2)^2 + (a4 - b3)^2 + (a5 - b4)^2$</li>
+<li>相同地，對齊 $(2, 1)$ 位置，其差異程度 $\mathit{diff}(A, B) = (a4 - b1)^2 + (a5 - b2)^2 + (a7 - b3)^2 + (a8 - b4)^2$</li>
+</ul>
+<p>比較時，整張 $B$ 都要落在 $A$ 中。現在要找到一個對齊位置 $(x, y)$，使得 $\mathit{diff}(A, B)$ 最小。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>多組測資，每一組第一行有四個整數 $A_H, A_W, B_H, B_W$，分別表示圖片 $A$ 的高寬、$B$ 的高寬。</p>
+<p>接下來會有 $A_H$ 行，每一行上會有 $A_W$ 個整數，第 $i$ 行上的第 $j$ 個整數 $x$ 表示 $A(i, j)$ 的灰階像素值。同樣地，接下來會有 $B_H$ 行，每一行上會有 $B_W$ 個整數，第 $i$ 行上的第 $j$ 個整數 $x$ 表示 $B(i, j)$ 的灰階像素值。</p>
+<ul>
+<li>$ 1\le A_H, A_W, B_H, B_W \le 500$</li>
+<li>$ B_H \le A_H, B_W \le A_W$</li>
+<li>$ 0 \le x \le 255$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每一組測資輸出一行，兩個整數 $x, y$，滿足 $\mathit{diff}(A, B)$ 最小。若有相同情況滿足，則優先挑選 $x$ 最小，若 $x$ 仍相同，則挑選 $y$ 最小。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">4 4 2 2</div><div class="line">0 3 3 0</div><div class="line">0 3 3 0</div><div class="line">0 0 5 5</div><div class="line">0 0 5 5</div><div class="line">5 5</div><div class="line">5 5</div><div class="line">3 5 1 2</div><div class="line">2 3 0 4 5</div><div class="line">0 0 7 0 0</div><div class="line">0 0 7 0 0</div><div class="line">3 4</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">3 3</div><div class="line">1 1</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="樸素平行"><a href="#樸素平行" class="headerlink" title="樸素平行"></a>樸素平行</h3><p>若圖片是 $N \times N$，樸素算法運作要 $\mathcal{O}(N^4)$，傅立葉算法要 $\mathcal{O}(N^2 \log N)$，這裡針對樸素算法平行。從最高層次的找解平行，每一個匹配位置都要耗費 $\mathcal{O}(M^2)$ 計算相似性，又由於平行限制跟核心數有關，那麼針對每一個 thread 要求找到好幾個 row 的解，分別存在各自的答案陣列區中，之後再線性跑一次取最小值，利用額外的空間儲存，避免在運算過程中遇到 critical section。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(dynamic, chunk) shared(A, B)</span></div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= Ch; i++) &#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= Cw; j++) &#123;</div><div class="line">        <span class="keyword">long</span> <span class="keyword">long</span> d = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> p = <span class="number">0</span>; p &lt; Bh; p++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> q = <span class="number">0</span>; q &lt; Bw; q++) &#123;</div><div class="line">                d += (<span class="keyword">long</span> <span class="keyword">long</span>) (B[p][q] - A[i+p][j+q])*(B[p][q] - A[i+p][j+q]);</div><div class="line">            &#125;                   </div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (d &lt; diff)</div><div class="line">        &#123;</div><div class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp critical</span></div><div class="line">            <span class="keyword">if</span> (d &lt; diff)</div><div class="line">                diff = d, bx = i, by = j;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>就是上列的寫法會卡在 critical section，倒不如存在另一個陣列中，效能還差距個幾百毫秒。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;limits.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 512</span></div><div class="line"><span class="keyword">int</span> A[MAXN][MAXN], B[MAXN][MAXN];</div><div class="line"><span class="keyword">int</span> C[MAXN][MAXN];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> Ah, Aw, Bh, Bw, x;</div><div class="line">    <span class="keyword">int</span> cases = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span>(<span class="built_in">scanf</span>(<span class="string">"%d %d %d %d"</span>, &amp;Ah, &amp;Aw, &amp;Bh, &amp;Bw) == <span class="number">4</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Ah; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; Aw; j++)</div><div class="line">                <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;x), A[i][j] = x;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Bh; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; Bw; j++)</div><div class="line">                <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;x), B[i][j] = x;</div><div class="line">        <span class="keyword">int</span> Ch = Ah - Bh, Cw = Aw - Bw;</div><div class="line">        <span class="keyword">int</span> bx = <span class="number">-1</span>, by = <span class="number">-1</span>;</div><div class="line">        <span class="keyword">int</span> diff = INT_MAX;</div><div class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= Ch; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= Cw; j++) &#123;</div><div class="line">                <span class="keyword">int</span> d = <span class="number">0</span>;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> p = <span class="number">0</span>; p &lt; Bh; p++) &#123;</div><div class="line">                    <span class="keyword">for</span> (<span class="keyword">int</span> q = <span class="number">0</span>; q &lt; Bw; q++) &#123;</div><div class="line">                        d += (B[p][q] - A[i+p][j+q])*(B[p][q] - A[i+p][j+q]);</div><div class="line">                    &#125;                    </div><div class="line">                &#125;</div><div class="line">                C[i][j] = d;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= Ch; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= Cw; j++)</div><div class="line">                <span class="keyword">if</span> (C[i][j] &lt; diff)</div><div class="line">                    diff = C[i][j], bx = i, by = j;</div><div class="line">        &#125;</div><div class="line"> </div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d %d\n"</span>, bx + <span class="number">1</span>, by + <span class="number">1</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="FFT"><a href="#FFT" class="headerlink" title="FFT"></a>FFT</h3><p>儘管使用快速傅立葉 (FFT) 已經達到 <span>$\mathcal{O}(N \log N)$</span><!-- Has MathJax --> 的時間複雜度的極致，只比平行樸素算法快個兩到三倍，加入平行之後，效能可以達到五到六倍加速。</p>
+<p>FFT 用到大量的三角函數計算，一般而言若使用序列化的乘法代替三角函數計算 (疊加角度) 會比重新計算快上很多，但這樣會損失一大部分的精準度 (但速度快很多)，而且會產生很多相互依賴的指令，這也導致不容易對迴圈平行。</p>
+<p>如果需要平行，每一個三角函數可以預先存在陣列中，每一個 thread 直接存取陣列中的元素即可，但麻煩的地方在於最好使用多核處理器，然而跨越多個處理器有可能會因為快取 … 等機制，導致速度下降，因此這裡採用單一處理器六核心 (只有三個是 physical core)，因此 thread 限定在五個以內。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;limits.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdbool.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></div><div class="line"><span class="comment">// FFT header</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 262144</span></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></div><div class="line">    <span class="keyword">float</span> x, y;</div><div class="line">&#125; <span class="keyword">complex</span>;</div><div class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">int</span> UINT32;</div><div class="line"></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> (* <span class="keyword">const</span> NumberOfBitsNeeded) (<span class="keyword">int</span>);</div><div class="line">    UINT32 (* <span class="keyword">const</span> FastReverseBits) (UINT32, <span class="keyword">int</span>);</div><div class="line">    <span class="keyword">void</span> (* <span class="keyword">const</span> FFT) (<span class="keyword">bool</span>, <span class="keyword">complex</span>[], <span class="keyword">complex</span>[], <span class="keyword">int</span>);</div><div class="line">    <span class="keyword">void</span> (* <span class="keyword">const</span> convolution) (<span class="keyword">double</span> *, <span class="keyword">double</span> *, <span class="keyword">int</span> , <span class="keyword">double</span> *);</div><div class="line">&#125; FFT_namespace;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">complex</span> <span class="title">init_complex</span><span class="params">(<span class="keyword">double</span> a, <span class="keyword">double</span> b)</span> </span>&#123;</div><div class="line">    <span class="keyword">complex</span> t = &#123;a, b&#125;;</div><div class="line">    <span class="keyword">return</span> t;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">complex</span> <span class="title">add_complex</span><span class="params">(<span class="keyword">complex</span> *a, <span class="keyword">complex</span> *b)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> init_complex(a-&gt;x + b-&gt;x, a-&gt;y + b-&gt;y);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">complex</span> <span class="title">sub_complex</span><span class="params">(<span class="keyword">complex</span> *a, <span class="keyword">complex</span> *b)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> init_complex(a-&gt;x - b-&gt;x, a-&gt;y - b-&gt;y);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">complex</span> <span class="title">mul_complex</span><span class="params">(<span class="keyword">complex</span> *a, <span class="keyword">complex</span> *b)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> init_complex(a-&gt;x * b-&gt;x - a-&gt;y * b-&gt;y, a-&gt;x * b-&gt;y+ a-&gt;y * b-&gt;x);</div><div class="line">&#125;</div><div class="line"><span class="keyword">static</span> <span class="keyword">complex</span> pre_theta[<span class="number">2</span>][MAXN];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">prework</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> pre_n = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">double</span> PI = <span class="built_in">acos</span>(<span class="number">-1</span>);</div><div class="line">    <span class="keyword">if</span> (pre_n == n)</div><div class="line">        <span class="keyword">return</span> ;</div><div class="line">    pre_n = n;</div><div class="line">    pre_theta[<span class="number">0</span>][<span class="number">0</span>] = init_complex(<span class="number">1</span>, <span class="number">0</span>);</div><div class="line">    pre_theta[<span class="number">1</span>][<span class="number">0</span>] = init_complex(<span class="number">1</span>, <span class="number">0</span>);</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; i++) &#123;</div><div class="line">        pre_theta[<span class="number">0</span>][i] = init_complex(<span class="built_in">cos</span>(<span class="number">2</span>*i*PI / n ) , <span class="built_in">sin</span>(<span class="number">2</span>*i*PI / n ));</div><div class="line">        pre_theta[<span class="number">1</span>][i] = init_complex(<span class="built_in">cos</span>(<span class="number">2</span>*i*PI / n ) , -<span class="built_in">sin</span>(<span class="number">2</span>*i*PI / n ));</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">// FFT body</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">NumberOfBitsNeeded</span><span class="params">(<span class="keyword">int</span> PowerOfTwo)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;; ++i) &#123;</div><div class="line">        <span class="keyword">if</span> (PowerOfTwo &amp; (<span class="number">1</span> &lt;&lt; i)) &#123;</div><div class="line">            <span class="keyword">return</span> i;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function">UINT32 <span class="title">FastReverseBits</span><span class="params">(UINT32 a, <span class="keyword">int</span> NumBits)</span> </span>&#123;</div><div class="line">    a = ( ( a &amp; <span class="number">0x55555555</span>U ) &lt;&lt; <span class="number">1</span> ) | ( ( a &amp; <span class="number">0xAAAAAAAA</span>U ) &gt;&gt; <span class="number">1</span> ) ;</div><div class="line">    a = ( ( a &amp; <span class="number">0x33333333</span>U ) &lt;&lt; <span class="number">2</span> ) | ( ( a &amp; <span class="number">0xCCCCCCCC</span>U ) &gt;&gt; <span class="number">2</span> ) ;</div><div class="line">    a = ( ( a &amp; <span class="number">0x0F0F0F0F</span>U ) &lt;&lt; <span class="number">4</span> ) | ( ( a &amp; <span class="number">0xF0F0F0F0</span>U ) &gt;&gt; <span class="number">4</span> ) ;</div><div class="line">    a = ( ( a &amp; <span class="number">0x00FF00FF</span>U ) &lt;&lt; <span class="number">8</span> ) | ( ( a &amp; <span class="number">0xFF00FF00</span>U ) &gt;&gt; <span class="number">8</span> ) ;</div><div class="line">    a = ( ( a &amp; <span class="number">0x0000FFFF</span>U ) &lt;&lt; <span class="number">16</span> ) | ( ( a &amp; <span class="number">0xFFFF0000</span>U ) &gt;&gt; <span class="number">16</span> ) ;</div><div class="line">    <span class="keyword">return</span> a &gt;&gt; (<span class="number">32</span> - NumBits);</div><div class="line">&#125;</div><div class="line"><span class="keyword">void</span> _FFT(<span class="keyword">bool</span> InverseTransform, <span class="keyword">complex</span> In[], <span class="keyword">complex</span> Out[], <span class="keyword">int</span> n) &#123;</div><div class="line">    <span class="comment">// simultaneous data copy and bit-reversal ordering into outputs</span></div><div class="line">    <span class="keyword">int</span> NumSamples = n;</div><div class="line">    <span class="keyword">int</span> NumBits = NumberOfBitsNeeded(NumSamples);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; NumSamples; ++i)</div><div class="line">        Out[FastReverseBits(i, NumBits)] = In[i];</div><div class="line">    <span class="comment">// the FFT process</span></div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= NumBits; i++) &#123;</div><div class="line">        <span class="keyword">int</span> BlockSize = <span class="number">1</span>&lt;&lt;i, BlockEnd = BlockSize&gt;&gt;<span class="number">1</span>, BlockCnt = NumSamples/BlockSize;</div><div class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; NumSamples; j += BlockSize) &#123;</div><div class="line">            <span class="keyword">complex</span> *t = pre_theta[InverseTransform];</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; BlockEnd; k++, t += BlockCnt) &#123;</div><div class="line">                <span class="keyword">complex</span> a = mul_complex(&amp;(*t), &amp;Out[k+j+BlockEnd]);</div><div class="line">                Out[k+j+BlockEnd] = sub_complex(&amp;Out[k+j], &amp;a);</div><div class="line">                Out[k+j] = add_complex(&amp;Out[k+j], &amp;a);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="comment">// normalize if inverse transform</span></div><div class="line">    <span class="keyword">if</span> (InverseTransform) &#123;</div><div class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; NumSamples; ++i) &#123;</div><div class="line">            Out[i].x = Out[i].x / NumSamples;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">convolution</span><span class="params">(<span class="keyword">double</span> *a, <span class="keyword">double</span> *b, <span class="keyword">int</span> n, <span class="keyword">double</span> *c)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">complex</span> s[MAXN], d1[MAXN], d2[MAXN], y[MAXN];</div><div class="line">    prework(n);</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)</div><div class="line">        s[i] = init_complex(a[i], <span class="number">0</span>);</div><div class="line">    _FFT(<span class="literal">false</span>, s, d1, n);</div><div class="line">    s[<span class="number">0</span>] = init_complex(b[<span class="number">0</span>], <span class="number">0</span>);</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i)</div><div class="line">        s[i] = init_complex(b[n - i], <span class="number">0</span>);</div><div class="line">    _FFT(<span class="literal">false</span>, s, d2, n);</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)</div><div class="line">        y[i] = mul_complex(&amp;d1[i], &amp;d2[i]);</div><div class="line">    _FFT(<span class="literal">true</span>, y, s, n);</div><div class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)</div><div class="line">        c[i] = s[i].x;</div><div class="line">&#125;</div><div class="line">FFT_namespace <span class="keyword">const</span> FFT = &#123;NumberOfBitsNeeded, FastReverseBits, _FFT, convolution&#125;;</div><div class="line"><span class="comment">// FFT end</span></div><div class="line"><span class="keyword">double</span> a[MAXN], b[MAXN], c[MAXN];</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> sum[<span class="number">512</span>][<span class="number">512</span>];</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">getArea</span><span class="params">(<span class="keyword">int</span> lx, <span class="keyword">int</span> ly, <span class="keyword">int</span> rx, <span class="keyword">int</span> ry)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = sum[rx][ry];</div><div class="line">    <span class="keyword">if</span> (lx) ret -= sum[lx<span class="number">-1</span>][ry];</div><div class="line">    <span class="keyword">if</span> (ly) ret -= sum[rx][ly<span class="number">-1</span>];</div><div class="line">    <span class="keyword">if</span> (lx &amp;&amp; ly)   ret += sum[lx<span class="number">-1</span>][ly<span class="number">-1</span>];</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    omp_set_num_threads(<span class="number">5</span>);</div><div class="line">    <span class="keyword">int</span> m, n, p, q, x, N, M, S;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d %d"</span>, &amp;m, &amp;n, &amp;p, &amp;q) == <span class="number">4</span>) &#123;</div><div class="line">        N = m &gt; p ? m : p, M = n &gt; q ? n : q;</div><div class="line">        S = <span class="number">1</span>;</div><div class="line">        <span class="keyword">for</span> (; S &lt; N*M; S &lt;&lt;= <span class="number">1</span>);</div><div class="line">        <span class="built_in">memset</span>(a, <span class="number">0</span>, <span class="keyword">sizeof</span>(a[<span class="number">0</span>]) * S);</div><div class="line">        <span class="built_in">memset</span>(b, <span class="number">0</span>, <span class="keyword">sizeof</span>(b[<span class="number">0</span>]) * S);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="keyword">long</span> <span class="keyword">long</span> s = <span class="number">0</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123;</div><div class="line">                <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;x);</div><div class="line">                a[i*M+j] = x;</div><div class="line">                s += x*x;</div><div class="line">                sum[i][j] = (i &gt; <span class="number">0</span> ? sum[i<span class="number">-1</span>][j] : <span class="number">0</span>) + s;          </div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; p; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; q; j++) &#123;</div><div class="line">                <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;x);</div><div class="line">                b[i*M+j] = x;</div><div class="line">            &#125;</div><div class="line">        &#125;        </div><div class="line">        FFT.convolution(a, b, S, c);</div><div class="line">        <span class="keyword">int</span> qx = m - p, qy = n - q, bX = INT_MAX, bY = INT_MAX;</div><div class="line">        <span class="keyword">long</span> <span class="keyword">long</span> diff = LONG_MAX;</div><div class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel</span></div><div class="line">        &#123;</div><div class="line">            <span class="keyword">long</span> <span class="keyword">long</span> t_diff = LONG_MAX;</div><div class="line">            <span class="keyword">int</span> t_bX = INT_MAX, t_bY = INT_MAX;</div><div class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= qx; i++)    &#123;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= qy; j++) &#123;</div><div class="line">                    <span class="keyword">long</span> <span class="keyword">long</span> v = getArea(i, j, i+p<span class="number">-1</span>, j+q<span class="number">-1</span>) - <span class="number">2</span>*c[i*M + j] + <span class="number">0.5</span>;</div><div class="line">                    <span class="keyword">if</span> (v &lt; t_diff)</div><div class="line">                        t_diff = v, t_bX = i, t_bY = j;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp critical</span></div><div class="line">            &#123;</div><div class="line">                <span class="keyword">if</span> (t_diff &lt; diff)</div><div class="line">                    diff = t_diff, bX = t_bX, bY = t_bY;</div><div class="line"></div><div class="line">                <span class="keyword">if</span> (t_diff == diff &amp;&amp; (t_bX &lt; bX || (t_bX == bX &amp;&amp; t_bY &lt; bY))) &#123;</div><div class="line">                    bX = t_bX, bY = t_bY;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d %d\n"</span>, bX+<span class="number">1</span>, bY+<span class="number">1</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/30/jg-10026/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10026. Fast N-Queen
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/20/jg-10022/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10022. Fast Matrix Multiplication</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10025/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

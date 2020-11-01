@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>建造二元搜尋樹 O(n log n) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Problem參照 Zerojudge d526: Binary Search Tree (BST) 按照插入的順序，建造一棵二元搜尋樹，原則上很簡單，但是很容易遇到極端的偏斜情況，如果插入順序很接近已經排序過的順序，則複雜度最慘為 O(n^2)。 Sample Input123411368 115 121 88 741 762 801 34 41 511 6065 2 10 4 9 15 Sam">
+<meta name="keywords" content="笛卡爾樹,stl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="建造二元搜尋樹 O(n log n)">
+<meta property="og:url" content="http://morris821028.github.io/2014/10/12/build-BST/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="Problem參照 Zerojudge d526: Binary Search Tree (BST) 按照插入的順序，建造一棵二元搜尋樹，原則上很簡單，但是很容易遇到極端的偏斜情況，如果插入順序很接近已經排序過的順序，則複雜度最慘為 O(n^2)。 Sample Input123411368 115 121 88 741 762 801 34 41 511 6065 2 10 4 9 15 Sam">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-20T11:50:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="建造二元搜尋樹 O(n log n)">
+<meta name="twitter:description" content="Problem參照 Zerojudge d526: Binary Search Tree (BST) 按照插入的順序，建造一棵二元搜尋樹，原則上很簡單，但是很容易遇到極端的偏斜情況，如果插入順序很接近已經排序過的順序，則複雜度最慘為 O(n^2)。 Sample Input123411368 115 121 88 741 762 801 34 41 511 6065 2 10 4 9 15 Sam">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-build-BST" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/10/12/build-BST/" class="article-date">
+  <time datetime="2014-10-11T23:50:45.000Z" itemprop="datePublished">2014-10-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      建造二元搜尋樹 O(n log n)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/10/12/build-BST/" data-id="ckgyo559g001g3cvr48qdtvp8" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/10/12/build-BST/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/stl/">stl</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/笛卡爾樹/">笛卡爾樹</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Problem"><span class="toc-number">1.</span> <span class="toc-text">Problem</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sample-Input"><span class="toc-number">2.</span> <span class="toc-text">Sample Input</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sample-Output"><span class="toc-number">3.</span> <span class="toc-text">Sample Output</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">4.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#核心"><span class="toc-number">4.1.</span> <span class="toc-text">核心</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#補充"><span class="toc-number">4.2.</span> <span class="toc-text">補充</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>參照 <a href="http://zerojudge.tw/ShowProblem?problemid=d526" target="_blank" rel="external">Zerojudge d526: Binary Search Tree (BST)</a> 按照插入的順序，建造一棵二元搜尋樹，原則上很簡單，但是很容易遇到極端的偏斜情況，如果插入順序很接近已經排序過的順序，則複雜度最慘為 <code>O(n^2)</code>。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">11</div><div class="line">368 115 121 88 741 762 801 34 41 511 60</div><div class="line">6</div><div class="line">5 2 10 4 9 15</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">368 115 88 34 41 60 121 741 511 762 801</div><div class="line">5 2 4 10 9 15</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="核心"><a href="#核心" class="headerlink" title="核心"></a>核心</h3><p>先稍微認識一下笛卡爾樹 (一種二元樹)，每個節點為 <code>&lt;key, value&gt;</code>，只看 key 時，笛卡爾樹是一棵二元搜尋樹，而看 value 時，它是一個最大堆 (或者是最小堆)。</p>
+<p>在建造前，先撇清一點，笛卡爾樹的深度可能到達 n，與一般平衡樹不同。</p>
+<p>笛卡爾樹如何建造 ? 假使已經對於 key 值由小到大排序 (升排序)，那麼將點依序插入笛卡爾樹，能保證的是－由於要符合二元搜尋樹，新加入的點一定是這棵樹某個節點的右節點。知道這一點後，再往前考慮前一次插 入的點(它原本也符合再某節點的右節點)，往這個節點往上爬，直到符合最大堆(性質 node.v &gt; new_insert.v)，這時將這個節點的右子樹移到新加入節點的左子樹 (此時符合二元搜尋樹的性質，也保有原本堆的性質)。就這麼持續入點下去。</p>
+<p>這麼發現，往上爬的次數不超過節點個數，因為每個節點只會從右子樹換到左子樹。均攤下 O(n) (每個節點只會從右子樹推到左子樹一次，因此最多 n 次)</p>
+<p>我們接著將 “按照順序插入的 BST” 轉換成建造笛卡爾樹，key 值依舊為輸入的元素大小，而 value 則訂為輸入順序，根據 key 值為一個二元搜尋樹，根據 value 建造一個最小堆，那麼仔細思考可以得到與原本相同的二元搜尋樹。</p>
+<p>建造笛卡爾樹只需要花 O(n) 時間，但建造前必須根據 key 排序 O(n log n)，所以複雜度為 O(n log n)。</p>
+<p>在這樣的方式建造有一個缺點，並不知道途中插入的情況，只會在最後得到一樣的二元搜尋樹。假使要得到途中插入的情況，考慮離線處理，將所有操作儲存起來，而二元樹的節點位置並不會更動的情況下，事先建造一個靜態樹，隨後使用一個懶標記存在與否即可。</p>
+<h3 id="補充"><a href="#補充" class="headerlink" title="補充"></a>補充</h3><ul>
+<li><strong> 如何利用這個笛卡爾樹解決最簡單的 RMQ 問題？</strong><br>對於 <code>&lt;key, value&gt; = &lt;i, A[i]&gt;</code> 所建造的笛卡爾樹，可以利用 LCA 的 tarjan 算法(離線作法) 在 O(n) 時間內完成。RMQ 假使查找 <code>[l, r]</code> 的最小值，又因為我們根據 value 建造最小堆，則根據 tarjan 的搜索順序，拜訪右子樹時(對於區間的 r 來說)，左子樹將會跟其 LCA 合併，而 LCA 的 index 肯定比左子樹來得大 (大於等於 l)，又根據最小堆保證是大於等於 l 且小於等於 r 的最小值。</li>
+<li><strong> 只有笛卡爾樹可以做到建造二元搜尋樹嗎？</strong><br>其實並不然，還可以藉由一個額外的平衡樹來完成，效率一樣在 O (n log n)，但是親自撰寫平衡樹本身就本末倒置，如果藉由 STL 提供的平衡樹，代碼量會比笛卡爾樹好寫多。具體而言使用 lower_bound 查找當前插入的元素位在哪兩個元素之間，一定符合在右子樹或者是左子樹。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Node</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> key, value;</div><div class="line">    <span class="keyword">int</span> lson, rson, parent;</div><div class="line">&#125;;</div><div class="line">Node D[<span class="number">65536</span>];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">insertCartesianTree</span><span class="params">(<span class="keyword">int</span> index, Node D[])</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> p = index - <span class="number">1</span>;</div><div class="line">    <span class="keyword">while</span>(D[p].value &gt; D[index].value)</div><div class="line">        p = D[p].parent;</div><div class="line">    D[D[p].rson].parent = index;</div><div class="line">    D[index].lson = D[p].rson;</div><div class="line">    D[p].rson = index;</div><div class="line">    D[index].parent = p;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfsPrint</span><span class="params">(<span class="keyword">int</span> node)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span>(node == <span class="number">0</span>)    <span class="keyword">return</span>;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%d "</span>, D[node].key);</div><div class="line">    dfsPrint(D[node].lson);</div><div class="line">    dfsPrint(D[node].rson);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N, x;</div><div class="line">    pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; A[<span class="number">65536</span>];</div><div class="line">    <span class="keyword">while</span>(<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;N) == <span class="number">1</span> &amp;&amp; N) &#123;</div><div class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;x);</div><div class="line">            A[i] = make_pair(x, i);</div><div class="line">        &#125;</div><div class="line">        sort(A+<span class="number">1</span>, A+<span class="number">1</span>+N);</div><div class="line">        D[<span class="number">0</span>].value = <span class="number">-1</span>;</div><div class="line">        D[<span class="number">0</span>].lson = D[<span class="number">0</span>].rson = D[<span class="number">0</span>].parent = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</div><div class="line">            D[i].lson = D[i].rson = D[i].parent = <span class="number">0</span>;</div><div class="line">            D[i].value = A[i].second, D[i].key = A[i].first;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</div><div class="line">            insertCartesianTree(i, D);</div><div class="line">        &#125;</div><div class="line">        dfsPrint(D[<span class="number">0</span>].rson);</div><div class="line">        <span class="built_in">puts</span>(<span class="string">""</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/10/12/oj/uva/uva-1629/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          UVa 1629 - Cake slicing
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/10/11/lesson/civilization-w3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">[通識] 文明的進程 Week 3</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2014/10/12/build-BST/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</body>
+</html>
