@@ -89,6 +89,87 @@
           
           <section id="main">
   
+    <article id="post-mproblem-persistent-array" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/01/06/mproblem-persistent-array/" class="article-date">
+  <time datetime="2020-01-05T23:26:10.000Z" itemprop="datePublished">2020-01-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/可持久化/">可持久化</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/01/06/mproblem-persistent-array/">可持久化陣列 Persistent Array 始</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2020/01/06/mproblem-persistent-array/" data-id="ckilr6wbi00as8svrcmo24tvi" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2020/01/06/mproblem-persistent-array/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/array/">array</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/可持久化/">可持久化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/陣列/">陣列</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="回顧"><a href="#回顧" class="headerlink" title="回顧"></a>回顧</h2><p>幾年前，跟 liouzhou101 一起搞了很多記憶中系列題目，有一題與陣列很相似，但操作更複雜一些。陣列的操作只有下列幾種</p>
+<ul>
+<li><code>get(index)</code>: 回傳索引為 index 的元素，其中 <span>$\text{index} \in \left [0, n-1 \right ]$</span><!-- Has MathJax --></li>
+<li><code>set(index, value)</code>: 修改 index 上的元素</li>
+<li><code>pushBack(value)</code>: 陣列尾端後接一個新的元素</li>
+<li><code>popBack()</code>: 移除陣列尾端的最後一個元素</li>
+</ul>
+<p>從演算法課程中，我們學到 C++ 中的 <code>std::vector</code> 可以做到均攤 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->，其大致的做法為陣列快填滿容量時，倍增其大小後轉移原先的所有元素到新的容器上，均攤計算為每次增加的元素都需要預先支付未來轉移自己、轉移對應的另一個元素、移除自己、移除對應的另一個元素的花費，因此均攤花費為常數。</p>
+<p>而這樣子的均攤操作在可持久化卻是不利的，因為單一操作的最慘複雜度為 <span>$\mathcal{O}(n)$</span><!-- Has MathJax -->，意味著可能在同一個操作上，使用 <span>$m$</span><!-- Has MathJax --> 次持久化會造成時間複雜度退化成 <span>$\mathcal{O}(mn)$</span><!-- Has MathJax -->。因此，我們需要最小化最慘時間複雜度的結構。</p>
+<p>當年初學者的我，切入觀點有二元樹 (binary tree)、塊狀表 (unrolled linked list)，前者讓操作必為 <span>$\mathcal{\Theta}(\log n)$</span><!-- Has MathJax -->、後者為 <span>$\mathcal{\Theta}(\sqrt{n})$</span><!-- Has MathJax -->，從理論分析上一定優先選擇前者實作，但如果操作有特別的比例問題，如 <code>get(index)</code>、<code>pushBack()</code> … 等，這時候快取能力好的塊狀表反而有優勢，二元樹因指標的使用導致整體的內存使用率不高，透過 2-3 tree 那一種將節點儲存多個元素的設計，就相當於把塊狀表拉成樹狀，其效果也不錯，但在計算上會更需要耗費工夫。</p>
+<h2 id="塊狀表-Unrolled-Linked-List"><a href="#塊狀表-Unrolled-Linked-List" class="headerlink" title="塊狀表 (Unrolled Linked List)"></a>塊狀表 (Unrolled Linked List)</h2><p>任何操作皆為 <span>$\mathcal{\Theta}(\sqrt{n})$</span><!-- Has MathJax -->，修改操作皆需要複製整個節點。在可持久化情況時，預先每一個塊的大小較為不可行，故做不到動態調整塊狀大小。</p>
+<h2 id="二元樹-Binary-Tree"><a href="#二元樹-Binary-Tree" class="headerlink" title="二元樹 (Binary Tree)"></a>二元樹 (Binary Tree)</h2><p>利用二元樹建立可持久化的情況有很多種編碼，以及紀錄節點的優化方式，這將會影響到我們的效率。盡可能地不在節點中儲存欄位 <code>size</code> 即可達到索引。若二元樹節點定義為</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">    Node *lson;</div><div class="line">    Node *rson;</div><div class="line">    <span class="keyword">int</span> size;</div><div class="line">    T value;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>葉與內部節點皆帶有元素值，那麼在陣列的新增刪除尾端的操作，我們可以透過類似 heap 的方式，將其設計成不用旋轉操作、不用紀錄樹大小的編碼。當節點編碼為 <span>$k$</span><!-- Has MathJax -->，則兩個子節點 <span>$2k$</span><!-- Has MathJax --> 和 <span>$2k+1$</span><!-- Has MathJax -->，實作時只需要紀錄整體大小，接著在走訪過程中，採用位元運算得到其子樹大小作為操作依據。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">      1</div><div class="line">     / \</div><div class="line">    2   3</div><div class="line">   / \ / \</div><div class="line">  4  5 6 7</div><div class="line"> /</div><div class="line">8</div></pre></td></tr></table></figure>
+<p>這樣的編碼問題，對於陣列實作時，發現 <code>push/set(index, value)</code> 時，時間複雜度為 <span>$\mathcal{\Theta}(\log \text{index})$</span><!-- Has MathJax -->，那動態將 <span>$n$</span><!-- Has MathJax --> 個元素推入的時間必為 <span>$\mathcal{\Theta}(n \log n)$</span><!-- Has MathJax -->，靜態建造則為 <span>$\mathcal{\Theta}(n)$</span><!-- Has MathJax -->。索引值越大的元素，其操作花費越高。</p>
+<p>設計函數庫時，我們通常希望盡可能地讓複雜度對稱，也就是兩端的索引速度不會差太多，即使是亂數也好，因為演算法設計、真實生活中的應用大多都會偏向一方，很可能總是觸發最慘情況。</p>
+<h3 id="Braun-Tree"><a href="#Braun-Tree" class="headerlink" title="Braun Tree"></a>Braun Tree</h3><p>另一種編碼設計，對於每一個節點皆滿足右子樹大小最多比左子樹大小多一個，由於每一個節點都滿足，按照插入順序，可以得到下圖</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">          1</div><div class="line">     2         3</div><div class="line"> 4     6    5     7</div><div class="line">8 10 12 14 9 11 13 15</div></pre></td></tr></table></figure>
+<p>明顯地，如同霍夫曼編碼一樣，這一個 1-indexed 的情況，最低位 0 則往左子樹、反之為右子樹。每一個操作皆為對稱的，但複雜度如同一般的二元搜尋樹，作為陣列操作也不滿足期待。</p>
+<p>若用於可持久化陣列的基底，代碼量非常少，遞迴定義使得操作簡單，我們甚至可以連整體大小都不用儲存，透過其遞迴定義可在 <span>$\mathcal{O}(\log^2 n)$</span><!-- Has MathJax --> 得到，但大部分陣列使用都是會希望 <code>A.size()</code> 是可以在 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 完成的。這樣的設計在優先隊列 (priority queue) 更友善，因為鮮少需要去拿到 <code>size</code>，只需要回傳這個優先隊列是否為空。</p>
+<p>同樣地，這依舊不是實作可持久化陣列的首選。</p>
+<h2 id="線段樹-Segment-Tree"><a href="#線段樹-Segment-Tree" class="headerlink" title="線段樹 (Segment Tree)"></a>線段樹 (Segment Tree)</h2><p>線段樹的設計有一個缺點，大部分的情況總是預先知道大小，然後再代入修改操作。</p>
+<p>如果要做到動態的增加大小，則採用 top-down 的展開節點方法。如根節點一開始設計範圍為 <span>$\left [0, 2^{32} \right ]$</span><!-- Has MathJax -->，當我們 push 一個新的元素至尾端時，相當於開出一個葉節點為 <code>index = size</code>，同理 pop 操作。一開始預設最大上限 <span>$M$</span><!-- Has MathJax -->，單一操作的時間複雜度必為 <span>$\mathcal{\Theta}(\log M)$</span><!-- Has MathJax -->。</p>
+<p>以上述的狀況，每一次操作複雜度必為 <span>$32$</span><!-- Has MathJax -->，作為函數庫的設計而言，這樣的寫法沒有彈性，而且要是未來超出指定大小，修改就非常的緩慢，更因為在持久化的環境下，不可能在對數時間內轉移其架構。</p>
+<h2 id="Leftist-Leaf-Tree"><a href="#Leftist-Leaf-Tree" class="headerlink" title="Leftist Leaf Tree"></a>Leftist Leaf Tree</h2><p>其概念類似二項堆積 (binomial heap)，我們將使用 <span>$\log n$</span><!-- Has MathJax --> 棵樹表示整個序列。將內容放置於葉節點上，並且每一個樹皆為完美樹，無須額外紀錄子樹大小。</p>
+<p>例如：當 <code>n = dec(11) = bin(1011)</code> 時，用三棵大小分別為 8, 2, 1 的樹表示之。當 push 一個新的元素至尾端時，與最右邊的子樹 1 合併成大小為 2 的樹，再與左邊的子樹合併成大小為 4 的子樹，最後成為 <code>n&#39; = dec(12) = bin(1100)</code>，用兩棵子樹表示之。同理 pop 操作，模擬二進制的退位。</p>
+<p>每一個操作皆為 <span>$\mathcal{O}(\log n)$</span><!-- Has MathJax -->，且分布較為一般的二元樹均勻。並解決一開始我們在二元樹上遇到的問題，<strong>動態將 <span>$n$</span><!-- Has MathJax --> 個元素推入的時間</strong>，整體複雜度為 <span>$\mathcal{\Theta}(n)$</span><!-- Has MathJax -->。因此，這是目前實作可持久化隊列的首選。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>函數式理論複雜度最好的結構為 finger tree，實作複雜度相當高，卻具備了合併兩個陣列的特殊操作，這是以上結構皆不具有操作。實際的效能無法預測，通常常數過大而無法使用。有朝一日，我們再來挑戰這偉大的結構吧。</p>
+<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-work/persistent-motivation" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/01/05/work/persistent-motivation/" class="article-date">
@@ -114,7 +195,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/01/05/work/persistent-motivation/" data-id="ckh8skgrt02g278vr39gowh34" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/01/05/work/persistent-motivation/" data-id="ckilr6xqo02lc8svry9dfxgrs" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/01/05/work/persistent-motivation/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -181,7 +262,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/01/05/mproblem-persistent-deque-pre-evaluation/" data-id="ckh8skfeu00av78vrzp7fltmh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/01/05/mproblem-persistent-deque-pre-evaluation/" data-id="ckilr6wbx00bf8svrqrmywgg2" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/01/05/mproblem-persistent-deque-pre-evaluation/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -273,7 +354,7 @@ R&apos; &amp;= \textit{take}(n, R)
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/01/01/mproblem-persistent-deque/" data-id="ckh8skfez00b378vrz7ikyh3i" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/01/01/mproblem-persistent-deque/" data-id="ckilr6wbo00b18svrfm78fzt8" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/01/01/mproblem-persistent-deque/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -365,7 +446,7 @@ R&apos; &amp;= \textit{take}(n, R)
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckh8skff000b678vr33n7qyxm" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckilr6wdj00ed8svr0fnvl909" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -467,7 +548,7 @@ R&apos; &amp;= \textit{take}(n, R)
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/" data-id="ckh8skfiw00hn78vryidislr0" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/" data-id="ckilr6wdf00e58svrbfofgc0j" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -550,7 +631,7 @@ R&apos; &amp;= \textit{take}(n, R)
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckh8skff500be78vredunk888" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckilr6wc600bv8svrigw0wwpm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -666,7 +747,7 @@ R&apos; &amp;= \textit{take}(n, R)
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckh8skffe00br78vrreg9rtaq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckilr6wc100bn8svrtfyvlgma" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -745,7 +826,7 @@ R&apos; &amp;= \textit{take}(n, R)
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">17</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">8</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">18</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">8</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -755,6 +836,14 @@ R&apos; &amp;= \textit{take}(n, R)
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2020/12/12/java/java-jni-tls-error/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Java JNI Thread Error (EINVAL)</a>
+          </li>
         
           <li>
             <a class="text" href="/2020/11/08/work/company-ghost-story-8/">
@@ -826,14 +915,6 @@ R&apos; &amp;= \textit{take}(n, R)
                 <i class="icon-file-o"></i> 
               
             為什麼不推薦用 Java Stream 改寫迴圈</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2020/09/20/work/company-ghost-story-3/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 3</a>
           </li>
         
       </ul>

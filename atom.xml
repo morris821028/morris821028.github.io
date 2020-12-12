@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2020-11-08T07:24:32.340Z</updated>
+  <updated>2020-12-12T14:08:41.489Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -15,6 +15,38 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Java JNI Thread Error (EINVAL)</title>
+    <link href="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/"/>
+    <id>http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/</id>
+    <published>2020-12-12T10:00:00.000Z</published>
+    <updated>2020-12-12T14:08:41.489Z</updated>
+    
+    <content type="html"><![CDATA[<p>Keywords: JNI, Java, ProcessBuilder, Thread Error</p><p>Error message: <code>[os,thread] Failed to start thread - pthread_create failed (EINVAL) for attributes: stacksize: 136k, guardsize: 0k, detached.</code></p><p>Solution: <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code></p><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>From JNI process, it is fine to execute Java internal multi-threading, but can not use Runetime.exec or <code>ProcessBuilder</code> to do anything. Even through adjust java stack-related option</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setenv _JAVA_OPTIONS &quot;-ea -Xlog -XX:ThreadStackSize=31744 -XX:VMThreadStackSize=1024 -XX:CompilerThreadStackSize=1024&quot;</div></pre></td></tr></table></figure><p>cgroup (Linux control group) limition, and set_rlimit. Same error message will be displayed.</p><p>When you link large C/C++ program with large thread local storage (TLS), default minimum stacksize computation is not enough to create pthread in OS-level. Only to set <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> to apply default pthread arguments.  Then, it will be working for you.</p><h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>無法透過 JNI 啟動的 JVM 運行外部程序，如 <code>Runtime.exec</code> 或者是 <code>Process</code> 都無法使用，卻可以使用內部執行緒，甚至達到了數百個執行緒。</p><p>首先，JVM 內部拆分了好幾種不同的執行緒使用策略，也有不同的資源需求判斷，去挖原始碼的時候會追到底層的 C 部分，就可以看出這些問題。但是錯誤訊息仍然不足，到了 JDK15 後，才能透過 <code>-Xlog</code> dump 更多的配置訊息，但有些配置訊息的翻譯仍然有錯，還是得看原始碼去得知實際情況。</p><p>追了好幾天，調適了許多不同的 stack 配置都沒有起色。自己寫的小短碼 JNI 都沒有事情，架在產品上就突然運行失敗。因此，只能去找有沒有現有的產品開發或使用上發生類似的問題，不該去找任何的教學文件。最後挖到幾篇安裝不同版本的產品失敗，據說更改 JDK 版本就能解決，然後有人分析說因為 TLS 的大小變動才導致新版本突然無法工作，才明白果然是 JNI 上的問題。</p><p>實作 JNI 介面的時候，若連接的 C++ 程式中存在大量的 <code>thread_local</code> 變數時，那麼在每一個執行緒中都必須給予相對應的大小進行初始化。而對於 JVM 內部會透過一些預設 stack 配置進行最小化，透過 JNI 連接的時候，便會受到影響。</p><p>透過 <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> 取消最小化 stack 配置，直接使用預設的構造行為，這樣就能暫時解決 JNI 啟動的 JVM 無法運行外部程序的問題。很明顯地，每一條執行緒都會開相當大的 stack size，大部分的情況下預設最多為 4 MB，而實際工作的產品中預設就要 20 MB，這個得從其關聯函數庫去分析為什麼需要這麼大的堆疊，可能是寫錯，也或者是連結太多沒有必要的庫進來。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Keywords: JNI, Java, ProcessBuilder, Thread Error&lt;/p&gt;
+&lt;p&gt;Error message: &lt;code&gt;[os,thread] Failed to start thread - pthread_create failed 
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
+    
+    
+      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
+    
+      <category term="JNI" scheme="http://morris821028.github.io/tags/JNI/"/>
+    
+      <category term="TLS" scheme="http://morris821028.github.io/tags/TLS/"/>
+    
+  </entry>
   
   <entry>
     <title>Company Ghost Story 公司鬼故事 8</title>
@@ -540,35 +572,6 @@
       
         &lt;p&gt;接續前一篇 《可持久化隊列 Persistent Queue 序》，開始搬運論文的內容，就當作個翻譯吧&lt;/p&gt;
 &lt;h2 id=&quot;預先評估隊列-Pre-Evaluation&quot;&gt;&lt;a href=&quot;#預先評估隊列-Pre-Evaluation&quot; class=&quot;headerlink
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="可持久化" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E5%8F%AF%E6%8C%81%E4%B9%85%E5%8C%96/"/>
-    
-    
-      <category term="可持久化" scheme="http://morris821028.github.io/tags/%E5%8F%AF%E6%8C%81%E4%B9%85%E5%8C%96/"/>
-    
-      <category term="queue" scheme="http://morris821028.github.io/tags/queue/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>可持久化隊列 Persistent Queue 序</title>
-    <link href="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/"/>
-    <id>http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/</id>
-    <published>2019-12-23T22:43:50.000Z</published>
-    <updated>2020-01-01T11:58:07.690Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我們完成了持久化堆疊後，必然要去完成隊列 (Queue)。難度遠比想像中的高，很多人的第一個反應是用兩個指標去完成持久化隊列，分別指向最前和最後的兩個元素。不幸地，<strong>直覺無法套用</strong>在不同的領域上。</p><p>下述為一個例子，假定每一個節點都往後指到下一次會被 pop 的節點，則我們無法同時描述 B 和 C。如果每一個節點都往前指到前一個加入的節點，則無法解決隊列的 pop 操作。上述的兩種設計都無法滿足可持久化的定義，則得到<strong>用兩個指標是無法完成可持久化隊列</strong>。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">A = empty().push(1); // [1]</div><div class="line">B = A.push(2);       // [1, 2]</div><div class="line">C = A.push(3);       // [1, 3]</div><div class="line">D = B.pop();         // [2]</div></pre></td></tr></table></figure><h3 id="攤銷分析的錯誤"><a href="#攤銷分析的錯誤" class="headerlink" title="攤銷分析的錯誤"></a>攤銷分析的錯誤</h3><p>定義：可持久化隊列 <span>$Q = \left \langle L, \; R \right \rangle$</span><!-- Has MathJax --></p><p>在沒有持久化的要求下，我們的確可以用兩個堆疊 <span>$L, \; R$</span><!-- Has MathJax --> 去實作隊列 <span>$Q$</span><!-- Has MathJax -->。當 <span>$|L|  = 0$</span><!-- Has MathJax --> 時，令 <span>$L&apos; = \text{Rev}(R), \; R&apos; = \left [ \; \right ]$</span><!-- Has MathJax -->，每一個操作的時間複雜度為 <span>$\text{amortized} \; \mathcal{O}(1)$</span><!-- Has MathJax -->。</p><p>然而，對於可持久化的場合中，這種忽大忽小的成本是不切實際的，因為持久化會複製整體的攤銷成本，而獨立於前一個狀態。達到真正的即時 (realtime)，必須保證每一個操作 <span>$\mathcal{\Theta}(1)$</span><!-- Has MathJax -->，才能防止攤銷最慘情況不會發生。</p><h2 id="即時隊列-Realtime"><a href="#即時隊列-Realtime" class="headerlink" title="即時隊列 (Realtime)"></a>即時隊列 (Realtime)</h2><ul><li>REAL-TIME QUEUE OPERATIONS IN PURE LISP, Robert HOOD and Robert MEVILL, 1981</li></ul><p>這快三十年前的論文，給了我們設計函數式的另一種啟發。不透過函數式語言的語法結構，我們可以很直觀地用傳統算法去模擬可持久化隊列。好比 C++ 中的 <code>vector&lt;T&gt;</code> 或者是 Java 中 的<code>ArrayList&lt;T&gt;</code>，每當快滿的時候，我們變將元素複製到兩倍大的容器裡。那可持久化就好比背景程式一般，在每一次操作的過程中，就開始準備好抽換的兩倍容器，直到真的要替換的時候，就可以常數搬移。</p><p>定義：隊列 <span>$Q = \left \langle O^{\triangleleft}, I^{\triangleright} \right \rangle$</span><!-- Has MathJax --> 且滿足 <span>$|O^{\triangleleft}| \ge |I^{\triangleright}|$</span><!-- Has MathJax --></p><ul><li><span>$O^{\triangleleft}$</span><!-- Has MathJax --> 表示出隊的堆疊</li><li><span>$I^{\triangleright}$</span><!-- Has MathJax --> 表示入隊的堆疊</li></ul><p>當發生 <span>$|O^{\triangleleft}| = n, \; |I^{\triangleright}| = n+1$</span><!-- Has MathJax --> 時，我們標記這個隊列為 <strong>轉移中</strong> (<em>transferring</em>)，此時開始可不滿足上述 <span>$|O^{\triangleleft}| \ge |I^{\triangleright}|$</span><!-- Has MathJax --> 的規定。接著，我們將預期在下一次 <span>$|O^{\triangleleft}| = 0$</span><!-- Has MathJax --> 的 pop 操作前，變換成 <span>$Q = \left \langle (OI)^{\triangleleft}, \left [ \; \right ]  \right \rangle$</span><!-- Has MathJax -->。因此這中間至少有 <span>$n$</span><!-- Has MathJax --> 次的 push/pop 操作，讓我們將轉移中隊列變成正規隊列。</p><p>需要以下操作：</p><ol><li>將 <span>$I^{\triangleright}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$I_\text{aux} = I^{\triangleleft}$</span><!-- Has MathJax -->，需 <span>$n+2$</span><!-- Has MathJax --> 步。</li><li>將 <span>$O^{\triangleleft}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$O_\text{aux} = O^{\triangleright}$</span><!-- Has MathJax -->，需 <span>$n+1$</span><!-- Has MathJax --> 步。</li><li>將 <span>$O_\text{aux}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$I_\text{aux}$</span><!-- Has MathJax -->，<span>$O_\text{new}= (OI)^{\triangleleft}$</span><!-- Has MathJax -->，需 <span>$n+1$</span><!-- Has MathJax --> 步。</li></ol><p>共計 <span>$3n+4$</span><!-- Has MathJax --> 步。平均在 <span>$n$</span><!-- Has MathJax --> 次操作內完成。變成 <strong>轉移中</strong> 狀態的那一瞬間，操作 <span>$7$</span><!-- Has MathJax --> 次，隨後的每一個 push/pop 完成 <span>$3$</span><!-- Has MathJax --> 次操作。 確保了每一步在常數時間內完成。</p><p>在轉移過程中，若進行 push 操作，直接在清空完後的 <span>$I^{\triangleright}$</span><!-- Has MathJax --> 上操作、或者 <span>$I_\text{extra}^{\triangleright}$</span><!-- Has MathJax --> 。若進行 pop 操作時，步驟 3 的最後幾個會成為多餘操作，故需要額外的計數器統計總共完成了幾個 <span>$O_\text{aux}$</span><!-- Has MathJax --> 複製，當完成數量等於當前數量 <span>$|O|$</span><!-- Has MathJax --> 便停止轉移，並標記為正規隊列 <span>$Q = \left \langle O_\text{new}^{\triangleleft}, I^{\triangleright} \right \rangle$</span><!-- Has MathJax -->、或者 <span>$Q = \left \langle O_\text{new}^{\triangleleft}, I_\text{extra}^{\triangleright} \right \rangle$</span><!-- Has MathJax --></p><p>宣告不可變物件的類別時，以 Java 為例相當棘手，展開代碼會造成進入 HotSpot 的機會變低，傳遞這個多的參數進行轉移卻要用在回傳值上額外宣告變數來接取。因此，透過平均 <span>$3$</span><!-- Has MathJax --> 次，可能會需要額外宣告 3 次變數，這對 GC 的壓力非同小可。貪心一點，用常數 4 取代，這麼一來可讀性不會下降太多，代碼也能更明確一點，呼叫 2 次的 2 個操作。</p><p>實作時，一個可持久化隊列除了一開始的 2 個堆疊，還要維護轉移狀態 5~6 的狀態空間，因此一個隊列需要 7~8 個欄位。</p><h2 id="預先評估隊列-Pre-Evaluation"><a href="#預先評估隊列-Pre-Evaluation" class="headerlink" title="預先評估隊列 (Pre-Evaluation)"></a>預先評估隊列 (Pre-Evaluation)</h2><ul><li>SIMPLE AND EFFICIENT PURELY FUNCTIONAL QUEUES AND DEQUES, Chris Okasaki, 1995</li></ul><p>這是另一種設計方法，上述方法用了 7~8 欄位來表示一個隊列，作為一個函數式定義太複雜了，這一概念將只使用 3 個，其他的塞在別的定義中，讓其他函數式定義也能夠共享，下一篇文章再來細說。</p><h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p><h2 id="效能評比"><a href="#效能評比" class="headerlink" title="效能評比"></a>效能評比</h2><p>以 Java 實作，Realtime 與 Pre-Evaluation 效能差不多，但以 OOP 的角度看來 Realtime 很像當初打比賽的精明能幹，Pre-Evaluation 則是代碼量巨大，擴充概念性高。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;我們完成了持久化堆疊後，必然要去完成隊列 (Queue)。難度遠比想像中的高，很多人的第一個反應是用兩個指標去完成持久化隊列，分別指向最前和
       
     
     </summary>

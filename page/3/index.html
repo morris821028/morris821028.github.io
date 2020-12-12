@@ -89,6 +89,89 @@
           
           <section id="main">
   
+    <article id="post-mproblem-persistent-queue" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/12/24/mproblem-persistent-queue/" class="article-date">
+  <time datetime="2019-12-23T22:43:50.000Z" itemprop="datePublished">2019-12-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/可持久化/">可持久化</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/12/24/mproblem-persistent-queue/">可持久化隊列 Persistent Queue 序</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/" data-id="ckilr6wdf00e58svrbfofgc0j" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/queue/">queue</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/可持久化/">可持久化</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我們完成了持久化堆疊後，必然要去完成隊列 (Queue)。難度遠比想像中的高，很多人的第一個反應是用兩個指標去完成持久化隊列，分別指向最前和最後的兩個元素。不幸地，<strong>直覺無法套用</strong>在不同的領域上。</p>
+<p>下述為一個例子，假定每一個節點都往後指到下一次會被 pop 的節點，則我們無法同時描述 B 和 C。如果每一個節點都往前指到前一個加入的節點，則無法解決隊列的 pop 操作。上述的兩種設計都無法滿足可持久化的定義，則得到<strong>用兩個指標是無法完成可持久化隊列</strong>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">A = empty().push(1); // [1]</div><div class="line">B = A.push(2);       // [1, 2]</div><div class="line">C = A.push(3);       // [1, 3]</div><div class="line">D = B.pop();         // [2]</div></pre></td></tr></table></figure>
+<h3 id="攤銷分析的錯誤"><a href="#攤銷分析的錯誤" class="headerlink" title="攤銷分析的錯誤"></a>攤銷分析的錯誤</h3><p>定義：可持久化隊列 <span>$Q = \left \langle L, \; R \right \rangle$</span><!-- Has MathJax --></p>
+<p>在沒有持久化的要求下，我們的確可以用兩個堆疊 <span>$L, \; R$</span><!-- Has MathJax --> 去實作隊列 <span>$Q$</span><!-- Has MathJax -->。當 <span>$|L|  = 0$</span><!-- Has MathJax --> 時，令 <span>$L&apos; = \text{Rev}(R), \; R&apos; = \left [ \; \right ]$</span><!-- Has MathJax -->，每一個操作的時間複雜度為 <span>$\text{amortized} \; \mathcal{O}(1)$</span><!-- Has MathJax -->。</p>
+<p>然而，對於可持久化的場合中，這種忽大忽小的成本是不切實際的，因為持久化會複製整體的攤銷成本，而獨立於前一個狀態。達到真正的即時 (realtime)，必須保證每一個操作 <span>$\mathcal{\Theta}(1)$</span><!-- Has MathJax -->，才能防止攤銷最慘情況不會發生。</p>
+<h2 id="即時隊列-Realtime"><a href="#即時隊列-Realtime" class="headerlink" title="即時隊列 (Realtime)"></a>即時隊列 (Realtime)</h2><ul>
+<li>REAL-TIME QUEUE OPERATIONS IN PURE LISP, Robert HOOD and Robert MEVILL, 1981</li>
+</ul>
+<p>這快三十年前的論文，給了我們設計函數式的另一種啟發。不透過函數式語言的語法結構，我們可以很直觀地用傳統算法去模擬可持久化隊列。好比 C++ 中的 <code>vector&lt;T&gt;</code> 或者是 Java 中 的<code>ArrayList&lt;T&gt;</code>，每當快滿的時候，我們變將元素複製到兩倍大的容器裡。那可持久化就好比背景程式一般，在每一次操作的過程中，就開始準備好抽換的兩倍容器，直到真的要替換的時候，就可以常數搬移。</p>
+<p>定義：隊列 <span>$Q = \left \langle O^{\triangleleft}, I^{\triangleright} \right \rangle$</span><!-- Has MathJax --> 且滿足 <span>$|O^{\triangleleft}| \ge |I^{\triangleright}|$</span><!-- Has MathJax --></p>
+<ul>
+<li><span>$O^{\triangleleft}$</span><!-- Has MathJax --> 表示出隊的堆疊</li>
+<li><span>$I^{\triangleright}$</span><!-- Has MathJax --> 表示入隊的堆疊</li>
+</ul>
+<p>當發生 <span>$|O^{\triangleleft}| = n, \; |I^{\triangleright}| = n+1$</span><!-- Has MathJax --> 時，我們標記這個隊列為 <strong>轉移中</strong> (<em>transferring</em>)，此時開始可不滿足上述 <span>$|O^{\triangleleft}| \ge |I^{\triangleright}|$</span><!-- Has MathJax --> 的規定。接著，我們將預期在下一次 <span>$|O^{\triangleleft}| = 0$</span><!-- Has MathJax --> 的 pop 操作前，變換成 <span>$Q = \left \langle (OI)^{\triangleleft}, \left [ \; \right ]  \right \rangle$</span><!-- Has MathJax -->。因此這中間至少有 <span>$n$</span><!-- Has MathJax --> 次的 push/pop 操作，讓我們將轉移中隊列變成正規隊列。</p>
+<p>需要以下操作：</p>
+<ol>
+<li>將 <span>$I^{\triangleright}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$I_\text{aux} = I^{\triangleleft}$</span><!-- Has MathJax -->，需 <span>$n+2$</span><!-- Has MathJax --> 步。</li>
+<li>將 <span>$O^{\triangleleft}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$O_\text{aux} = O^{\triangleright}$</span><!-- Has MathJax -->，需 <span>$n+1$</span><!-- Has MathJax --> 步。</li>
+<li>將 <span>$O_\text{aux}$</span><!-- Has MathJax --> 的所有元素 pop 至 <span>$I_\text{aux}$</span><!-- Has MathJax -->，<span>$O_\text{new}= (OI)^{\triangleleft}$</span><!-- Has MathJax -->，需 <span>$n+1$</span><!-- Has MathJax --> 步。</li>
+</ol>
+<p>共計 <span>$3n+4$</span><!-- Has MathJax --> 步。平均在 <span>$n$</span><!-- Has MathJax --> 次操作內完成。變成 <strong>轉移中</strong> 狀態的那一瞬間，操作 <span>$7$</span><!-- Has MathJax --> 次，隨後的每一個 push/pop 完成 <span>$3$</span><!-- Has MathJax --> 次操作。 確保了每一步在常數時間內完成。</p>
+<p>在轉移過程中，若進行 push 操作，直接在清空完後的 <span>$I^{\triangleright}$</span><!-- Has MathJax --> 上操作、或者 <span>$I_\text{extra}^{\triangleright}$</span><!-- Has MathJax --> 。若進行 pop 操作時，步驟 3 的最後幾個會成為多餘操作，故需要額外的計數器統計總共完成了幾個 <span>$O_\text{aux}$</span><!-- Has MathJax --> 複製，當完成數量等於當前數量 <span>$|O|$</span><!-- Has MathJax --> 便停止轉移，並標記為正規隊列 <span>$Q = \left \langle O_\text{new}^{\triangleleft}, I^{\triangleright} \right \rangle$</span><!-- Has MathJax -->、或者 <span>$Q = \left \langle O_\text{new}^{\triangleleft}, I_\text{extra}^{\triangleright} \right \rangle$</span><!-- Has MathJax --></p>
+<p>宣告不可變物件的類別時，以 Java 為例相當棘手，展開代碼會造成進入 HotSpot 的機會變低，傳遞這個多的參數進行轉移卻要用在回傳值上額外宣告變數來接取。因此，透過平均 <span>$3$</span><!-- Has MathJax --> 次，可能會需要額外宣告 3 次變數，這對 GC 的壓力非同小可。貪心一點，用常數 4 取代，這麼一來可讀性不會下降太多，代碼也能更明確一點，呼叫 2 次的 2 個操作。</p>
+<p>實作時，一個可持久化隊列除了一開始的 2 個堆疊，還要維護轉移狀態 5~6 的狀態空間，因此一個隊列需要 7~8 個欄位。</p>
+<h2 id="預先評估隊列-Pre-Evaluation"><a href="#預先評估隊列-Pre-Evaluation" class="headerlink" title="預先評估隊列 (Pre-Evaluation)"></a>預先評估隊列 (Pre-Evaluation)</h2><ul>
+<li>SIMPLE AND EFFICIENT PURELY FUNCTIONAL QUEUES AND DEQUES, Chris Okasaki, 1995</li>
+</ul>
+<p>這是另一種設計方法，上述方法用了 7~8 欄位來表示一個隊列，作為一個函數式定義太複雜了，這一概念將只使用 3 個，其他的塞在別的定義中，讓其他函數式定義也能夠共享，下一篇文章再來細說。</p>
+<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p>
+<h2 id="效能評比"><a href="#效能評比" class="headerlink" title="效能評比"></a>效能評比</h2><p>以 Java 實作，Realtime 與 Pre-Evaluation 效能差不多，但以 OOP 的角度看來 Realtime 很像當初打比賽的精明能幹，Pre-Evaluation 則是代碼量巨大，擴充概念性高。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-mproblem-persistent-stack-operators" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/12/23/mproblem-persistent-stack-operators/" class="article-date">
@@ -114,7 +197,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckh8skff500be78vredunk888" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckilr6wc600bv8svrigw0wwpm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -230,7 +313,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckh8skffe00br78vrreg9rtaq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckilr6wc100bn8svrtfyvlgma" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -310,7 +393,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g1o7Yud.jpg" rel="gallery_ckh8skfb1004b78vr98z465qo">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g1o7Yud.jpg" rel="gallery_ckilr6w79004a8svr07pirtei">
         <img src="https://i.imgur.com/g1o7Yud.jpg" itemprop="image">
       </a>
     
@@ -329,7 +412,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/08/09/diary-201908/" data-id="ckh8skfb1004b78vr98z465qo" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/08/09/diary-201908/" data-id="ckilr6w79004a8svr07pirtei" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/08/09/diary-201908/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -419,7 +502,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/02/16/zj-e021/" data-id="ckh8skfyt013n78vrfj0dxuj1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/02/16/zj-e021/" data-id="ckilr6xfz02cp8svrgk3ls2l5" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/02/16/zj-e021/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -496,7 +579,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Klod0Cb.jpg" rel="gallery_ckh8skfba004s78vrauyd2tcg">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Klod0Cb.jpg" rel="gallery_ckilr6w7700488svrjgo6owea">
         <img src="https://i.imgur.com/Klod0Cb.jpg" itemprop="image">
       </a>
     
@@ -515,7 +598,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/27/diary-201901/" data-id="ckh8skfba004s78vrauyd2tcg" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/27/diary-201901/" data-id="ckilr6w7700488svrjgo6owea" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/01/27/diary-201901/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -586,7 +669,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/" data-id="ckh8skfew00az78vrz85b8w7i" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/" data-id="ckilr6wbz00bj8svrnrb09ike" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -655,7 +738,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/" data-id="ckh8skffb00bo78vrqgrm6nwm" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/" data-id="ckilr6wbk00av8svrdnbw6ati" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -723,7 +806,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/rP2LtTm.jpg" rel="gallery_ckh8skfb4004f78vr1bpiurtj">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/rP2LtTm.jpg" rel="gallery_ckilr6w7600458svrzh5o5lkj">
         <img src="https://i.imgur.com/rP2LtTm.jpg" itemprop="image">
       </a>
     
@@ -742,7 +825,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2018/11/25/diary-201811/" data-id="ckh8skfb4004f78vr1bpiurtj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2018/11/25/diary-201811/" data-id="ckilr6w7600458svrzh5o5lkj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2018/11/25/diary-201811/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -821,7 +904,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2018/08/19/uva-12254/" data-id="ckh8skfm000mb78vrg8raww7w" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2018/08/19/uva-12254/" data-id="ckilr6wi700n98svrlz896os2" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2018/08/19/uva-12254/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -871,69 +954,6 @@
 
 
   
-    <article id="post-optimize-skill-sort" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/07/22/optimize-skill-sort/" class="article-date">
-  <time datetime="2018-07-22T00:20:18.000Z" itemprop="datePublished">2018-07-22</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/07/22/optimize-skill-sort/">優化技巧 - 排序/優先隊列</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2018/07/22/optimize-skill-sort/" data-id="ckh8skfj300hy78vr2ozme55g" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2018/07/22/optimize-skill-sort/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/基數排序/">基數排序</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/堆/">堆</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="主要問題"><a href="#主要問題" class="headerlink" title="主要問題"></a>主要問題</h2><p>在算法問題中，時常結合到排序，而排序的常數也大大影響到我們整體的效能。</p>
-<h2 id="基數排序降低常數"><a href="#基數排序降低常數" class="headerlink" title="基數排序降低常數"></a>基數排序降低常數</h2><p>若是一般原始型別的排序，可以透過基數排序 (radix sort)。從排序的範圍來決定是否要劃分 8-bit 一組一組。若範圍介於可容忍的 <span>$[0, v]$</span><!-- Has MathJax -->，當 <span>$v &lt; n$</span><!-- Has MathJax --> 時，直接開 <span>$n$</span><!-- Has MathJax --> 個 bucket 的方式更好。因為大多數的複雜度都大於線性 <span>$O(n)$</span><!-- Has MathJax --></p>
-<h3 id="非負整數基數排序"><a href="#非負整數基數排序" class="headerlink" title="非負整數基數排序"></a>非負整數基數排序</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">void</span> _radix_sort(Pt *A, <span class="keyword">int</span> n) &#123;</div><div class="line">    <span class="keyword">static</span> Pt _tmp[MAXN];</div><div class="line">    <span class="keyword">const</span> <span class="keyword">int</span> CHUNK = <span class="number">256</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> C[CHUNK];</div><div class="line">    Pt *B = _tmp, *T;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">0</span>; x &lt; <span class="number">8</span>; x++) &#123;</div><div class="line">        <span class="keyword">const</span> <span class="keyword">int</span> d = x*<span class="number">8</span>;</div><div class="line">        <span class="built_in">memset</span>(C, <span class="number">0</span>, <span class="keyword">sizeof</span>(C));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            C[(A[i].x&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]++;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; CHUNK; i++)</div><div class="line">            C[i] += C[i<span class="number">-1</span>];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = n<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--)</div><div class="line">            B[--C[(A[i].x&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]] = A[i];</div><div class="line">        T = A, A = B, B = T;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="浮點數基數排序"><a href="#浮點數基數排序" class="headerlink" title="浮點數基數排序"></a>浮點數基數排序</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">radix_sort</span><span class="params">(Pt *A, <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">int32_t</span> &amp;v = *((<span class="keyword">int32_t</span> *) &amp;(A[i].s));</div><div class="line">        <span class="keyword">if</span> ((v&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>)</div><div class="line">            v = ~v;</div><div class="line">        <span class="keyword">else</span></div><div class="line">            v = v | <span class="number">0x80000000</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">static</span> Pt _tmp[MAXN*<span class="number">2</span>];</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> CHUNK = <span class="number">256</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> C[<span class="number">1</span>&lt;&lt;<span class="number">8</span>];</div><div class="line">    Pt *B = _tmp, *T;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">0</span>; x &lt; <span class="number">4</span>; x++) &#123;</div><div class="line">        <span class="keyword">const</span> <span class="keyword">int</span> d = x*<span class="number">8</span>;</div><div class="line">        <span class="built_in">memset</span>(C, <span class="number">0</span>, <span class="keyword">sizeof</span>(C));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            C[((*((<span class="keyword">int32_t</span> *) &amp;(A[i].s)))&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]++;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; CHUNK; i++)</div><div class="line">            C[i] += C[i<span class="number">-1</span>];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = n<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--)</div><div class="line">            B[--C[((*((<span class="keyword">int32_t</span> *) &amp;(A[i].s)))&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]] = A[i];</div><div class="line">        T = A, A = B, B = T;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">int32_t</span> &amp;v = *((<span class="keyword">int32_t</span> *) &amp;(A[i].s));</div><div class="line">        <span class="keyword">if</span> ((v&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>)</div><div class="line">            v = v &amp; <span class="number">0x7fffffff</span>;</div><div class="line">        <span class="keyword">else</span></div><div class="line">            v = ~v;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="慎選內建排序"><a href="#慎選內建排序" class="headerlink" title="慎選內建排序"></a>慎選內建排序</h2><p>內建排序常見的有 <code>qsort</code>, <code>sort</code>, <code>stable_sort</code>，我不推薦使用 <code>qsort</code>，因為它在很久以前找到了一個退化情況 <a href="https://news.ycombinator.com/item?id=10476466" target="_blank" rel="external">A Killer Adversary for Quicksort - 1995</a>，有些題目的測資會出這種特別案例，導致當年的萌新內心受創。除非只有 C 的情況，否則請避開 <code>qsort</code>。如果算法屬於調整某些元素後，再對整體進行排序，這時候 <code>sort</code> 比 <code>stable_sort</code> 慢很多。當情況非常接近已經排序的時候，就使用 <code>stable_sort</code>。</p>
-<h2 id="優先隊列"><a href="#優先隊列" class="headerlink" title="優先隊列"></a>優先隊列</h2><p>使用 priority queue 的方法通常有三種 <code>set</code>, <code>priority_queue</code>, <code>heap</code>。</p>
-<ul>
-<li>功能最多的 <code>set</code>、次少的 <code>priority_queue</code>，最少的 <code>heap</code>。</li>
-<li>效能方面則是 <code>heap</code> 最快、次著 <code>priority_queue</code>、最後 <code>set</code>。</li>
-<li>代碼維護最容易的 <code>set</code>、最差的 <code>heap</code>。</li>
-</ul>
-<p>之前很排斥使用 <code>priority_queue</code>，原因在於撰寫 <code>operator&lt;</code> 與我的邏輯相反，因此都偏愛使用 <code>set</code>，但是效能被拉出來的時候，又必須退回類似 C 的 <code>make_heap</code>、<code>pop_heap</code> … 的接口。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/83/">83</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
@@ -949,7 +969,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">17</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">8</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">18</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">8</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -959,6 +979,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2020/12/12/java/java-jni-tls-error/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Java JNI Thread Error (EINVAL)</a>
+          </li>
         
           <li>
             <a class="text" href="/2020/11/08/work/company-ghost-story-8/">
@@ -1030,14 +1058,6 @@
                 <i class="icon-file-o"></i> 
               
             為什麼不推薦用 Java Stream 改寫迴圈</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2020/09/20/work/company-ghost-story-3/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 3</a>
           </li>
         
       </ul>
