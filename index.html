@@ -89,6 +89,71 @@
           
           <section id="main">
   
+    <article id="post-work/company-ghost-story-9" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/01/30/work/company-ghost-story-9/" class="article-date">
+  <time datetime="2021-01-30T04:00:00.000Z" itemprop="datePublished">2021-01-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/鬼故事/">鬼故事</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/01/30/work/company-ghost-story-9/">Company Ghost Story 公司鬼故事 9</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/" data-id="ckkj23o7i02e6n0vr9kxpn91n" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/鬼故事/">鬼故事</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="BufferWriter-StringBuilder"><a href="#BufferWriter-StringBuilder" class="headerlink" title="BufferWriter/StringBuilder"></a>BufferWriter/StringBuilder</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">writeLong</span><span class="params">(<span class="keyword">long</span> v)</span> </span>&#123;</div><div class="line">    StringBuilder sb = <span class="keyword">new</span> StringBuilder(<span class="number">8192</span>); <span class="comment">// ?</span></div><div class="line">    sb.append(Long.toString(v));</div><div class="line">    writer.write(sb.toString());</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>每一次轉換，別浪費額外的空間 8192 的 <code>StringBuilder</code>。如果真的需要這種 IO 的緩衝區，可以直接宣告在 <code>BufferWriter</code> 給定預設大小的緩衝區。</p>
+<h3 id="BufferWriter-StringBuilder-1"><a href="#BufferWriter-StringBuilder-1" class="headerlink" title="BufferWriter/StringBuilder"></a>BufferWriter/StringBuilder</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">private</span> String <span class="title">writeTwo</span><span class="params">(String token0, String token1)</span> </span>&#123;</div><div class="line">    writer.write(token0 + token1); <span class="comment">// why not write separately without intermediate result.</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>既然都知道了字串串接會有中間結果，我們可以直接分開寫 <code>writer.write(token0);</code> 和 <code>writer.write(token1);</code> 來達到相同效果。</p>
+<h3 id="StringBuilder-Helper"><a href="#StringBuilder-Helper" class="headerlink" title="StringBuilder Helper"></a>StringBuilder Helper</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> StringBuilder <span class="title">append</span><span class="params">(StringBuilder sb, String... tokens)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (String t : tokens)</div><div class="line">        sb.append(t);</div><div class="line">    <span class="keyword">return</span> sb;</div><div class="line">&#125;</div><div class="line"></div><div class="line">append(sb, <span class="string">"a"</span>, <span class="string">"b"</span>, <span class="string">"c"</span>).append(<span class="string">"d"</span>, <span class="string">"e"</span>);</div><div class="line"><span class="comment">// if performance it critical, please write all statements without sugar syntax</span></div><div class="line">append(ab, <span class="string">"a"</span> + <span class="string">"b"</span>, <span class="string">"c"</span>);</div><div class="line"><span class="comment">// ... why?</span></div></pre></td></tr></table></figure>
+<p>這種可變參數的寫法會額外產生一個陣列，對於效能來說會很傷。</p>
+<h3 id="Math-Getter-Setter"><a href="#Math-Getter-Setter" class="headerlink" title="Math Getter/Setter"></a>Math Getter/Setter</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// convert x' = a x + b</span></div><div class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">convert</span><span class="params">(Point p)</span> </span>&#123;</div><div class="line">    p.setX(p.getX() * a);</div><div class="line">    p.setX(p.getX() + b); <span class="comment">// why not p.setX(p.getX() * a + b);</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>別中毒於 Java 或者是 OOP 的寫法。</p>
+<h3 id="Lookup-by-Key"><a href="#Lookup-by-Key" class="headerlink" title="Lookup by Key"></a>Lookup by Key</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> T <span class="title">getSelected</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (T c : candidates) &#123;</div><div class="line">        <span class="keyword">if</span> (Objects.equals(c.toKey(), mSelected))</div><div class="line">            <span class="keyword">return</span> c;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setSelected</span><span class="params">(T s)</span> </span>&#123;</div><div class="line">    mSelected = s.toKey(); <span class="comment">// why not store `s` directly?</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在大多數的狀況下都可以直接存原本的物件。除非是在一些特定的序列化，或者是橫跨兩個不同 domain 的交互資料，這時候我們必須採用字串作為中介對象。</p>
+<h3 id="Default-Value-by-Wrapper-Class"><a href="#Default-Value-by-Wrapper-Class" class="headerlink" title="Default Value by Wrapper Class"></a>Default Value by Wrapper Class</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> Boolean mirror = <span class="keyword">false</span>; <span class="comment">// why use wrapper class here?</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setMirror</span><span class="params">(<span class="keyword">boolean</span> m)</span> </span>&#123;</div><div class="line">    mirror = m;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (mirror != <span class="keyword">null</span>) &#123; <span class="comment">// why?</span></div><div class="line">        <span class="comment">// must do here</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>多餘的寫法。如果 wrapper class 有預設值，而且還不能被設置 null。那必然有些地方出錯。</p>
+<h3 id="Constant-Value-by-Wrapper-Class"><a href="#Constant-Value-by-Wrapper-Class" class="headerlink" title="Constant Value by Wrapper Class"></a>Constant Value by Wrapper Class</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Double SIZE = <span class="number">50L</span>; <span class="comment">// ...</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">exec</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> v = SIZE.longValue(); <span class="comment">// ...</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>這傢伙到底在宣告什麼？想用什麼？</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-java/java-jni-tls-error" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/12/12/java/java-jni-tls-error/" class="article-date">
@@ -114,7 +179,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/" data-id="ckilr6xg102cr8svrx46wov6c" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/" data-id="ckkj23nyx027nn0vra2jzuayy" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -177,7 +242,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/" data-id="ckilr6xqi02l88svrvrce0rnt" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/" data-id="ckkj23o7202drn0vr68t23zwa" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -243,7 +308,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/" data-id="ckilr6xqt02le8svr8jcsbo0a" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/" data-id="ckkj23o7802dyn0vr1wyzu77g" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -300,7 +365,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/" data-id="ckilr6xgi02d28svruy8cgmxu" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/" data-id="ckkj23nzw0287n0vrev2h0s7y" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -370,7 +435,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/" data-id="ckilr6xg802cu8svrnij9jb3i" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/" data-id="ckkj23nza027un0vr072ycfvk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -434,7 +499,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g0lZncf.jpg" rel="gallery_ckilr6w7n004w8svrgvo5w2d2">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g0lZncf.jpg" rel="gallery_ckkj23mj7003xn0vrx6lk6hpm">
         <img src="https://i.imgur.com/g0lZncf.jpg" itemprop="image">
       </a>
     
@@ -453,7 +518,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/25/diary-202010/" data-id="ckilr6w7n004w8svrgvo5w2d2" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/25/diary-202010/" data-id="ckkj23mj7003xn0vrx6lk6hpm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/25/diary-202010/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -612,7 +677,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/" data-id="ckilr6xrg02lt8svrnwnj3y4d" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/" data-id="ckkj23o9202fbn0vr8d3h1v2o" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -679,7 +744,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/" data-id="ckilr6xsh02mi8svrb0dkqcw5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/" data-id="ckkj23o9602ffn0vr4bxhnxg7" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -744,7 +809,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/" data-id="ckilr6xqb02l58svr84e5l7hc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/" data-id="ckkj23o8x02f8n0vr80ogq1dx" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -781,89 +846,6 @@
 
 
   
-    <article id="post-java/java-stream" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2020/09/20/java/java-stream/" class="article-date">
-  <time datetime="2020-09-20T10:00:00.000Z" itemprop="datePublished">2020-09-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Java/">Java</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/09/20/java/java-stream/">為什麼不推薦用 Java Stream 改寫迴圈</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/20/java/java-stream/" data-id="ckilr6xgc02cy8svr80yoa8lq" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2020/09/20/java/java-stream/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/lambda/">lambda</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/performance/">performance</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/stream/">stream</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/效能/">效能</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>Java 8 開始推出了 stream 介面，搭配 lambda 可以達到函數式編程 (functional language) 的能力，但是也造成非常多的效能爆炸的憾事。尤其是在我們沒有深入了解官方實作的細節時，請別輕易地轉換到 stream 介面。</p>
-<h2 id="Stream"><a href="#Stream" class="headerlink" title="Stream"></a>Stream</h2><p>在 <code>Stream</code> 出現之前，我們可以透過 <code>Iterator</code> 的實作來達到串流的概念，如 guava 庫所提供的 <code>FluentIterable</code> 就是一個替代方案。公司內部則是因為維護問題自己實作了一個自己的庫，因此沒辦法輕易地用 guava 的項目。但其中一點很明顯的不同在於 parallel 並行特性，即使是 <code>FluentIterable</code> 中，我也未見相關的平行操作。</p>
-<p>在自己實作庫、人手不足的團隊配置下，直接吹捧去使用現有的函數庫，那麼問題就容易出現在於轉換上。必須考慮「何時我們該去使用」，決定好使用場景，再決定是否要改寫。公司已經升級到了 JDK 11 的，在銜接官方的 stream 實作時，依舊造成顯著的效能退化，甚至還有嚴重的運行問題，導致 dead lock 等問題。</p>
-<h3 id="Static-Initialization-Block"><a href="#Static-Initialization-Block" class="headerlink" title="Static Initialization Block"></a>Static Initialization Block</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">classA</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> &#123;</div><div class="line">        getXXX().parallelStream().forEach(e -&gt; doSomething(e));</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在 JDK 11 中，可能會無知地不小心在 static initialization block 中觸發 parallel 特性，此時會造成程式無法運行、卡住。這個問題在於 threading 之間調度時的鎖，另一部分則是 lambda 抓取變數造成的。目前在 bug <a href="https://bugs.openjdk.java.net/browse/JDK-8143380" target="_blank" rel="external">JDK-8143380</a> 回報系統上看出無意解決此問題，因為這是人為撰寫的問題。如果是呼叫大量的函數來初始化參數，很容易遇到不知道哪個函數區塊內偷偷開了平行計算。</p>
-<p>像同事都把 <code>stream()</code> 都改寫成 <code>parallelStream()</code>，不管問題是大是小，這樣改寫有時候就造成莫名其妙的 Bug 發生，造成找了半天才發現問題。如果覺得著官方提供的項目都有公信力，而且不會做很蠢的事情，一直都可以很聰明地在平行與不平行取捨的話，那其實也不用設計 <code>parallelStream()</code> 給我們使用，統一一個 <code>stream()</code> 接口就好。</p>
-<p>想到同事如此狂妄的想法「工程師不該考慮資源，從摩爾定律來看，硬體明年就會解決，我們要做出更好的 scalability 的寫法」，讓我整個火氣都上來，無法接受 <strong>用而不知</strong> 的習慣。在沒人力挺下，只能眼真真地看著代碼被改得亂七八糟。</p>
-<h3 id="Stream-Cost"><a href="#Stream-Cost" class="headerlink" title="Stream Cost"></a>Stream Cost</h3><p>了解 <code>Stream</code> 基礎實作後，就會明白在沒有平行的狀況下，維護 stage 的狀態會是額外開銷，相較於手刻的 <code>Iterator</code>，很多沒有必要的狀態紀錄容易在非常簡單的迭代器中暴露。</p>
-<h3 id="Stream-Concatentation"><a href="#Stream-Concatentation" class="headerlink" title="Stream Concatentation"></a>Stream Concatentation</h3><p>串流串接又是更可怕的實作技術，請參閱附錄文章 <a href="https://www.techempower.com/blog/2016/10/19/efficient-multiple-stream-concatenation-in-java/" target="_blank" rel="external">Efficient multiple-stream concatenation in Java</a>。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">                                       concat(concat(concat(a, b), c), d)</div><div class="line">                                      /                                 \</div><div class="line">               concat(concat(a, b), c)                                   d</div><div class="line">              /                      \</div><div class="line">  concat(a, b)                        c</div><div class="line"> /           \</div><div class="line">a             b</div></pre></td></tr></table></figure>
-<p>串接的實作像是二元樹。如果操作順序不當，馬上會產生一棵偏斜的二元樹，假設我們要取 <code>a</code> 裏頭的元素，則必須從根一路走到葉節點去。如果構造 $n$ 次操作，且每一個恰好為一個元素，蒐集所有的內容，時間複雜度為 $O(n^2)$。</p>
-<p>因此，亂改寫遞迴構造器很容易出現問題，不如用原本的回傳值 <code>List/Collection</code> 把要的東西收集好，不支援惰性操作也好，舊的寫法依舊在 $O(n)$ 完成。若要支援惰性操作，使用 <code>StreamBuilder</code> 建立平衡的二元樹也能在 $O(n \log n)$ 最慘複雜度下完成迭代。</p>
-<p>這個問題並不是開 <code>parallelStream()</code> 解決，必須從根本的複雜度去分析，</p>
-<h3 id="Iterator-to-Stream"><a href="#Iterator-to-Stream" class="headerlink" title="Iterator to Stream"></a>Iterator to Stream</h3><p>從內建的 <code>Collection</code> 到 <code>Stream</code> 大部分都由官方做得很好，用不著花太多的心思去思考如何實作，直接呼叫相關函數即可。如果工作需要自己的 <code>Iterator</code> 變成 <code>Stream</code> 就沒有這麼好運。必須了解什麼是 <code>Spliterator</code>，而 <code>Spliterator</code> 是怎麼實作的，會有什麼樣的介面，而它是從何支援 <code>parallelStream</code> 這一項特性。</p>
-<p>假設您已經詳讀 <code>Spliterators.java</code> 下的所有代碼，如自動建造函數 </p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">static</span> &lt;T&gt; <span class="function">Spliterator&lt;T&gt; <span class="title">spliteratorUnknownSize</span><span class="params">(Iterator&lt;? extends T&gt; iterator, <span class="keyword">int</span> characteristics)</span></span></div></pre></td></tr></table></figure>
-<p>標示不確定迭代器實際運行的元素個數，好比在 stream 的 <code>flatMap()</code> 和 <code>filter()</code> 後，無法得知下一階段的元素多寡。在這些情況下只能透過這一類函數構造。然而官方預設的行為卻造成了嚴重的效能問題，它要求建造一個 <code>IteratorSpliterator</code>，而為了支援平行特性，平行通常需要透過高效的拆分陣列完成工作分配，因此會呼叫 <code>Spliterator::trySplit</code> 不斷地拆分，從源代碼中我們可以得知在未知大小的狀況下，則建立 <code>new Object[1024]</code> 預處理資料結構，即使在沒有開啟 <code>parallelStream</code>，依舊按照相同的運行流程。</p>
-<p>有人說在 Java 開 <code>new Object[1024]</code> 很快，而最慘情況迭代器就只有一個元素，甚至沒有任何的狀況下，用最蠢的實作只消耗了一個迭代器的宣告開銷，而轉換串流卻消耗了整整數千個位元組，這是個效能損耗。就算 GC 很強，也不代表它能發現這麼複雜的操作，它整整跨足了超過一個函數區塊。</p>
-<p>工作中因為繪製處理，需要運算數億次，若每一次都宣告這麼多餘的陣列，那麼莫虛有內存損耗高達幾十 GB，GC 若要運行 10 次，畫面繪製需要多一分鐘都是有可能的，將數秒不到的計算整整拖累下去。</p>
-<h3 id="Lazy-Evaluation"><a href="#Lazy-Evaluation" class="headerlink" title="Lazy Evaluation"></a>Lazy Evaluation</h3><p>惰性計算是 stream 的主要特性之一，從另一個術語按需計算 (on-demand)。即使是官方提供的庫也有一些小 Bug 造成假的惰性計算。最常見的像是 <code>flatMap</code>、<code>map</code> 和 <code>filter</code> 混用的時候，最後使用 <code>findFirst</code> 操作。從代碼上，我們會預期差不多就是找到一個元素之前的所有計算，而從回報系統裡面下關鍵字去找，會發現不少多餘的計算發生。</p>
-<p>同事老是說「我們自己的庫超慢的，用 stream 比較快。」</p>
-<blockquote>
-<p>言下之意，只是沒有遇到官方庫的 Bug，而你看到了庫的 Bug 卻從沒打算解決。</p>
-</blockquote>
-<p>最常見的迭代器實作，忘了 Lazy Evaluation 的寫法如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyIterator</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">Iterator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">    ...</div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">next</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (!hasNext())</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</div><div class="line">        T val = nextVal;</div><div class="line">        findNext(); <span class="comment">// on-demand ?</span></div><div class="line">        <span class="keyword">return</span> val;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span> </span>&#123;...&#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">findNext</span><span class="params">()</span> </span>&#123;</div><div class="line">        ... <span class="comment">// time complexity ?</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>很明顯地，透過 <code>findNext()</code> 我們可能只拿了第一個元素，在不需要第二個元素的狀況下，卻耗費了線性時間。</p>
-<h2 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h2><p>還有一些問題，下一次再聊聊吧。</p>
-<h2 id="Reading-List"><a href="#Reading-List" class="headerlink" title="Reading List"></a>Reading List</h2><ul>
-<li><a href="https://blog.jooq.org/2015/12/08/3-reasons-why-you-shouldnt-replace-your-for-loops-by-stream-foreach/" target="_blank" rel="external">3 Reasons why You Shouldn’t Replace Your for-loops by Stream.forEach()</a></li>
-<li><a href="https://www.techempower.com/blog/2016/10/19/efficient-multiple-stream-concatenation-in-java/" target="_blank" rel="external">Efficient multiple-stream concatenation in Java</a></li>
-</ul>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/83/">83</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -879,7 +861,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">18</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">8</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">19</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">9</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -889,6 +871,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/01/30/work/company-ghost-story-9/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Company Ghost Story 公司鬼故事 9</a>
+          </li>
         
           <li>
             <a class="text" href="/2020/12/12/java/java-jni-tls-error/">
@@ -962,14 +952,6 @@
             Company Ghost Story 公司鬼故事 4</a>
           </li>
         
-          <li>
-            <a class="text" href="/2020/09/20/java/java-stream/">
-              
-                <i class="icon-file-o"></i> 
-              
-            為什麼不推薦用 Java Stream 改寫迴圈</a>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -1019,7 +1001,7 @@
       
     </div>
     <div id="footer-info" class="inner">
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2020 Shiang-Yun Yang 
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
     </div>
   </div>
 </footer>
