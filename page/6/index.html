@@ -89,6 +89,76 @@
           
           <section id="main">
   
+    <article id="post-jg-20020" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/07/01/jg-20020/" class="article-date">
+  <time datetime="2017-07-01T05:47:41.000Z" itemprop="datePublished">2017-07-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/07/01/jg-20020/">批改娘 20020. Dot Product</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/07/01/jg-20020/" data-id="ckpaqpy5i009t00vng61jp500" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/07/01/jg-20020/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SIMD/">SIMD</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>請嘗試使用 SIMD 技術 AVX/SSE/MMX 來加速以下的純數值計算。</p>
+<h3 id="main-c"><a href="#main-c" class="headerlink" title="main.c"></a>main.c</h3><p>最低需求加速兩倍快</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">f</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = off; i &lt; N; i++, j++)</div><div class="line">        sum += encrypt(j, key1) * encrypt(j, key2), i++, j++;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = f(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>有多組測資，每組一行包含三個整數 <span>$N, \; \text{key1}, \; \text{key2}$</span><!-- Has MathJax -->，表示向量長度 <span>$N$</span><!-- Has MathJax -->、向量 <span>$\vec{A}$</span><!-- Has MathJax --> 由亂數種子 <span>$\text{key1}$</span><!-- Has MathJax --> 產生、向量 <span>$\vec{B}$</span><!-- Has MathJax --> 由亂數種子 <span>$\text{key2}$</span><!-- Has MathJax --> 產生。</p>
+<ul>
+<li>$1 \le N \le 16777216$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每組測資輸出一行整數，為 <span>$\vec{A} \cdot \vec{B}$</span><!-- Has MathJax --> 的 unsigned 32-bit integer 結果。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">16777216 1 2</div><div class="line">16777216 3 5</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">2885681152</div><div class="line">2147483648</div></pre></td></tr></table></figure>
+<h2 id="編譯參數"><a href="#編譯參數" class="headerlink" title="編譯參數"></a>編譯參數</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">gcc -std=c99 -O3 -march=native main.c -lm</div></pre></td></tr></table></figure>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><ul>
+<li>當前測試機器 Intel CPU E5-2620v3</li>
+<li><a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#" target="_blank" rel="external">Intel Intrinsics Guide</a></li>
+</ul>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>對於數值計算時，SIMD 能充分地加速程序，每一個元素皆經過一連串的數學函數計算，那麼把一連串的數學式拆分，化成最簡的邏輯計算，並且找出常數向量存放到暫存器中。如在影像處理的程序，即使沒有 GPU 幫忙，搭配 SIMD 也是個不錯的選擇，可以加速 2~4 倍之多。</p>
+<p>為了凸顯效能差異，題目設計時必須在計算單一元素結果上複雜些，防止大部分的加速效果是來自於減少 branch 操作 (loop unrolling)。</p>
+<h3 id="AVX"><a href="#AVX" class="headerlink" title="AVX"></a>AVX</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;x86intrin.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">SSE</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = (N&gt;&gt;<span class="number">3</span>)&lt;&lt;<span class="number">3</span>; i &lt; N; i++)</div><div class="line">        sum += encrypt(i+off, key1) * encrypt(i+off, key2);</div><div class="line">    __m256i s_i = _mm256_set_epi32(off, off+<span class="number">1</span>, off+<span class="number">2</span>, off+<span class="number">3</span>, off+<span class="number">4</span>, off+<span class="number">5</span>, off+<span class="number">6</span>, off+<span class="number">7</span>);</div><div class="line">    __m256i s_4 = _mm256_set_epi32(<span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>);</div><div class="line">    __m256i s_k1 = _mm256_set_epi32(key1, key1, key1, key1, key1, key1, key1, key1);</div><div class="line">    __m256i s_k2 = _mm256_set_epi32(key2, key2, key2, key2, key2, key2, key2, key2);</div><div class="line">    <span class="keyword">uint32_t</span> modk1 = key1&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> modk2 = key2&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk1 = <span class="number">32</span> - modk1;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk2 = <span class="number">32</span> - modk2;</div><div class="line">    __m256i s_ret = _mm256_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    N &gt;&gt;= <span class="number">3</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; N; it++) &#123;</div><div class="line">        __m256i r_1 = _mm256_or_si256(_mm256_slli_epi32(s_i, modk1), _mm256_srli_epi32(s_i, cmodk1));</div><div class="line">        r_1 = _mm256_xor_si256(_mm256_add_epi32(r_1, s_k1), s_k1);</div><div class="line">        __m256i r_2 = _mm256_or_si256(_mm256_slli_epi32(s_i, modk2), _mm256_srli_epi32(s_i, cmodk2));</div><div class="line">        r_2 = _mm256_xor_si256(_mm256_add_epi32(r_2, s_k2), s_k2);</div><div class="line">        __m256i r_m = _mm256_mullo_epi32(r_1, r_2);</div><div class="line">        s_ret = _mm256_add_epi32(s_ret, r_m);</div><div class="line">        s_i = _mm256_add_epi32(s_i, s_4);</div><div class="line">    &#125;</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int32_t</span> tmp[<span class="number">8</span>] __attribute__ ((aligned (<span class="number">32</span>)));</div><div class="line">        _mm256_store_si256((__m256i*) &amp;tmp[<span class="number">0</span>], s_ret);</div><div class="line">        sum += tmp[<span class="number">0</span>] + tmp[<span class="number">1</span>] + tmp[<span class="number">2</span>] + tmp[<span class="number">3</span>];</div><div class="line">        sum += tmp[<span class="number">4</span>] + tmp[<span class="number">5</span>] + tmp[<span class="number">6</span>] + tmp[<span class="number">7</span>];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = SSE(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="SSE"><a href="#SSE" class="headerlink" title="SSE"></a>SSE</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;x86intrin.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">SSE</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = N/<span class="number">4</span>*<span class="number">4</span>; i &lt; N; i++)</div><div class="line">        sum += encrypt(i+off, key1) * encrypt(i+off, key2);</div><div class="line">    __m128i s_i = _mm_set_epi32(off, off+<span class="number">1</span>, off+<span class="number">2</span>, off+<span class="number">3</span>);</div><div class="line">    __m128i s_4 = _mm_set_epi32(<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>);</div><div class="line">    __m128i s_k1 = _mm_set_epi32(key1, key1, key1, key1);</div><div class="line">    __m128i s_k2 = _mm_set_epi32(key2, key2, key2, key2);</div><div class="line">    <span class="keyword">uint32_t</span> modk1 = key1&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> modk2 = key2&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk1 = <span class="number">32</span> - modk1;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk2 = <span class="number">32</span> - modk2;</div><div class="line">    __m128i s_ret = _mm_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    N &gt;&gt;= <span class="number">2</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; N; it++) &#123;</div><div class="line">        __m128i r_1 = _mm_or_si128(_mm_slli_epi32(s_i, modk1), _mm_srli_epi32(s_i, cmodk1));</div><div class="line">        r_1 = _mm_xor_si128(_mm_add_epi32(r_1, s_k1), s_k1);</div><div class="line">        __m128i r_2 = _mm_or_si128(_mm_slli_epi32(s_i, modk2), _mm_srli_epi32(s_i, cmodk2));</div><div class="line">        r_2 = _mm_xor_si128(_mm_add_epi32(r_2, s_k2), s_k2);</div><div class="line">        __m128i r_m = _mm_mullo_epi32(r_1, r_2);</div><div class="line">        s_ret = _mm_add_epi32(s_ret, r_m);</div><div class="line">        s_i = _mm_add_epi32(s_i, s_4);</div><div class="line">    &#125;</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int32_t</span> tmp[<span class="number">4</span>] __attribute__ ((aligned (<span class="number">16</span>)));</div><div class="line">        _mm_store_si128((__m128i*) &amp;tmp[<span class="number">0</span>], s_ret);</div><div class="line">        sum += tmp[<span class="number">0</span>] + tmp[<span class="number">1</span>] + tmp[<span class="number">2</span>] + tmp[<span class="number">3</span>];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = SSE(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-jg-20018" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/07/01/jg-20018/" class="article-date">
@@ -114,7 +184,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/07/01/jg-20018/" data-id="ckpal455700cto0vn97v7jnjv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/07/01/jg-20018/" data-id="ckpaqpy5g009q00vn02fl4phd" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/07/01/jg-20018/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -172,7 +242,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/W9PD2EB.jpg" rel="gallery_ckpal456h00g5o0vnm9qha1ek">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/W9PD2EB.jpg" rel="gallery_ckpaqpy6s00cy00vn44doig1l">
         <img src="http://i.imgur.com/W9PD2EB.jpg" itemprop="image">
       </a>
     
@@ -191,7 +261,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/07/01/parallel-TA/" data-id="ckpal456h00g5o0vnm9qha1ek" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/07/01/parallel-TA/" data-id="ckpaqpy6s00cy00vn44doig1l" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/07/01/parallel-TA/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -248,7 +318,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BsbOqhH.jpg" rel="gallery_ckpal44zz003io0vnbrv8hw5q">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BsbOqhH.jpg" rel="gallery_ckpaqpy35003k00vnzt52kux3">
         <img src="http://i.imgur.com/BsbOqhH.jpg" itemprop="image">
       </a>
     
@@ -267,7 +337,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/05/04/diary-201705-2/" data-id="ckpal44zz003io0vnbrv8hw5q" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/05/04/diary-201705-2/" data-id="ckpaqpy35003k00vnzt52kux3" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/05/04/diary-201705-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -344,7 +414,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/QfgFMVC.jpg" rel="gallery_ckpal4503003uo0vn4kqo31u5">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/QfgFMVC.jpg" rel="gallery_ckpaqpy37003o00vnxmcbgmmt">
         <img src="http://i.imgur.com/QfgFMVC.jpg" itemprop="image">
       </a>
     
@@ -363,7 +433,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/05/03/diary-201705/" data-id="ckpal4503003uo0vn4kqo31u5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/05/03/diary-201705/" data-id="ckpaqpy37003o00vnxmcbgmmt" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/05/03/diary-201705/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -466,7 +536,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/28/uva-13154/" data-id="ckpal45dt00wwo0vnfngu77sa" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/28/uva-13154/" data-id="ckpaqpydx00uo00vnz4zx1gip" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/28/uva-13154/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -541,7 +611,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BuPUpad.jpg" rel="gallery_ckpal44z10010o0vnv4ln3m8p">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BuPUpad.jpg" rel="gallery_ckpaqpy28000y00vn3jly8399">
         <img src="http://i.imgur.com/BuPUpad.jpg" itemprop="image">
       </a>
     
@@ -560,7 +630,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/09/big-integer-division/" data-id="ckpal44z10010o0vnv4ln3m8p" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/09/big-integer-division/" data-id="ckpaqpy28000y00vn3jly8399" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/09/big-integer-division/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -647,7 +717,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KrHRAeT.jpg" rel="gallery_ckpal44yv000ko0vnqbsw4pxs">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KrHRAeT.jpg" rel="gallery_ckpaqpy25000r00vn9s2y8mz0">
         <img src="http://i.imgur.com/KrHRAeT.jpg" itemprop="image">
       </a>
     
@@ -666,7 +736,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/" data-id="ckpal44yv000ko0vnqbsw4pxs" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/" data-id="ckpaqpy25000r00vn9s2y8mz0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -752,7 +822,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckpal450m0056o0vn0jvyitoi" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckpaqpy3u005c00vnqq8fgtsg" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -885,7 +955,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckpal450o005ao0vnriu1rrmp" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckpaqpy3v005g00vnlvt4jweh" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1039,133 +1109,6 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 
 
   
-    <article id="post-diary-201701-5" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/01/20/diary-201701-5/" class="article-date">
-  <time datetime="2017-01-20T12:23:52.000Z" itemprop="datePublished">2017-01-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/rxih6Pj.jpg" rel="gallery_ckpal44zx003do0vnojzgt25t">
-        <img src="http://i.imgur.com/rxih6Pj.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/01/20/diary-201701-5/">那段過往的蠢事</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/20/diary-201701-5/" data-id="ckpal44zx003do0vnojzgt25t" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2017/01/20/diary-201701-5/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>我一定誤會了什麼，才冒冒失失地進入這個世界，大家所期待的那個人明明不是我－《三月的獅子》</p>
-</blockquote>
-<h2 id="實驗室調侃"><a href="#實驗室調侃" class="headerlink" title="實驗室調侃"></a>實驗室調侃</h2><p>「什麼時候要簽博？」</p>
-<p>學校年底寄了封向碩士一學年修畢、在學成績前 30% 且被教授認可有研究能力的學生，提供 <strong>逕行修讀博士學位</strong> ，從那陣子之後，這句話不斷地從旁人口說出，可想而知是在玩弄我。大概是從某次開會中，老師三番兩次地說誰誰看起來適合簽博，又朝著我說能力怎樣怎樣地很安心，必然是學弟們的光芒尚未展現，目光才莫名其妙地投射在我身上。</p>
-<p>有趣的是隔了幾週後，系上放寬到一學期修畢即可，心想這下子總算能反攻了，但論談話辯論技巧，一時還是贏不了。</p>
-<blockquote>
-<p>「學弟們來簽博吧！」充滿嘲諷的反擊道<br>「可是老師只認同你」學弟緩緩地說道<br>「…」到底是怎麼想到那一塊去的，心中滿滿的困惑</p>
-</blockquote>
-<h2 id="順水推舟"><a href="#順水推舟" class="headerlink" title="順水推舟"></a>順水推舟</h2><p><img src="http://i.imgur.com/sdLbmIR.jpg" alt="「什麼 什麼」－ 《吹響吧！上低音號》"></p>
-<p>年底的事情仍尚未結束，在旁人的催促下，感覺需要紀錄點什麼－那段有趣的誤會。</p>
-<h3 id="跨年那一夜"><a href="#跨年那一夜" class="headerlink" title="跨年那一夜"></a>跨年那一夜</h3><p>在台北的第二次跨年，想去年在生測資完後，回家的路上看著一群攝影愛好者在圖書館後頭拍攝，而自己只能拖著疲累的身軀回家休息。2017 年稍微特別一點，在靠北工程師看到一句話「人家有閃光才叫跨年，我們這群單身狗不跨年，叫熬夜。」尾牙聚餐因學弟一句話衝動發出邀請後，果然還是一個人熬夜吧，這回是學弟們一起在實驗室熬夜，別有樂趣。</p>
-<p>這一夜原本想約著一起寫作業，自己一個人做做還可以，嘗試各種修改，絞盡腦力讓自己無法去想那原本的計劃，差點就在 TLE 下跨年了。</p>
-<p><img src="http://i.imgur.com/pPAN5fd.jpg" alt="「的確 成就感真是活下去所需要的能量啊」－《三月的獅子》"></p>
-<blockquote>
-<p>「楓之谷倒數計時 3, 2, 1, …」<br>「限時販售商店在哪？」</p>
-</blockquote>
-<p>一群肥宅就這麼在楓之谷上跨年。這麼說也許突然，學弟們看我有玩楓之谷，一個個都來跟我一起玩，一次要養這麼多人相當不容易，也因此那陣子完全不能自由活動，一上線就是當工具人。</p>
-<p>那晚走在回租屋處的路上，傳了封訊息說聲「新年快樂」這讓我不禁想起，曾經也做過類似的事情，對著四年沒聯絡的手機號碼，到了那天日子傳了封「祝你生日快樂」這麼說起來，就像動畫《秒速五釐米》心境，平凡地過著日子，卻時時刻刻想著那過往的蠢事。</p>
-<p>跨年那一夜的清晨走回家，平常一起租屋的高中同學們都會在家，而今晚一個都沒有，房裡、客廳裡只有從路燈照來的光，摸著冰冷的樓梯扶手走回房裡，收到封「抱歉，整天沒都沒看訊息，現在在喝酒」</p>
-<p>然而，不只是現實生活中，連遊戲中都感受到一種奇怪的氛圍，難道沒長時間在線上掛網，連網友都和這一夥人都想到一塊去了！素未謀面的網友，傳了些訊息給我。</p>
-<blockquote>
-<p>「吾 你今年會脫魯」遞上作業的截圖說道<br>「吾 你今年X月X日前會脫魯」</p>
-</blockquote>
-<p>心中滿滿地無奈，處處都有人在督促我。</p>
-<h3 id="新年那一日"><a href="#新年那一日" class="headerlink" title="新年那一日"></a>新年那一日</h3><p>三天連假必然要為了平行加速的期末專題奮戰，所以約了小夥伴一起努力。一早八點坐在床頭滑著手機，看看昨夜的廢文有什麼樣的反應，看著未讀訊息中一封也沒有，收拾著包包走到學校，在實驗室等著沒有約定的討論。看著什麼都沒進展的程序，不知不覺就一個人待到中午，心想那傢伙肯定宿醉了。</p>
-<blockquote>
-<p>「抱歉，剛剛才醒。」<br>「宿醉了對吧？」<br>「沒宿！」</p>
-</blockquote>
-<p>比起對於算法分析和優化技術，也許應該從更基本的算法開始講起。腦海中大量的資訊嘗試從平常不怎麼說話的口中說出，一時什麼都講不出來</p>
-<blockquote>
-<p>「沒關係，你慢慢說」<br>「是這個意思吧？」描繪著投影片上的圖示說道<br>「抱歉，這講起來有點枯燥」<br>「沒關係，聽你講著講著，我開始對這個有點興趣。」</p>
-</blockquote>
-<p>小組討論就這麼持續到晚上，學弟們還不跟我吃飯，不知道這群傢伙在想些什麼，你們這樣玩弄學長對嗎？就是要我們倆個一起吃。</p>
-<h3 id="心情複雜"><a href="#心情複雜" class="headerlink" title="心情複雜"></a>心情複雜</h3><p>一想到在自己喜歡的事物面前，思緒總沒辦法順暢且正常地表達出來！覺得自己遜斃了。</p>
-<p><img src="http://i.imgur.com/RyTYjQM.jpg" alt="「遜斃了」－《風夏》"></p>
-<p>趕緊逃進期末專題程式編寫的修改，不再去理會旁人的總總，心想事情根本不是這樣子的，這種事情怎麼會落在我身上呢。</p>
-<blockquote>
-<p>優化計算機圖學浮點數輸出轉文字檔部份，轉換 json 就可以更快，加速 4 倍之多。參考論文說道 16 倍加速，提供的程序 Warning 編譯訊息停不下來，修一修 Bug 送上 pull request，沒想到 Lemire 教授也在貢獻者裡，略感興奮。清晨就收到信，修改部份被 Merge！</p>
-</blockquote>
-<p>一個小小的 CPU 中，突然多了一條程序需要執行，帶著這樣的心情去工作。沒想到這一天是老闆來，一整天全是全英開會，而且還有一場是咱的報告，事前都不知道啊！時間不斷消逝，終於迎來那一刻 … 原來已經沒救了，好丟臉啊。</p>
-<p><img src="http://i.imgur.com/P46COfP.jpg" alt="「太丟臉了」－《風夏》"></p>
-<p>在當下心中不冒出某晚一起討論的閒聊</p>
-<blockquote>
-<p>指著螢幕上一行一行的程序，試圖解釋自己的想法<br>「我改了這裡，好讓整個三角形更加地完整，不會破圖，不過也因此不太能平行 … 這有點麻煩」<br>在腦海中盤算著時程和算法<br>「如果要平行的話，要改成這個樣子，不過要花點時間，再弄個幾天吧」</p>
-<p>「每個人都有自己不擅長的，不會每件事情都做得好，沒・關・係・的」<br>「我們已經做很多了呀，先把這些弄好吧」</p>
-</blockquote>
-<p>我啊，對於自己不擅長的項目太過在意，對於做不好一件可以完成的事覺得相當愧疚，總是投入好幾倍的時間來完成，想想自己這麼疲憊到底是為了什麼？在追求什麼？聽到那段話，有如放下了大石，旁人要不什麼都不說，要不鼓勵盡量往前衝，距離上一次對我傳達「你可以休息一下」又是多麼久遠的事了。</p>
-<blockquote>
-<p>不斷地敲打鍵盤，嘗試將自己的想法加入並進行測試，突然冒出了一句話<br>「欸欸，你爸有缺老婆嗎？」<br>「？」頓時落下手上的工作，腦海中喀喀聲瞬間即逝，『等等，這是什麼話題，現在我們在弄期末專題吧？』<br>「沒啦，我媽離婚一陣子，最近又交了另一半。」<br>「嗯？」對於這話題到底從哪裡來，心中滿滿的困惑<br>「她居然嗆我說『我比妳還有市場耶』，我是不是應該隨便交個男友？」<br>『咦？咦咦咦咦？』現在應該要沉住氣吧，擔心一不小心就要進警局<br>「沒事，你繼續寫吧。」</p>
-</blockquote>
-<p>繼續敲著鍵盤的同時，心想好像錯過了什麼選項。</p>
-<h3 id="角色轉換"><a href="#角色轉換" class="headerlink" title="角色轉換"></a>角色轉換</h3><p><img src="http://i.imgur.com/J2cTZsg.jpg" alt="「只是一味地爬升，爬升，最終抵達的地方沒有回去的路」－《三月的獅子》"></p>
-<blockquote>
-<p>「今天學姊會來嗎？」學弟如此問道<br>「哪個學姊？你想說什麼」不耐煩地詢問</p>
-</blockquote>
-<p>終於來到這一天，跟學弟談話時要把同屆同學用稱謂描述，叫全名也不對勁，只喊名也怪奇特的，若用學長學姊稱呼，一不小心談話又忘了是哪個學長學姊。</p>
-<h3 id="清醒之日"><a href="#清醒之日" class="headerlink" title="清醒之日"></a>清醒之日</h3><blockquote>
-<p>「我在你家，可以借用你房間嗎？」<br>「？」原來是高中同學來訪，如此地閒情逸致 … 到我的房間打電動！<br>「借你桌子打電動」</p>
-</blockquote>
-<p>十一點多離開實驗室，一回到租屋的地方，從沒想過接下來才是那無法描述的黑歷史，為什麼連回家都要被酷刑拷問，這些不是我能決定的啊，學校那樣就算了，連好友都能從動態中發現個什麼，為什麼你們要處處肉搜呢？</p>
-<p>次次日，收到通知要買電池回去弄熱水器，到處敲個房門請求工具支援，才發現自己有多孤單。不僅是電池沒電，連瓦斯都沒有，看來今天是冷水澡的清醒日！</p>
-<p><img src="http://i.imgur.com/1j4BK8O.jpg" alt="「孤單的時候 就可以相互依靠」－《人渣本願》"></p>
-<blockquote>
-<p>根據以往的經驗，想認識的女生都會馬上有男朋友。我想這次也不意外，祝福各位，這個小劇場給大家帶來一陣子的歡笑。</p>
-</blockquote>
-<p>學期的最後，授課老師說研究生只要有幾門課拿到 A+ 就好，研究方向就會比較明確。然而，在這當下把碩士課程八門都修完，回過頭來，發現到擅長的研究領域無法判定，對於研究能力更加迷惘。感謝小夥伴們的協助，全 A+ 成就取得。</p>
-<p><img src="http://i.imgur.com/VvcUwJZ.jpg" alt="「誰能溫暖我 誰能快點溫暖我」－《為美好的世界獻上祝福》"></p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/5/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/7/">Next &raquo;</a>
@@ -1181,7 +1124,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">31</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">9</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">31</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">9</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1191,6 +1134,14 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/05/30/diary-202105/">
+              
+                <i class="icon-file-o"></i> 
+              
+            前思後想 新居落成</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/05/30/java/java-memory-optimization-2/">
@@ -1225,19 +1176,19 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
           </li>
         
           <li>
-            <a class="text" href="/2021/01/31/work/meme-handover/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Handover</a>
-          </li>
-        
-          <li>
             <a class="text" href="/2021/01/31/work/meme-globl-var/">
               
                 <i class="icon-file-o"></i> 
               
             Global Variable</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/01/31/work/meme-handover/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Handover</a>
           </li>
         
           <li>
@@ -1262,14 +1213,6 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
                 <i class="icon-file-o"></i> 
               
             Programming Language Impostors</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-machine-learning-newbie/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Machine Learning for Newbie</a>
           </li>
         
       </ul>
