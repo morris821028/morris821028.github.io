@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10094. Fast 0/1 Knapsack Problem | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述有 $N$ 個重量和價值分別為 $W_i, V_i$ 的物品，現在要從這些物品中選出總重量不超過 $M$ 的物品，求所有挑選方案中的總價值最大值為何。 輸入格式輸入只有一組測資，第一行會有兩個整數 $N, M$ 分別表示物品數量和背包能容大的最大重量 $M$。接下來會有 $N$ 行，第 $i$ 行上會有兩個整數 $W_i, V_i$，分別為物品 $i$ 的重量和價值。  $1 \le N">
+<meta name="keywords" content="dp,OpenMP,批改娘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10094. Fast 0&#x2F;1 Knapsack Problem">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10094/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述有 $N$ 個重量和價值分別為 $W_i, V_i$ 的物品，現在要從這些物品中選出總重量不超過 $M$ 的物品，求所有挑選方案中的總價值最大值為何。 輸入格式輸入只有一組測資，第一行會有兩個整數 $N, M$ 分別表示物品數量和背包能容大的最大重量 $M$。接下來會有 $N$ 行，第 $i$ 行上會有兩個整數 $W_i, V_i$，分別為物品 $i$ 的重量和價值。  $1 \le N">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.500Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10094. Fast 0&#x2F;1 Knapsack Problem">
+<meta name="twitter:description" content="題目描述有 $N$ 個重量和價值分別為 $W_i, V_i$ 的物品，現在要從這些物品中選出總重量不超過 $M$ 的物品，求所有挑選方案中的總價值最大值為何。 輸入格式輸入只有一組測資，第一行會有兩個整數 $N, M$ 分別表示物品數量和背包能容大的最大重量 $M$。接下來會有 $N$ 行，第 $i$ 行上會有兩個整數 $W_i, V_i$，分別為物品 $i$ 的重量和價值。  $1 \le N">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10094" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10094/" class="article-date">
+  <time datetime="2016-04-30T06:54:49.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10094. Fast 0/1 Knapsack Problem
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10094/" data-id="ckpaivc7m002an8vn9grigour" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10094/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dp/">dp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入"><span class="toc-number">4.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出"><span class="toc-number">5.</span> <span class="toc-text">範例輸出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">6.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#滾動數組"><span class="toc-number">6.1.</span> <span class="toc-text">滾動數組</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分組合併"><span class="toc-number">6.2.</span> <span class="toc-text">分組合併</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>有 $N$ 個重量和價值分別為 $W_i, V_i$ 的物品，現在要從這些物品中選出總重量不超過 $M$ 的物品，求所有挑選方案中的總價值最大值為何。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>輸入只有一組測資，第一行會有兩個整數 $N, M$ 分別表示物品數量和背包能容大的最大重量 $M$。接下來會有 $N$ 行，第 $i$ 行上會有兩個整數 $W_i, V_i$，分別為物品 $i$ 的重量和價值。</p>
+<ul>
+<li>$1 \le N \le 10000$</li>
+<li>$1 \le M \le 1000000$</li>
+<li>$1 \le W_i, ; V_i \le 100000$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>輸出一行整數，挑選方案中的最大價值 $B$。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">4 5</span><br><span class="line">2 3</span><br><span class="line">1 2 </span><br><span class="line">3 4</span><br><span class="line">2 2</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">7</span><br></pre></td></tr></table></figure>
+
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>遞迴公式</p>
+<span>$$\begin{align*}
+f(i, j) = \max(f(i-1, j-w)+v, f(i-1, j))
+\end{align*}$$</span><!-- Has MathJax -->
+
+<p>最單純採用滾動數組完成，也就是所謂的 double buffer 的技巧，可以大幅度節省記憶體，但先決條件是他們的相依關係必須獨立。</p>
+<p>在平行處理上的另一種解法，就是分成前 $N/2$ 個物品和後 $N/2$ 物品分開計算，之後再藉由 $\mathcal{O}(M)$ 合併答案，由於算法的限制，最多拆分兩組。而不像滾動數組的平行於最內層的迴圈，平行度有限，但在較少核心的處理上非常快速，其一原因是空間使用比較有效率。</p>
+<ul>
+<li>Server (32 cores)<ul>
+<li>分組合併: Accepted (768 ms, 8320 KB)</li>
+<li>滾動數組: Accepted (380 ms, 8 MB)</li>
+</ul>
+</li>
+<li>PC (4 cores)<ul>
+<li>分組合併: 600ms</li>
+<li>滾動數組: 900ms</li>
+</ul>
+</li>
+</ul>
+<h3 id="滾動數組"><a href="#滾動數組" class="headerlink" title="滾動數組"></a>滾動數組</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXM 1000005</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 10005</span></span><br><span class="line"><span class="keyword">int</span> dp[<span class="number">2</span>][MAXM];</span><br><span class="line"><span class="keyword">int</span> W[MAXN], V[MAXN];</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> max(a, b) (a &gt; b ? a : b)</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> N, M;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;N, &amp;M) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;W[i], &amp;V[i]);</span><br><span class="line">        <span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(dp));</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">int</span> p = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">            <span class="keyword">int</span> q = <span class="number">1</span> - p;</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">int</span> pp = p, qq = q;</span><br><span class="line">                <span class="keyword">int</span> v = V[i], w = W[i];</span><br><span class="line">                <span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = w; i &lt;= M; i++)</span><br><span class="line">                    dp[qq][i] = <span class="built_in">max</span>(dp[pp][i-w]+v, dp[pp][i]);</span><br><span class="line">                <span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; w; i++)</span><br><span class="line">                    dp[qq][i] = dp[pp][i];</span><br><span class="line">            &#125;</span><br><span class="line">            p = <span class="number">1</span> - p;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, dp[p][M]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="分組合併"><a href="#分組合併" class="headerlink" title="分組合併"></a>分組合併</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">max</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a &gt; b ? a : b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">subKnapsack</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> m, <span class="keyword">int</span> w[], <span class="keyword">int</span> v[], <span class="keyword">int</span> dp[])</span> </span>&#123;</span><br><span class="line">    <span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(dp[<span class="number">0</span>]) * (m+<span class="number">1</span>));</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> vv = v[i], ww = w[i];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = m; j &gt;= ww; j--)</span><br><span class="line">            dp[j] = <span class="built_in">max</span>(dp[j], dp[j-ww]+vv);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXM 1000005</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 100005</span></span><br><span class="line"><span class="keyword">int</span> W[MAXN], V[MAXN];</span><br><span class="line"><span class="keyword">int</span> dp[<span class="number">2</span>][MAXM];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> N, M;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;N, &amp;M) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;W[i], &amp;V[i]);</span><br><span class="line">        <span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(dp));</span><br><span class="line"> </span><br><span class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel sections</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp section</span></span><br><span class="line">            <span class="built_in">subKnapsack</span>(N/<span class="number">2</span>, M, W, V, dp[<span class="number">0</span>]);</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp section</span></span><br><span class="line">            <span class="built_in">subKnapsack</span>(N-N/<span class="number">2</span>, M, W+N/<span class="number">2</span>, V+N/<span class="number">2</span>, dp[<span class="number">1</span>]);</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = M, j = <span class="number">0</span>, mx = <span class="number">0</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            mx = <span class="built_in">max</span>(mx, dp[<span class="number">1</span>][j]), j++;</span><br><span class="line">            ret = <span class="built_in">max</span>(ret, dp[<span class="number">0</span>][i] + mx);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/30/jg-10093/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10093. Fast Matrix Chain Multiplication (OpenMP)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/30/jg-10027/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10027. Fast Sudoku</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10094/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

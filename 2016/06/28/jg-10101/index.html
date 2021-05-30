@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10101. Fast Game of Life (CUDA) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<meta name="keywords" content="批改娘,CUDA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10101. Fast Game of Life (CUDA)">
+<meta property="og:url" content="http://morris821028.github.io/2016/06/28/jg-10101/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-06-28T01:41:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10101. Fast Game of Life (CUDA)">
+<meta name="twitter:description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10101" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/06/28/jg-10101/" class="article-date">
+  <time datetime="2016-06-28T01:33:37.000Z" itemprop="datePublished">2016-06-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10101. Fast Game of Life (CUDA)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10101/" data-id="ckpaivc7n002gn8vnasu14zpq" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/06/28/jg-10101/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CUDA/">CUDA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入-1"><span class="toc-number">4.</span> <span class="toc-text">範例輸入 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出-1"><span class="toc-number">5.</span> <span class="toc-text">範例輸出 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入-2"><span class="toc-number">6.</span> <span class="toc-text">範例輸入 2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出-2"><span class="toc-number">7.</span> <span class="toc-text">範例輸出 2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#編譯參數"><span class="toc-number">8.</span> <span class="toc-text">編譯參數</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">9.</span> <span class="toc-text">Solution</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>生命遊戲中，對於任意細胞，規則如下：<br>每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。</p>
+<ul>
+<li>當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。</li>
+<li>當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。</li>
+<li>當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。</li>
+<li>當前細胞為死亡狀態時，當周圍有 3 個存活細胞時，該細胞變成存活狀態。</li>
+</ul>
+<p>可以把最初的細胞結構定義為種子，當所有在種子中的細胞同時被以上規則處理後，可以得到第一代細胞圖。按規則繼續處理當前的細胞圖，可以得到下一代的細胞圖，周而復始。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>輸入第一行有兩個整數 $N$, $M$，表示盤面大小為 $N \times N$，模擬週期次數 $M$。接下來會有 $N$ 行，每一行上會有 $N$ 個字符，以 <code>0</code> 表示 $(i, j)$ 格子上的細胞屬於死亡狀態，反之 <code>1</code> 為存活狀態。</p>
+<ul>
+<li>$1 \le N \le 2000$</li>
+<li>$0 \le M \le 5000$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每一組測資輸出 $N$ 行，每一行上有 $N$ 個字元表示模擬 $M$ 次的最終盤面結果。</p>
+<h2 id="範例輸入-1"><a href="#範例輸入-1" class="headerlink" title="範例輸入 1"></a>範例輸入 1</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">5 1</span><br><span class="line">10001</span><br><span class="line">00100</span><br><span class="line">01110</span><br><span class="line">00100</span><br><span class="line">01010</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出-1"><a href="#範例輸出-1" class="headerlink" title="範例輸出 1"></a>範例輸出 1</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">00000</span><br><span class="line">00100</span><br><span class="line">01010</span><br><span class="line">00000</span><br><span class="line">00100</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸入-2"><a href="#範例輸入-2" class="headerlink" title="範例輸入 2"></a>範例輸入 2</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">5 3</span><br><span class="line">10001</span><br><span class="line">00100</span><br><span class="line">01110</span><br><span class="line">00100</span><br><span class="line">01010</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出-2"><a href="#範例輸出-2" class="headerlink" title="範例輸出 2"></a>範例輸出 2</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">00000</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">00000</span><br><span class="line">00000</span><br></pre></td></tr></table></figure>
+
+<h2 id="編譯參數"><a href="#編譯參數" class="headerlink" title="編譯參數"></a>編譯參數</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ nvcc -Xcompiler &quot;-O2 -fopenmp&quot; main.cu -o main</span><br><span class="line">$ ./main</span><br></pre></td></tr></table></figure>
+
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>CUDA 的函數分成 blocking 或者是 non-blocking，這是因為是異質計算在 host 上不一定要等到 GPU 算完才能執行下一行指令。kernel function call 是 non-blocking 的，可以藉由 <code>cudaDeviceSynchronize</code> 等待 device 所有的 task 都完成，才進行到下一個運行區塊。</p>
+<p>但是別忘記 <code>cudaMemcpy</code> 和 kernel function call 這一類都類似 OpenCL 的 Command Queue，若沒有特別設定，原則上都是 in-order 處理 (相對於隨意順序，必須按照進入 queue 的順序執行)，因此 memory copy 也是一條指令，<code>cudaMemcpy</code> 屬於 blocking 函數，在設計上就不一定要加上 <code>cudaDeviceSynchronize</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cuda.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GPULOCAL 1024</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CheckErr(status) &#123; gpuAssert((status), __FILE__, __LINE__); &#125;</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">gpuAssert</span><span class="params">(cudaError_t code, <span class="keyword">const</span> <span class="keyword">char</span> *file, <span class="keyword">int</span> line, <span class="keyword">int</span> abort=<span class="literal">true</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (code != cudaSuccess) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(stderr,<span class="string">&quot;GPUassert: %s %s %d\n&quot;</span>, <span class="built_in">cudaGetErrorString</span>(code), file, line);</span><br><span class="line">        <span class="keyword">if</span> (abort) <span class="built_in">exit</span>(code);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 2048</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">int</span> N, M, BN;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">char</span> str[MAXN][MAXN] = &#123;&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">char</span> hostMtx[<span class="number">2</span>][MAXN*MAXN] = &#123;&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="keyword">void</span> <span class="title">simulate</span><span class="params">(<span class="keyword">char</span> IN[], <span class="keyword">char</span> OUT[], <span class="keyword">int</span> N, <span class="keyword">int</span> BN)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> globalId = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line">    <span class="keyword">int</span> x = globalId/N + <span class="number">1</span>, y = globalId%N + <span class="number">1</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> G(x, y) IN[(x) * BN + (y)]</span></span><br><span class="line">    <span class="keyword">char</span> t = <span class="built_in">G</span>(x, y);</span><br><span class="line">    <span class="keyword">char</span> adj = <span class="built_in">G</span>(x<span class="number">-1</span>, y<span class="number">-1</span>) + <span class="built_in">G</span>(x<span class="number">-1</span>, y) + <span class="built_in">G</span>(x<span class="number">-1</span>, y+<span class="number">1</span>)</span><br><span class="line">            + <span class="built_in">G</span>(x, y<span class="number">-1</span>) + <span class="built_in">G</span>(x, y+<span class="number">1</span>) + <span class="built_in">G</span>(x+<span class="number">1</span>, y<span class="number">-1</span>) + <span class="built_in">G</span>(x+<span class="number">1</span>, y) + <span class="built_in">G</span>(x+<span class="number">1</span>, y+<span class="number">1</span>);</span><br><span class="line">    OUT[x * BN + y] = (t == <span class="number">0</span> &amp;&amp; adj == <span class="number">3</span>) || (t == <span class="number">1</span> &amp;&amp; (adj == <span class="number">2</span> || adj == <span class="number">3</span>));</span><br><span class="line"><span class="meta">#<span class="meta-keyword">undef</span> G</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">runCuda</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> cudaDeviceCnt = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">cudaGetDeviceCount</span>(&amp;cudaDeviceCnt);</span><br><span class="line">    <span class="keyword">if</span> (cudaDeviceCnt == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;No supported GPU\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> ;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">char</span> *cuMtx[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">int</span> memSz = BN*BN*<span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">char</span>);</span><br><span class="line">    <span class="keyword">int</span> localSz = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">1024</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (N*N%i == <span class="number">0</span>)</span><br><span class="line">            localSz = i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">dim3 <span class="title">cuBlock</span><span class="params">(localSz)</span></span>;</span><br><span class="line">    <span class="function">dim3 <span class="title">cuGrid</span><span class="params">(N*N/localSz)</span></span>;</span><br><span class="line">    <span class="built_in">cudaMalloc</span>((<span class="keyword">void</span> **) &amp;cuMtx[<span class="number">0</span>], memSz);</span><br><span class="line">    <span class="built_in">cudaMalloc</span>((<span class="keyword">void</span> **) &amp;cuMtx[<span class="number">1</span>], memSz);</span><br><span class="line">    <span class="built_in">cudaMemcpy</span>(cuMtx[<span class="number">0</span>], hostMtx[<span class="number">0</span>], memSz, cudaMemcpyHostToDevice);</span><br><span class="line">    <span class="built_in">cudaMemcpy</span>(cuMtx[<span class="number">1</span>], hostMtx[<span class="number">1</span>], memSz, cudaMemcpyHostToDevice);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; M; i++) &#123;</span><br><span class="line">        simulate&lt;&lt;&lt;cuGrid, cuBlock&gt;&gt;&gt;(cuMtx[i%<span class="number">2</span>], cuMtx[(i+<span class="number">1</span>)%<span class="number">2</span>], N, BN);</span><br><span class="line">        <span class="built_in">CheckErr</span>(<span class="built_in">cudaGetLastError</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cudaDeviceSynchronize</span>();	</span><br><span class="line">    <span class="keyword">int</span> f = M%<span class="number">2</span>;</span><br><span class="line">    <span class="built_in">cudaMemcpy</span>(hostMtx[f], cuMtx[f], memSz, cudaMemcpyDeviceToHost);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= N; j++)</span><br><span class="line">            hostMtx[f][i*BN + j] += <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">        <span class="built_in">puts</span>(hostMtx[f] + i*BN + <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">assert</span>(<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;N, &amp;M) == <span class="number">2</span>);</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">getchar</span>() != <span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++)</span><br><span class="line">        <span class="built_in">assert</span>(<span class="built_in">fgets</span>(str[i]+<span class="number">1</span>, MAXN, stdin) != <span class="literal">NULL</span>);</span><br><span class="line">    BN = N+<span class="number">2</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= N; j++)</span><br><span class="line">            hostMtx[<span class="number">0</span>][i*BN + j] = str[i][j] - <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">runCuda</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/28/jg-10102/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10102. Matrix Calculator (CUDA)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/06/28/jg-10100/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10100. Fast Matrix Multiplication (CUDA)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/06/28/jg-10101/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10093. Fast Matrix Chain Multiplication (OpenMP) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述計算矩陣鏈乘積 $A_{r_1, c_1} B_{r_2, c_2} \cdots$ 的值。 sample.c123456789101112131415161718192021222324// generate matrix, row-majoruint32_t* rand_gen(uint32_t seed, int R, int C) &amp;#123;    uint32_t *m = (">
+<meta name="keywords" content="dp,OpenMP,批改娘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10093. Fast Matrix Chain Multiplication (OpenMP)">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10093/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述計算矩陣鏈乘積 $A_{r_1, c_1} B_{r_2, c_2} \cdots$ 的值。 sample.c123456789101112131415161718192021222324// generate matrix, row-majoruint32_t* rand_gen(uint32_t seed, int R, int C) &amp;#123;    uint32_t *m = (">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.500Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10093. Fast Matrix Chain Multiplication (OpenMP)">
+<meta name="twitter:description" content="題目描述計算矩陣鏈乘積 $A_{r_1, c_1} B_{r_2, c_2} \cdots$ 的值。 sample.c123456789101112131415161718192021222324// generate matrix, row-majoruint32_t* rand_gen(uint32_t seed, int R, int C) &amp;#123;    uint32_t *m = (">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10093" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10093/" class="article-date">
+  <time datetime="2016-04-30T07:07:14.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10093. Fast Matrix Chain Multiplication (OpenMP)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10093/" data-id="ckpaivc7m0029n8vn1xua29c0" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10093/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dp/">dp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#sample-c"><span class="toc-number">1.1.</span> <span class="toc-text">sample.c</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入"><span class="toc-number">4.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出"><span class="toc-number">5.</span> <span class="toc-text">範例輸出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#備註"><span class="toc-number">6.</span> <span class="toc-text">備註</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">7.</span> <span class="toc-text">Solution</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>計算矩陣鏈乘積 <span>$A_{r_1, c_1} B_{r_2, c_2} \cdots$</span><!-- Has MathJax --> 的值。</p>
+<h3 id="sample-c"><a href="#sample-c" class="headerlink" title="sample.c"></a>sample.c</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// generate matrix, row-major</span></span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span>* <span class="title">rand_gen</span><span class="params">(<span class="keyword">uint32_t</span> seed, <span class="keyword">int</span> R, <span class="keyword">int</span> C)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">uint32_t</span> *m = (<span class="keyword">uint32_t</span> *) <span class="built_in">malloc</span>(<span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">uint32_t</span>) * R*C);</span><br><span class="line">    <span class="keyword">uint32_t</span> x = <span class="number">2</span>, n = R*C;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; R; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">            x = (x * x + seed + i + j)%n;</span><br><span class="line">            m[i*C + j] = x;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> m;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span> <span class="title">hash</span><span class="params">(<span class="keyword">uint32_t</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (x * <span class="number">2654435761LU</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// output</span></span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span> <span class="title">signature</span><span class="params">(<span class="keyword">uint32_t</span> *A, <span class="keyword">int</span> r, <span class="keyword">int</span> c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">uint32_t</span> h = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; r; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; c; j++)</span><br><span class="line">            h = <span class="built_in">hash</span>(h + A[i*c + j]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> h;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>有多組測資，每組第一行會有一個整數 $N$ 表示矩陣鏈上有 $N$ 個矩陣，第二行上會有 $N+1$ 個整數 $Z_i$，表示矩陣鏈的每一個行列大小，例如當 $N = 3$ 時，輸入 <code>10 30 5 60</code> 表示矩陣 <span>$A_{10, 30} B_{30, 5} C_{5, 60}$</span><!-- Has MathJax --> 相乘。第三行會有 $N$ 個整數，第 $i$ 個整數 <span>$S_i$</span><!-- Has MathJax --> 為第 $i$ 個矩陣生成種子。</p>
+<ul>
+<li>$1 \le N \le 100$</li>
+<li><span>$1 \le Z_i \le 1000$</span><!-- Has MathJax --></li>
+<li><span>$0 \le S_i \le 32767$</span><!-- Has MathJax --></li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每組測資輸出一行，將最後的矩陣結果輸出雜湊值。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">2</span><br><span class="line">2 2 2</span><br><span class="line">2 5</span><br><span class="line"></span><br><span class="line">3</span><br><span class="line">10 30 5 60</span><br><span class="line">0 0 0</span><br><span class="line"></span><br><span class="line">3</span><br><span class="line">1 5 20 1</span><br><span class="line">0 0 0</span><br><span class="line"></span><br><span class="line">3</span><br><span class="line">5 10 20 35</span><br><span class="line">0 0 0 </span><br><span class="line"></span><br><span class="line">6</span><br><span class="line">30 35 15 5 10 20 25</span><br><span class="line">0 0 0 0 0 0</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">573770929</span><br><span class="line">1762797124</span><br><span class="line">1738984832</span><br><span class="line">354147713</span><br><span class="line">3544048495</span><br></pre></td></tr></table></figure>
+
+<h2 id="備註"><a href="#備註" class="headerlink" title="備註"></a>備註</h2><blockquote>
+<p>輸出請用 <code>printf(&quot;%u&quot;, answer);</code>，計算 Dynamic Programming 時，請使用 64-bit 型態紀錄，因為最慘情況下會超過 32-bit 所能容納的範圍。</p>
+</blockquote>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>充分地運用當初在演算法學到的，計算矩陣鍊乘積的最少乘法數，接著再針對優化後的乘法順序進行平行。平行可以從單純矩陣乘法，又或者針對可以同時進行矩陣乘法操作開始。甚至可以套用編譯器學到的最少暫存器算法，想辦法從少量的空間換取好的快取效果。</p>
+<p>下述程式只針對矩陣乘法計算平行，而非兩個乘法同時進行，其一原因在於很難保證 load balance。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 128</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> LOOP_UNROLL 8</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> INF (1LL&lt;&lt;60)</span></span><br><span class="line"><span class="keyword">int</span> N, SZ[MAXN], SEED[MAXN];</span><br><span class="line"><span class="keyword">long</span> <span class="keyword">long</span> dp[MAXN][MAXN] = &#123;&#125;;</span><br><span class="line"><span class="keyword">int</span> argdp[MAXN][MAXN];</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span>* <span class="title">rand_gen</span><span class="params">(<span class="keyword">uint32_t</span> c, <span class="keyword">int</span> R, <span class="keyword">int</span> C)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">uint32_t</span> *m = (<span class="keyword">uint32_t</span> *) <span class="built_in">malloc</span>(<span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">uint32_t</span>) * R*C);</span><br><span class="line">    <span class="built_in">assert</span>(m != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">uint32_t</span> x = <span class="number">2</span>, n = R*C;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; R; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">            x = (x * x + c + i + j)%n;</span><br><span class="line">            m[i*C + j] = x;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> m;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span>* <span class="title">multiplyAndDel</span><span class="params">(<span class="keyword">uint32_t</span> *A, <span class="keyword">uint32_t</span> *B, <span class="keyword">int</span> r, <span class="keyword">int</span> rc, <span class="keyword">int</span> c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">uint32_t</span> *C = (<span class="keyword">uint32_t</span> *) <span class="built_in">malloc</span>(<span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">uint32_t</span>) * r * c);</span><br><span class="line">    <span class="keyword">uint32_t</span> *tB = (<span class="keyword">uint32_t</span> *) <span class="built_in">malloc</span>(<span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">uint32_t</span>) * rc * c);</span><br><span class="line">    <span class="built_in">assert</span>(C != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">assert</span>(tB != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; rc; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; c; j++)</span><br><span class="line">            tB[j*rc + i] = B[i*c + j];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(B);</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = r<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = c<span class="number">-1</span>; j &gt;= <span class="number">0</span>; j--) &#123;</span><br><span class="line">            <span class="keyword">register</span> <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">uint32_t</span> *a = &amp;A[i*rc], *b = &amp;tB[j*rc];</span><br><span class="line">            <span class="keyword">int</span> k = rc;</span><br><span class="line">            <span class="built_in"><span class="keyword">switch</span></span> (k % LOOP_UNROLL) &#123;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">0</span>: <span class="keyword">do</span> &#123; sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">7</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">6</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">5</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">4</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">3</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">2</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">1</span>: sum += *a * *b, a++, b++;</span><br><span class="line">                &#125; <span class="keyword">while</span> ((k -= LOOP_UNROLL) &gt; <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            C[i*c + j] = sum;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(A), <span class="built_in">free</span>(tB);</span><br><span class="line">    <span class="keyword">return</span> C;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span> <span class="title">hash</span><span class="params">(<span class="keyword">uint32_t</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (x * <span class="number">2654435761LU</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span> <span class="title">signatureAndDel</span><span class="params">(<span class="keyword">uint32_t</span> *A, <span class="keyword">int</span> r, <span class="keyword">int</span> c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">uint32_t</span> h = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; r; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; c; j++)</span><br><span class="line">            h = <span class="built_in">hash</span>(h + A[i*c + j]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(A);</span><br><span class="line">    <span class="keyword">return</span> h;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">uint32_t</span>* <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> *mR, <span class="keyword">int</span> *mC)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (l == r) &#123;</span><br><span class="line">        *mR = SZ[l], *mC = SZ[l+<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">rand_gen</span>(SEED[l], *mR, *mC);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> split = argdp[l][r];</span><br><span class="line">    <span class="keyword">int</span> r1, r2, c1, c2;</span><br><span class="line">    <span class="keyword">uint32_t</span> *A, *B;</span><br><span class="line">    A = <span class="built_in">dfs</span>(l, split, &amp;r1, &amp;c1);</span><br><span class="line">    B = <span class="built_in">dfs</span>(split+<span class="number">1</span>, r, &amp;r2, &amp;c2);</span><br><span class="line">    <span class="built_in">assert</span>(c1 == r2);</span><br><span class="line">    *mR = r1, *mC = c2;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">multiplyAndDel</span>(A, B, r1, c1, c2);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>, &amp;N) == <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= N; i++)</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>, &amp;SZ[i]);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>, &amp;SEED[i]);</span><br><span class="line">        <span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(dp));</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j+i &lt; N; j++) &#123;</span><br><span class="line">                <span class="keyword">int</span> l = j, r = j+i;</span><br><span class="line">                dp[l][r] = INF;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; k++) &#123;</span><br><span class="line">                    <span class="keyword">long</span> <span class="keyword">long</span> t = dp[l][k] + dp[k+<span class="number">1</span>][r] + (<span class="keyword">long</span> <span class="keyword">long</span>) SZ[l] * SZ[k+<span class="number">1</span>] * SZ[r+<span class="number">1</span>];</span><br><span class="line">                    <span class="keyword">if</span> (t &lt; dp[l][r])</span><br><span class="line">                        dp[l][r] = t, argdp[l][r] = k;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> retR, retC;</span><br><span class="line">        <span class="keyword">uint32_t</span> *retM;</span><br><span class="line">        <span class="keyword">uint32_t</span> hval;</span><br><span class="line">        retM = <span class="built_in">dfs</span>(<span class="number">0</span>, N<span class="number">-1</span>, &amp;retR, &amp;retC);</span><br><span class="line">        hval = <span class="built_in">signatureAndDel</span>(retM, retR, retC);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%u\n&quot;</span>, hval);</span><br><span class="line"> </span><br><span class="line">        <span class="keyword">long</span> <span class="keyword">long</span> test = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; N; i++) &#123;</span><br><span class="line">            test += SZ[<span class="number">0</span>] * SZ[i] * SZ[i+<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">fprintf</span>(stderr, <span class="string">&quot;best %lld, origin %lld, %lf\n&quot;</span>, dp[<span class="number">0</span>][N<span class="number">-1</span>], test, dp[<span class="number">0</span>][N<span class="number">-1</span>]*<span class="number">1.f</span> / test);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/24/jg-10038/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10038. Fast Covering Problem
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/30/jg-10094/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10094. Fast 0/1 Knapsack Problem</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10093/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

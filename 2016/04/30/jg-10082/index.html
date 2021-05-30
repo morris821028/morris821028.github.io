@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10082. Fast Find Prime Number (OpenMP) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述找出 $[ L, ; R ]$ 區間內有多少個質數。 輸入格式有多組測資，每組測資一行兩個整數 $L$, $R$，表示左右區間。  $1 \le L \le R \le 2^{31}-1$  輸出格式對於每一組詢問輸出一行一個整數。 輸入範例121000000 20000001 1000000000  輸出範例127043550847534  提示Sieve of Eratosthenes">
+<meta name="keywords" content="OpenMP,批改娘,sieve,bitmask">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10082. Fast Find Prime Number (OpenMP)">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10082/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述找出 $[ L, ; R ]$ 區間內有多少個質數。 輸入格式有多組測資，每組測資一行兩個整數 $L$, $R$，表示左右區間。  $1 \le L \le R \le 2^{31}-1$  輸出格式對於每一組詢問輸出一行一個整數。 輸入範例121000000 20000001 1000000000  輸出範例127043550847534  提示Sieve of Eratosthenes">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-30T03:18:24.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10082. Fast Find Prime Number (OpenMP)">
+<meta name="twitter:description" content="題目描述找出 $[ L, ; R ]$ 區間內有多少個質數。 輸入格式有多組測資，每組測資一行兩個整數 $L$, $R$，表示左右區間。  $1 \le L \le R \le 2^{31}-1$  輸出格式對於每一組詢問輸出一行一個整數。 輸入範例121000000 20000001 1000000000  輸出範例127043550847534  提示Sieve of Eratosthenes">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10082" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10082/" class="article-date">
+  <time datetime="2016-04-30T03:09:27.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10082. Fast Find Prime Number (OpenMP)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10082/" data-id="ckpaivc7i0020n8vn4eyx1owm" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10082/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/bitmask/">bitmask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/sieve/">sieve</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入範例"><span class="toc-number">4.</span> <span class="toc-text">輸入範例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出範例"><span class="toc-number">5.</span> <span class="toc-text">輸出範例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#提示"><span class="toc-number">6.</span> <span class="toc-text">提示</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">7.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#線性篩法"><span class="toc-number">7.1.</span> <span class="toc-text">線性篩法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#作弊打表"><span class="toc-number">7.2.</span> <span class="toc-text">作弊打表</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>找出 $[ L, ; R ]$ 區間內有多少個質數。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>有多組測資，每組測資一行兩個整數 $L$, $R$，表示左右區間。</p>
+<ul>
+<li>$1 \le L \le R \le 2^{31}-1$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每一組詢問輸出一行一個整數。</p>
+<h2 id="輸入範例"><a href="#輸入範例" class="headerlink" title="輸入範例"></a>輸入範例</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1000000 2000000</span><br><span class="line">1 1000000000</span><br></pre></td></tr></table></figure>
+
+<h2 id="輸出範例"><a href="#輸出範例" class="headerlink" title="輸出範例"></a>輸出範例</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">70435</span><br><span class="line">50847534</span><br></pre></td></tr></table></figure>
+
+<h2 id="提示"><a href="#提示" class="headerlink" title="提示"></a>提示</h2><p><a href="https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes">Sieve of Eratosthenes</a></p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>這一題沒有出得很好，後來想到可以作弊打表，目前仍沒有同學挑戰成功，略感傷心。</p>
+<h3 id="線性篩法"><a href="#線性篩法" class="headerlink" title="線性篩法"></a>線性篩法</h3><ul>
+<li>線性篩法 Accepted (1724 ms, 2816 KB)</li>
+</ul>
+<p>由於只要統計 $2^{31}$ 以內的質數個數，只需要把 50000 以內的所有質數找到，利用這不到 5000 的質數進行區塊篩法即可。</p>
+<p>由於 $[1, 2^{31}]$ 也是非常龐大的區間，可以利用 bitmask 的技術，將記憶體壓縮 32 倍，但這樣子平行度還是不高，因此若詢問區間 $[l, r]$ 有多少個質數，將區間切割成數個足夠大的 chunk，這裡決定 chunk 大約在 100000 到 1000000 都有不錯的效果。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (50000&gt;&gt;5)+1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BLOCK (1&lt;&lt;17)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN (BLOCK&gt;&gt;5)+1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GET1(x) (mark1[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> SET1(x) (mark1[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GET2(x) (mark2[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> SET2(x) (mark2[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></span><br><span class="line"><span class="keyword">int</span> mark1[MAXL];</span><br><span class="line"><span class="keyword">int</span> P[<span class="number">5500</span>], Pt = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sieve</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> i, j, k;</span><br><span class="line">    <span class="built_in">SET1</span>(<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">int</span> n = <span class="number">50000</span>;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">2</span>; i &lt;= n; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">GET1</span>(i)) &#123;</span><br><span class="line">            <span class="keyword">for</span> (k = n/i, j = i*k; k &gt;= i; k--, j -= i)</span><br><span class="line">                <span class="built_in">SET1</span>(j);</span><br><span class="line">            P[Pt++] = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">local_sieve</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sqr = (<span class="keyword">int</span>) <span class="built_in">sqrt</span>(b), gap = b - a;</span><br><span class="line">    <span class="keyword">int</span> mark2[MAXN] = &#123;&#125;;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Pt &amp;&amp; P[i] &lt;= sqr; i++) &#123;</span><br><span class="line">        <span class="keyword">unsigned</span> p = P[i], base = a / p * p;</span><br><span class="line">        <span class="keyword">while</span> (base &lt; a)    base += p;</span><br><span class="line">        <span class="keyword">if</span> (base == p)    base += p;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">unsigned</span> j = base; j &lt;= b; j += p)</span><br><span class="line">            <span class="built_in">SET2</span>(j - a);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (a == <span class="number">1</span>)    <span class="built_in">SET2</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> ret = gap + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = gap&gt;&gt;<span class="number">5</span>; i &gt;= <span class="number">0</span>; i--)</span><br><span class="line">        ret -= __builtin_popcount(mark2[i]);</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">min</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x &lt; y ? x : y;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">sieve</span>();</span><br><span class="line">    <span class="keyword">int</span> l, r;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;l, &amp;r) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</span><br><span class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(dynamic) reduction(+: ret)</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> i = l; i &lt;= r; i += BLOCK)</span><br><span class="line">            ret += <span class="built_in">local_sieve</span>(i, <span class="built_in">min</span>(i+BLOCK<span class="number">-1</span>, r));</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="作弊打表"><a href="#作弊打表" class="headerlink" title="作弊打表"></a>作弊打表</h3><p>由於問題設計只針對個數，還可以偷偷本地建表完成每一個區間的值，針對非完全包含的區間單獨計算即可。打表部分可以藉由上述的程序做到。</p>
+<ul>
+<li>作弊打表 Accepted (622 ms, 384 KB)</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (50000&gt;&gt;5)+1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BLOCK (1&lt;&lt;20)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN (BLOCK&gt;&gt;5)+1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GET1(x) (mark1[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> SET1(x) (mark1[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GET2(x) (mark2[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> SET2(x) (mark2[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></span><br><span class="line"><span class="keyword">int</span> preprocess[] = &#123;<span class="number">82025</span>,<span class="number">73586</span>,<span class="number">70938</span>,<span class="number">69398</span>,<span class="number">68248</span>,<span class="number">67307</span>, &lt;...&gt;&#125;;</span><br><span class="line"><span class="keyword">int</span> mark1[MAXL];</span><br><span class="line"><span class="keyword">int</span> P[<span class="number">5500</span>], Pt = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sieve</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> i, j, k;</span><br><span class="line">    <span class="built_in">SET1</span>(<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">int</span> n = <span class="number">50000</span>;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">2</span>; i &lt;= n; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">GET1</span>(i)) &#123;</span><br><span class="line">            <span class="keyword">for</span> (k = n/i, j = i*k; k &gt;= i; k--, j -= i)</span><br><span class="line">                <span class="built_in">SET1</span>(j);</span><br><span class="line">            P[Pt++] = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">local_sieve</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sqr = (<span class="keyword">int</span>) <span class="built_in">sqrt</span>(b), gap = b - a;</span><br><span class="line">    <span class="keyword">int</span> mark2[MAXN] = &#123;&#125;;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; Pt &amp;&amp; P[i] &lt;= sqr; i++) &#123;</span><br><span class="line">        <span class="keyword">unsigned</span> p = P[i], base = a / p * p;</span><br><span class="line">        <span class="keyword">while</span> (base &lt; a)    base += p;</span><br><span class="line">        <span class="keyword">if</span> (base == p)    base += p;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">unsigned</span> j = base; j &lt;= b; j += p)</span><br><span class="line">            <span class="built_in">SET2</span>(j - a);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (a == <span class="number">1</span>)    <span class="built_in">SET2</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> ret = gap + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = gap&gt;&gt;<span class="number">5</span>; i &gt;= <span class="number">0</span>; i--)</span><br><span class="line">        ret -= __builtin_popcount(mark2[i]);</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">min</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x &lt; y ? x : y;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">max</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x &gt; y ? x : y;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">sieve</span>();</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">int</span> prepro_n = <span class="built_in"><span class="keyword">sizeof</span></span>(preprocess) / <span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">int</span>);</span><br><span class="line">    <span class="keyword">int</span> l, r;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;l, &amp;r) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>; </span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; prepro_n; i++) &#123;</span><br><span class="line">            <span class="keyword">long</span> <span class="keyword">long</span> tl = (<span class="keyword">long</span> <span class="keyword">long</span>) i * BLOCK + <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">long</span> <span class="keyword">long</span> tr = (<span class="keyword">long</span> <span class="keyword">long</span>) (i+<span class="number">1</span>) * BLOCK;</span><br><span class="line">            <span class="keyword">if</span> (l &lt;= tl &amp;&amp; tr &lt;= r) &#123;</span><br><span class="line">                ret += preprocess[i];</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (tl &lt;= l &amp;&amp; l &lt;= tr) &#123;</span><br><span class="line">                    ret += <span class="built_in">local_sieve</span>(l, <span class="built_in">min</span>(r, tr));</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (tl &lt;= r &amp;&amp; r &lt;= tr) &#123;</span><br><span class="line">                    ret += <span class="built_in">local_sieve</span>(<span class="built_in">max</span>(tl, l), r);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/30/uva-801/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          UVa 801 - Flight Planning
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/30/jg-10081/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10081. Fast Game of Life</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10082/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

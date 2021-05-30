@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>自然語言處理 論文研讀 1 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Introduction語意分析涉及正反意見在文字語句中判定，因此必須使用多方視角看待問題與答案，這一點在之前，有人做過意見導向的資訊萃取、資訊摘要 (於文件、語句、片語)。語意分析通常分為三個階段，** 校準 **、 ** 辨識 **、 ** 分類 ** 所有已經讀取的文句。這篇論文探討文件分級 (document-level) 的分析，將會著重分析 ** 特定類型的評論文件 **。 第一個問題">
+<meta name="keywords" content="自然語言">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自然語言處理 論文研讀 1">
+<meta property="og:url" content="http://morris821028.github.io/2014/11/22/lesson/NLP-paper1/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="Introduction語意分析涉及正反意見在文字語句中判定，因此必須使用多方視角看待問題與答案，這一點在之前，有人做過意見導向的資訊萃取、資訊摘要 (於文件、語句、片語)。語意分析通常分為三個階段，** 校準 **、 ** 辨識 **、 ** 分類 ** 所有已經讀取的文句。這篇論文探討文件分級 (document-level) 的分析，將會著重分析 ** 特定類型的評論文件 **。 第一個問題">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-20T11:50:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自然語言處理 論文研讀 1">
+<meta name="twitter:description" content="Introduction語意分析涉及正反意見在文字語句中判定，因此必須使用多方視角看待問題與答案，這一點在之前，有人做過意見導向的資訊萃取、資訊摘要 (於文件、語句、片語)。語意分析通常分為三個階段，** 校準 **、 ** 辨識 **、 ** 分類 ** 所有已經讀取的文句。這篇論文探討文件分級 (document-level) 的分析，將會著重分析 ** 特定類型的評論文件 **。 第一個問題">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-lesson/NLP-paper1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/11/22/lesson/NLP-paper1/" class="article-date">
+  <time datetime="2014-11-22T03:18:19.000Z" itemprop="datePublished">2014-11-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/自然語言/">自然語言</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      自然語言處理 論文研讀 1
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/11/22/lesson/NLP-paper1/" data-id="ckpaivcad00c3n8vn439mc37k" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/11/22/lesson/NLP-paper1/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/自然語言/">自然語言</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction"><span class="toc-number">1.</span> <span class="toc-text">Introduction</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>語意分析涉及正反意見在文字語句中判定，因此必須使用多方視角看待問題與答案，這一點在之前，有人做過意見導向的資訊萃取、資訊摘要 (於文件、語句、片語)。語意分析通常分為三個階段，** 校準 **、 ** 辨識 **、 ** 分類 ** 所有已經讀取的文句。這篇論文探討文件分級 (document-level) 的分析，將會著重分析 ** 特定類型的評論文件 **。</p>
+<p>第一個問題－極性分類 (polarity classification)，對於目標決策正極性 (贊同) 或者是 負極性 (反對)，最近也在擴大到中性文件的分類上，雖然研究成果相當多且廣，極性分類仍然是自然語言處理系統中重大的挑戰。</p>
+<p>接著將會著重於語言學上的極性分類。在語言學中，建立一個高校的極性分類透過：</p>
+<ul>
+<li>high order n-grams</li>
+<li>複合形容詞，例如 happy 被視為正，而 terrible 視為負面。</li>
+<li>詞彙的相依關係</li>
+<li>來自於中立文件中所描述的詞組</li>
+</ul>
+<p>… 本文略</p>
+<p>主要是極性分類，反映正反兩方兩種評論，為了增加精準度，其一種方法把單純闡述事實的評論去除、以及在中性評論用的用詞特別處理，接著對於形容詞與關聯名詞做統計，確保面向的評論對象是所需。</p>
+<p>至於 n-gram 部分，有說明到 n 越大，將會造成模糊範圍增加，這樣一來其極性價值就會被削減，對於精準度是會掉的，只用 n = 2 好不好？他說他複合使用 n = 2 和 n = 3 將精準度提升，看到所謂顯著 2% 上升，似乎跟誤差無仿。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/11/24/blog-update/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          部落格架構更新與狀態
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/11/22/uva-10907/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">UVa 10907 - Art Gallery</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2014/11/22/lesson/NLP-paper1/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</body>
+</html>

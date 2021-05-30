@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>pbrt-v2 加速結構 Height Field 改寫 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="前情提要 pbrt一套數位影像生成軟體，盡可能以物理性質為基底打造的，目前已經到了 pbrt-v3。pbrt 主要的工作在於 modeling 後，可以在場景內放置以幾何描述的物體、光源、拍攝曝光 … 等設定，藉由模擬光線走訪得到呈現在螢幕上每一個 pixel 的顏色。 目標工作Height Field 是一個高度場，測資中以山脈構造為主，等間隔取樣每一平面上的每一點高度的場景，當間隔越小越接近真">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pbrt-v2 加速結構 Height Field 改寫">
+<meta property="og:url" content="http://morris821028.github.io/2016/01/21/rendering-height-field/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="前情提要 pbrt一套數位影像生成軟體，盡可能以物理性質為基底打造的，目前已經到了 pbrt-v3。pbrt 主要的工作在於 modeling 後，可以在場景內放置以幾何描述的物體、光源、拍攝曝光 … 等設定，藉由模擬光線走訪得到呈現在螢幕上每一個 pixel 的顏色。 目標工作Height Field 是一個高度場，測資中以山脈構造為主，等間隔取樣每一平面上的每一點高度的場景，當間隔越小越接近真">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_1.png">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_2.png">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_1.png">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_2.png">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/hftest_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-0_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-1_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-2_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/texture_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-big_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/hftest_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-0_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-1_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-2_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/texture_2.jpg">
+<meta property="og:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-big_2.jpg">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.540Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="pbrt-v2 加速結構 Height Field 改寫">
+<meta name="twitter:description" content="前情提要 pbrt一套數位影像生成軟體，盡可能以物理性質為基底打造的，目前已經到了 pbrt-v3。pbrt 主要的工作在於 modeling 後，可以在場景內放置以幾何描述的物體、光源、拍攝曝光 … 等設定，藉由模擬光線走訪得到呈現在螢幕上每一個 pixel 的顏色。 目標工作Height Field 是一個高度場，測資中以山脈構造為主，等間隔取樣每一平面上的每一點高度的場景，當間隔越小越接近真">
+<meta name="twitter:image" content="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_1.png">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-rendering-height-field" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/21/rendering-height-field/" class="article-date">
+  <time datetime="2016-01-21T07:57:57.000Z" itemprop="datePublished">2016-01-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      pbrt-v2 加速結構 Height Field 改寫
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckpaivc850047n8vngy8od0ql" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#前情提要-pbrt"><span class="toc-number">1.</span> <span class="toc-text">前情提要 pbrt</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#目標工作"><span class="toc-number">2.</span> <span class="toc-text">目標工作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#實作與測試細節"><span class="toc-number">2.1.</span> <span class="toc-text">實作與測試細節</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#測試環境"><span class="toc-number">2.2.</span> <span class="toc-text">測試環境</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#紋理模糊"><span class="toc-number">2.3.</span> <span class="toc-text">紋理模糊</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Phong-圓滑化"><span class="toc-number">2.4.</span> <span class="toc-text">Phong 圓滑化</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Case-1-邊緣"><span class="toc-number">2.4.1.</span> <span class="toc-text">Case 1 邊緣</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Case-2-非邊緣"><span class="toc-number">2.4.2.</span> <span class="toc-text">Case 2 非邊緣</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#undefined"><span class="toc-number">3.</span> <span class="toc-text">Final Images Rendered with my implementation of heightfield.cpp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#undefined"><span class="toc-number">4.</span> <span class="toc-text">Final Images Rendered with my implementation of heightfield.cpp</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h3 id="前情提要-pbrt"><a href="#前情提要-pbrt" class="headerlink" title="前情提要 pbrt"></a>前情提要 pbrt</h3><p>一套數位影像生成軟體，盡可能以物理性質為基底打造的，目前已經到了 pbrt-v3。pbrt 主要的工作在於 modeling 後，可以在場景內放置以幾何描述的物體、光源、拍攝曝光 … 等設定，藉由模擬光線走訪得到呈現在螢幕上每一個 pixel 的顏色。</p>
+<h3 id="目標工作"><a href="#目標工作" class="headerlink" title="目標工作"></a>目標工作</h3><p>Height Field 是一個高度場，測資中以山脈構造為主，等間隔取樣每一平面上的每一點高度的場景，當間隔越小越接近真實場景。原生寫法是將點放置在三維空間，轉換成一堆三角網格，將其丟入 KD-tree 或者是 BVH 等加速結構，加快光線模擬找交點 (三維空間中，一射線和一多面體的交點) 的效能。而現在挑戰用 3D-DDA 的方式進行交點查找。</p>
+<p>實作採用 3D-DDA 算法降至 2D Grid 上進行交點測試。Uniform Grid 將會切割成 <span>$N \times M$</span><!-- Has MathJax --> 的格子，在 2D 平面上，先找到 ray 進入的格子點，接著使用增量算法找到下一個格子，算法只測試投影到 x-y 平面上時，在 ray 鄰近的格子點做交點測試，時間複雜度 <span>$O(\sqrt{N \times M})$</span><!-- Has MathJax -->，與預設的其他算法所需要的 traversal 複雜度差不多。</p>
+<p>原本預設的 Height Field 拆成好幾個 Triangle，做法類似 Triangle Mesh，接著將這幾個 Triangle 利用 BVH 或者是 KD-tree 的架構進行，原本的做法會考慮三個維度，使用投影的方式只考慮兩個維度下的情況，接著再針對有相交的格子測試，最後才進行 3D Triangle 是否與 ray 相交。</p>
+<p>實作 Height Field 時，考慮快取和再計算之間的好壞，則有兩種方法</p>
+<ol>
+<li>預先將預處理每個 3D Triangle 座標 (消耗空間)</li>
+<li>需要時，再創建 Triangle 出來測試 (消耗時間)</li>
+</ol>
+<p>由於要找 ray 碰度到 uniform grid 的第一個格子，需要預處理 Height Field Bound Box，計算 Bound Box 需要 <span>$O(N \times M)$</span><!-- Has MathJax -->，若不預處理會造成 3D-DDA 與暴力法 <span>$O(N \times M)$</span><!-- Has MathJax --> 無異。</p>
+<p>若對 Height Field 進行 2D-DDA 好處在於一定是數個三角形構成，因此不用等到 <code>ray.maxT</code> 小於下一格交點的 <code>NextCrossingT[stepAxis]</code> 才能結束，一與三角形有交點就可以離開，因為每一格之間都有獨立性。</p>
+<h4 id="實作與測試細節"><a href="#實作與測試細節" class="headerlink" title="實作與測試細節"></a>實作與測試細節</h4><h4 id="測試環境"><a href="#測試環境" class="headerlink" title="測試環境"></a>測試環境</h4><p>一開始為了熟悉 pbrt 架構環境只實作求出交點的函數，</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Heightfield2::Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;r, <span class="keyword">float</span> *tHit, <span class="keyword">float</span> *rayEpsilon,</span></span></span><br><span class="line"><span class="params"><span class="function">        DifferentialGeometry *dg)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 3D DDA</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而直接忽略單純詢問交點是否存在，這會導致畫面一片黑，因為每打到一個交點會嘗試從物體表面的交點連到點光源。若下述函數恆真，則不存在光源到交點的路徑，因此產出來的圖片是一片黑。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Heightfield2::IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;r)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="紋理模糊"><a href="#紋理模糊" class="headerlink" title="紋理模糊"></a>紋理模糊</h4><p>找出紋理的兩個參數 <span>$(u, v)$</span><!-- Has MathJax --> 時，從 <code>trianglemesh.cpp</code> 複製過來的 <code>class Triangle</code> 其 <code>bool Triangle::Intersect()</code> 函數得到的 <span>$u, v$</span><!-- Has MathJax --> 都是相對於三角形的 <span>$0 \le u, v \le 1$</span><!-- Has MathJax --> (直接 rendering 會看起來很多小格子點)，因此得到相對的 <span>$u, v$</span><!-- Has MathJax --> 和交點 <span>$p_{hit}$</span><!-- Has MathJax --> (Object coordinate)，則把 <span>$p_{hit}$</span><!-- Has MathJax --> 再次投影到 x-y 平面上，由於 height field 在 x-y 平面上長寬都是 1，投影到平面後得到 <span>$p_{projection}$</span><!-- Has MathJax -->，對於整個 height field <span>$u = p_{projection}.x, \; v = p_{projection}.y$</span><!-- Has MathJax -->。</p>
+<blockquote>
+<p>若測試 texture.pbrt 時，發生過模糊情況，其主要原因在於過多次座標轉換，如 <code>Object -&gt; World -&gt; Object -&gt; World</code>，求出來的 <span>$u, v$</span><!-- Has MathJax --> 誤差就會放大。</p>
+</blockquote>
+<p>將 height field 存成好幾個 triangle 可以像 <code>class TriangleMesh</code> 利用 <code>index</code> 標籤來壓縮記憶體，但實作為方便仍然每一個三角形都有實體的 <code>Point</code>，儲存三角形每一個點座標採用 object coordinate，先把 <span>$ray$</span><!-- Has MathJax --> 從 <code>WorldToObject</code> 得到 <span>$ray&apos;$</span><!-- Has MathJax -->，得到的交點 <span>$p_{hit}$</span><!-- Has MathJax --> 再進行 <code>ObjectToWorld</code>，如此一來模糊情況就會消失。</p>
+<h4 id="Phong-圓滑化"><a href="#Phong-圓滑化" class="headerlink" title="Phong 圓滑化"></a>Phong 圓滑化</h4><p>Phong interpolation 方法在三角形上面操作時，需要得知三個頂點的法向量，給予 height field 的資訊，並不曉得每一個頂點的法向量為何。得到每一個頂點的法向量，採用預先處理所有頂點的法向量並儲存起來，因為不斷地正規化是很耗時間的 (<code>float sqrt(float x)</code> 儘管採用 fast inverse square root 算法，也要極力避免多餘的運算)。</p>
+<p>再計算頂點法向量時，根據影像處理中常用的一次差分 (differentiation) 遮罩</p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_1.png"></p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_2.png"></p>
+<h5 id="Case-1-邊緣"><a href="#Case-1-邊緣" class="headerlink" title="Case 1 邊緣"></a>Case 1 邊緣</h5><span>$$N_x = \begin{bmatrix}
+0 &amp; 0 &amp; 0 \\
+-1 &amp; 1 &amp; 0 \\
+0 &amp; 0 &amp; 0 \\
+\end{bmatrix}, \;
+N_y = \begin{bmatrix}
+0 &amp; 0 &amp; 0 \\
+0 &amp; 1 &amp; 0 \\
+0 &amp; -1 &amp; 0 \\
+\end{bmatrix}$$</span><!-- Has MathJax -->
+
+<h5 id="Case-2-非邊緣"><a href="#Case-2-非邊緣" class="headerlink" title="Case 2 非邊緣"></a>Case 2 非邊緣</h5><span>$$N_x = \begin{bmatrix}
+0 &amp; 0 &amp; 0 \\
+-1 &amp; 0 &amp; 1 \\
+0 &amp; 0 &amp; 0 \\
+\end{bmatrix}, \;
+N_y = \begin{bmatrix}
+0 &amp; 1 &amp; 0 \\
+0 &amp; 0 &amp; 0 \\
+0 &amp; -1 &amp; 0 \\
+\end{bmatrix}$$</span><!-- Has MathJax -->
+
+<p>上圖矩陣的中心座標為 <span>$(x, y)$</span><!-- Has MathJax -->，將相鄰座標的高度值 <span>$z$</span><!-- Has MathJax --> 相減得到兩個方向的向量 <span>$N_x, \; N_y$</span><!-- Has MathJax -->，外積得到座標 <span>$(x, y)$</span><!-- Has MathJax --> 的法向量 <span>$N_{x, y} = \mathrm{Cross}(N_x, N_y)$</span><!-- Has MathJax -->。</p>
+<p>從另一個角度來看，將 height field 三角化後，每一個頂點原則上有 6 個鄰居，可以對每一個鄰居進行差分，接著順時針或者逆時針將兩兩相臨的向量外積，得到 6 個法向量平均後得到 <span>$N_{x, y}$</span><!-- Has MathJax -->，這做法看起來比上述的差分來得穩定，但初始化消耗的時間會比較長，且撰寫的外積順序不對容易造成零向量的正規化錯誤。</p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_1.png"></p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_2.png"></p>
+<h3>Final Images Rendered with my implementation of heightfield.cpp</h3>
+<p>&nbsp;
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/hftest_2.jpg" width="400" height="400">
+      <p><font><tt>hftest.pbrt </tt> (without Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 0.125 seconds</font></li>
+        <li><font>My implementation: 0.130 seconds (104% original)</font></li>
+      </ul>
+    </td>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-0_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-0.pbrt </tt> (without Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 0.815 seconds</font></li>
+        <li><font>My implementation: 1.050 seconds (128% original)</font></li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-1_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (without Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 0.850 seconds</font></li>
+        <li><font>My implementation: 1.020 seconds (120% original)</font></li>
+      </ul>
+    </td>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-2_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (without Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 0.780 seconds</font></li>
+        <li><font>My implementation: 0.870 seconds (115% original)</font></li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/texture_2.jpg" width="400" height="400">
+      <p><font><tt>texture.pbrt </tt> (without Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 0.450 seconds</font></li>
+        <li><font>My implementation: 0.520 seconds (120% original)</font></li>
+      </ul>
+    </td>
+    <td width="50%">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="100%" colspan="2">
+     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-big_2.jpg" width="600" height="600">
+      <p><font><tt>landsea-big.pbrt </tt> (without Phong
+            interpolation)</font></p>
+            <p><font>Timings:</font>
+      <ul>
+        <li><font>Original: 6.200 seconds</font></li>
+        <li><font>My implementation: 2.200 seconds (35% original)</font></li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h3>Final Images Rendered with my implementation of heightfield.cpp</h3>
+<p>&nbsp;
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/hftest_2.jpg" width="400" height="400">
+      <p><font><tt>hftest.pbrt </tt> (with Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>My implementation: 0.135 seconds</font></li>
+      </ul>
+    </td>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-0_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-0.pbrt </tt> (with Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>My implementation: 1.100 seconds</font></li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-1_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (with Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>My implementation: 1.050 seconds</font></li>
+      </ul>
+    </td>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-2_2.jpg" width="400" height="400">
+      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (with Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>My implementation: 0.900 seconds</font></li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/texture_2.jpg" width="400" height="400">
+      <p><font><tt>texture.pbrt </tt> (with Phong
+      interpolation)</font>
+      <p><font>Timings:</font>
+      <ul>
+        <li><font>My implementation: 0.530 seconds</font></li>
+      </ul>
+    </td>
+    <td width="50%">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"></td>
+    <td width="50%"></td>
+  </tr>
+  <tr>
+    <td width="100%" colspan="2">
+     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-big_2.jpg" width="600" height="600">
+    <p><font><tt>landsea-big.pbrt </tt> (with Phong interpolation)</font></p>
+          <p><font>Timings:</font>
+    <ul>
+      <li><font>My implementation: 2.300 seconds</font></li>
+    </ul>
+    </td>
+  </tr>
+</table>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/01/21/rendering-realistic-camera/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          pbrt-v2 加速結構 Realistic Camera 改寫
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/01/21/realtime-system-add-scheduler/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">即時系統 加入排程器</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/01/21/rendering-height-field/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

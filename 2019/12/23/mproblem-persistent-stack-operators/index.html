@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>可持久化堆疊 操作 Persistent Stack Operators | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="接續前一篇 《可持久化堆疊 Persistent Stack》，接下來要探討可持久化堆疊相互操作，如何照常在常數複雜度內完成。這一連貫的定義，將在後續的隊列、雙向隊列中使用。 串接 Append定義：串接堆疊 $A = \text{Append} \; (T, B)$ $$\begin{aligned} \left [ \; \right ]_{\textit{append}} &amp;amp;= \l">
+<meta name="keywords" content="可持久化,stack,堆">
+<meta property="og:type" content="article">
+<meta property="og:title" content="可持久化堆疊 操作 Persistent Stack Operators">
+<meta property="og:url" content="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="接續前一篇 《可持久化堆疊 Persistent Stack》，接下來要探討可持久化堆疊相互操作，如何照常在常數複雜度內完成。這一連貫的定義，將在後續的隊列、雙向隊列中使用。 串接 Append定義：串接堆疊 $A = \text{Append} \; (T, B)$ $$\begin{aligned} \left [ \; \right ]_{\textit{append}} &amp;amp;= \l">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.524Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="可持久化堆疊 操作 Persistent Stack Operators">
+<meta name="twitter:description" content="接續前一篇 《可持久化堆疊 Persistent Stack》，接下來要探討可持久化堆疊相互操作，如何照常在常數複雜度內完成。這一連貫的定義，將在後續的隊列、雙向隊列中使用。 串接 Append定義：串接堆疊 $A = \text{Append} \; (T, B)$ $$\begin{aligned} \left [ \; \right ]_{\textit{append}} &amp;amp;= \l">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-mproblem-persistent-stack-operators" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/12/23/mproblem-persistent-stack-operators/" class="article-date">
+  <time datetime="2019-12-23T13:21:21.000Z" itemprop="datePublished">2019-12-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/可持久化/">可持久化</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      可持久化堆疊 操作 Persistent Stack Operators
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckpaivc7z003kn8vnct6mfzd4" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/stack/">stack</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/可持久化/">可持久化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/堆/">堆</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#串接-Append"><span class="toc-number">1.</span> <span class="toc-text">串接 Append</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#提取-Take"><span class="toc-number">2.</span> <span class="toc-text">提取 Take</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#移除-Drop"><span class="toc-number">3.</span> <span class="toc-text">移除 Drop</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#反轉-Rev"><span class="toc-number">4.</span> <span class="toc-text">反轉 Rev</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#參考資料"><span class="toc-number">5.</span> <span class="toc-text">參考資料</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#來點題目-《記憶中的堆疊》"><span class="toc-number">6.</span> <span class="toc-text">來點題目 《記憶中的堆疊》</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#題目描述"><span class="toc-number">6.1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#範例輸入"><span class="toc-number">6.2.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#範例輸出"><span class="toc-number">6.3.</span> <span class="toc-text">範例輸出</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <p>接續前一篇 《可持久化堆疊 Persistent Stack》，接下來要探討可持久化堆疊相互操作，如何照常在常數複雜度內完成。這一連貫的定義，將在後續的隊列、雙向隊列中使用。</p>
+<h2 id="串接-Append"><a href="#串接-Append" class="headerlink" title="串接 Append"></a>串接 Append</h2><p>定義：串接堆疊 <span>$A = \text{Append} \; (T, B)$</span><!-- Has MathJax --></p>
+<span>$$\begin{aligned}
+\left [ \; \right ]_{\textit{append}} &amp;= \left \langle \left [ \; \right ], \left [ \; \right ] \right \rangle
+\\
+\\
+|\left \langle T, \; B \right \rangle | &amp;= |T| + |B|
+\\
+\\
+\textit{push} \; (\textit{e}, \left \langle T, \; B \right \rangle) &amp;= \left \langle e : T, \; B \right \rangle
+\\
+\\
+\textit{pop} \; (\left \langle T, \; B \right \rangle) &amp;= \left \langle \text{hd} \; T, \left \langle \text{tl} \; T, \; B \right \rangle \right \rangle &amp; \{ |T| &gt; 0 \} \\
+&amp;= \left \langle \text{hd} \; B, \text{tl} \; B \right \rangle &amp; \{ |T| = 0 \}
+\end{aligned}$$</span><!-- Has MathJax -->
+
+
+<p>串接兩個堆疊 <span>$T, \; B$</span><!-- Has MathJax -->，並且 <span>$T$</span><!-- Has MathJax --> 放置於頂首、<span>$B$</span><!-- Has MathJax --> 放置於末端，這時候串接也可以被視為一個堆疊結構。由於我們只在意堆疊的接口，完成這三項基礎操作並不是難事。皆可以在 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 內完成。</p>
+<p>對於大小這一個計算，要特別小心一個錯誤，如果直接以回傳值 <span>$|T| + |B|$</span><!-- Has MathJax --> 撰寫，將在遞迴使用時，其一方也為串接定義出的堆疊而退化成 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> 的計算。因此在宣告時，紀錄大小是很重要的。</p>
+<p>此外，我們也很容易遞迴定義出 Append，如果 <span>$T$</span><!-- Has MathJax --> 本身也是 Append 出來的結果，那麼 pop 時會付出遞迴深度的代價，按照使用的演算法，這種情況會使得時間複雜度為 <span>$\mathcal{O}(\log n)$</span><!-- Has MathJax -->。構造時，如果 <span>$T \in \text{Append}$</span><!-- Has MathJax -->，拆解成 <span>$\text{Append}(T.l, \; \text{Append}(T.r, \; B))$</span><!-- Has MathJax --> 可以避免。</p>
+<p>我們透過簡單的工廠模式 (Factory Design Pattern)，防止額外的空間宣告，當 <span>$T$</span><!-- Has MathJax --> 或者 <span>$B$</span><!-- Has MathJax --> 其一為空時，直接回傳其中一方。接著就能保證 <span>$|T| &gt; 0, \; |B| &gt; 0$</span><!-- Has MathJax -->，操作就能簡化許多。</p>
+<h2 id="提取-Take"><a href="#提取-Take" class="headerlink" title="提取 Take"></a>提取 Take</h2><p>定義：提取堆疊 <span>$A = \text{Take} \; (n, X)$</span><!-- Has MathJax --></p>
+<span>$$\begin{aligned}
+\left [ \; \right ]_{\textit{take}} &amp;= \left \langle 0, X \right \rangle
+\\
+\\
+|\left \langle n, X \right \rangle | &amp;= n
+\\
+\\
+\textit{push} \; (\textit{e}, \left \langle n, X \right \rangle) &amp;= \text{Append}(e,\; \left \langle n, X \right \rangle)
+\\
+\\
+\textit{pop} \; (\left \langle n, X \right \rangle) &amp;= \left [ \; \right ] &amp; \{ n = 1 \} \\
+&amp;= \left \langle \text{hd} \; X, \left \langle n-1, \text{tl} \; X \right \rangle \right \rangle &amp; \{ n &gt; 1 \}
+\end{aligned}$$</span><!-- Has MathJax -->
+
+<p>只提取堆頂的前 <span>$n$</span><!-- Has MathJax --> 個元素，剩餘的都不需要。無疑地，提取堆疊也是可持久化的，並且在 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 時間內完成所有堆疊操作。但是在 push 操作時，將使用串接操作。</p>
+<p>發生遞迴定義時，意即 <span>$X \in \text{Take}$</span><!-- Has MathJax -->，則必須提取成 <span>$A = \text{Take}(n, \; X.x)$</span><!-- Has MathJax --> 防止退化成 <span>$\mathcal{O}(\log n)$</span><!-- Has MathJax --></p>
+<h2 id="移除-Drop"><a href="#移除-Drop" class="headerlink" title="移除 Drop"></a>移除 Drop</h2><p>定義：移除堆疊 <span>$A = \text{Drop} \; (n, X)$</span><!-- Has MathJax --></p>
+<span>$$\begin{aligned}
+\text{Drop} \; (n, X) &amp;= X &amp; \{ n = 0 \} \\
+                      &amp;= \text{Drop} \; (n-1, X) &amp; \{ n &gt; 1\}
+\end{aligned}$$</span><!-- Has MathJax -->
+
+<p>相反於提取，忽略堆頂的前 <span>$n$</span><!-- Has MathJax --> 個元素，從 <span>$n+1$</span><!-- Has MathJax --> 個開始算。</p>
+<p>這裡僅提供遞迴定義，由於移除操作並非完全的常數操作，一旦需要拿到堆頂的第一個元素時，勢必要運行 <span>$n$</span><!-- Has MathJax --> 次。唯有在運行操作中，若 <span>$n \le c$</span><!-- Has MathJax --> 小於某個常數定值時，這時候才能把移除操作視為常數且可持久化的堆疊，否則將視為一般的攤平操作。</p>
+<p>爾後，我們將提及一些算法的定義 <span>$c = 3$</span><!-- Has MathJax -->，使用這一個 Drop 操作。實作時要特別小心，同時 X 也是一個移除堆疊，那麼在建構前，必然要將 X 攤平，意即把 n 弄成 0 的表示法。防止 pop 操作時，意外地發生 stack overflow 的慘劇。</p>
+<p>或許有人會問為什麼不一開始就攤平，早就是常數操作？其實，這就要看理論目標的最壞情況最小化，常數要怎麼分配到不同操作中。在可持久化的領域中，每一個常數操作的大小是每個操作的最大值，而非加總起來，<strong>完全不同於一般算法設計攤銷分析</strong>，因此優化的思維要有所轉變。</p>
+<h2 id="反轉-Rev"><a href="#反轉-Rev" class="headerlink" title="反轉 Rev"></a>反轉 Rev</h2><p>定義：反轉堆疊 <span>$A = \text{Rev} \; (X)$</span><!-- Has MathJax --></p>
+<span>$$\begin{aligned}
+\text{Rev} \; (X) &amp;= \text{Rev}&apos;(X, \left [ \; \right ]) &amp; \\
+\\
+\text{Rev}&apos;(X, A) &amp;= A &amp; \{ |X| = 0\} \\
+                  &amp;= \text{Rev}&apos; \; (\text{tl} \; X, \text{hd} \; X : A) &amp; \{ |X| &gt; 0\}
+\end{aligned}$$</span><!-- Has MathJax -->
+
+<p>將整個堆疊 <span>$X$</span><!-- Has MathJax --> 反轉後置放成一個堆疊 <span>$A$</span><!-- Has MathJax -->。</p>
+<p>同樣地，若沒有定義 <span>$|X| \le c$</span><!-- Has MathJax -->，反轉操作也<strong>無法在常數時間內完成</strong>。網路上許多實作號稱常數、攤銷持久化，實際上若牽涉到回傳反轉的過程，即使做了快取答案，也可以輕易地將它效能擊破。只需要不斷地呼叫反轉那一瞬間的的操作，或者倒退版本再推進一個版本去觸發攤銷的反轉操作，複雜度就會落入  <span>$\mathcal{O}(n)$</span><!-- Has MathJax -->。</p>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><ul>
+<li>SIMPLE AND EFFICIENT PURELY FUNCTIONAL QUEUES AND DEQUES, Chris Okasaki, 1995</li>
+</ul>
+<h2 id="來點題目-《記憶中的堆疊》"><a href="#來點題目-《記憶中的堆疊》" class="headerlink" title="來點題目 《記憶中的堆疊》"></a>來點題目 《記憶中的堆疊》</h2><h3 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h3><p>不斷地進行「思想實驗」的妮可，終於讓大腦演進到平行思考。假想在腦海裡，我們把狀態以堆疊 (Stack) 的方式儲存，當走投無路的時候，就會退回到上一個狀態，再把新的分支因素堆疊上去。正在全力計算的妮可無法細說每一個思維狀態，而我們可以操作戳記，反推出當前狀態。</p>
+<p>操作有以下三種：</p>
+<ul>
+<li><code>0 v</code>: 退回版本 v</li>
+<li><code>1 x</code>: 在當前堆疊，push x 到堆頂</li>
+<li><code>2</code>: 印出當前堆疊狀態</li>
+</ul>
+<p>起始版本編號為 0，第 <span>$i$</span><!-- Has MathJax --> 次操作版本編號為 <span>$i$</span><!-- Has MathJax -->。</p>
+<h3 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1 1</span><br><span class="line">1 2</span><br><span class="line">2</span><br><span class="line">0 1</span><br><span class="line">2</span><br><span class="line">1 3</span><br><span class="line">2</span><br><span class="line">0 3</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+
+<h3 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2 1 ]</span><br><span class="line">1 ]</span><br><span class="line">3 1 ]</span><br><span class="line">2 1 ]</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/12/24/mproblem-persistent-queue/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          可持久化隊列 Persistent Queue 序
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/12/22/mproblem-persistent-stack/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">可持久化堆疊 Persistent Stack</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

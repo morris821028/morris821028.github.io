@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10110. Longest Common Subsequence (OpenMP) | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述給兩個字串 $X, ; Y$，在兩個字串中都有出現且最長的子序列 (subsequence)，就是最長共同子字串。 輸入格式有多組測資，每組測資有兩行字串 $X, ; Y$，$X, ; Y$ 只由 A T C G 四個字母構成。  $1 \le |X|, |Y| \le 60000$  輸出格式針對每一組測資，輸出一行 $X, ; Y$ 的最長共同子字串長度。 範例輸入1234TCAGTA">
+<meta name="keywords" content="OpenMP,批改娘,LCS,DP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10110. Longest Common Subsequence (OpenMP)">
+<meta property="og:url" content="http://morris821028.github.io/2016/06/28/jg-10110/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述給兩個字串 $X, ; Y$，在兩個字串中都有出現且最長的子序列 (subsequence)，就是最長共同子字串。 輸入格式有多組測資，每組測資有兩行字串 $X, ; Y$，$X, ; Y$ 只由 A T C G 四個字母構成。  $1 \le |X|, |Y| \le 60000$  輸出格式針對每一組測資，輸出一行 $X, ; Y$ 的最長共同子字串長度。 範例輸入1234TCAGTA">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.502Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10110. Longest Common Subsequence (OpenMP)">
+<meta name="twitter:description" content="題目描述給兩個字串 $X, ; Y$，在兩個字串中都有出現且最長的子序列 (subsequence)，就是最長共同子字串。 輸入格式有多組測資，每組測資有兩行字串 $X, ; Y$，$X, ; Y$ 只由 A T C G 四個字母構成。  $1 \le |X|, |Y| \le 60000$  輸出格式針對每一組測資，輸出一行 $X, ; Y$ 的最長共同子字串長度。 範例輸入1234TCAGTA">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10110" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/06/28/jg-10110/" class="article-date">
+  <time datetime="2016-06-28T03:27:25.000Z" itemprop="datePublished">2016-06-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10110. Longest Common Subsequence (OpenMP)
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10110/" data-id="ckpaivc7q002pn8vnd4r7g5tv" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/06/28/jg-10110/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DP/">DP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/LCS/">LCS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入"><span class="toc-number">4.</span> <span class="toc-text">範例輸入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出"><span class="toc-number">5.</span> <span class="toc-text">範例輸出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">6.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一般平行化"><span class="toc-number">6.1.</span> <span class="toc-text">一般平行化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#高速平行化"><span class="toc-number">6.2.</span> <span class="toc-text">高速平行化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#最終優化"><span class="toc-number">6.2.1.</span> <span class="toc-text">最終優化</span></a></li></ol></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>給兩個字串 $X, ; Y$，在兩個字串中都有出現且最長的子序列 (subsequence)，就是最長共同子字串<br>。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>有多組測資，每組測資有兩行字串 $X, ; Y$，$X, ; Y$ 只由 <code>A</code> <code>T</code> <code>C</code> <code>G</code> 四個字母構成。</p>
+<ul>
+<li>$1 \le |X|, |Y| \le 60000$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>針對每一組測資，輸出一行 $X, ; Y$ 的最長共同子字串長度。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">TCA</span><br><span class="line">GTA</span><br><span class="line">TGGAC</span><br><span class="line">TATCT</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2</span><br><span class="line">3</span><br></pre></td></tr></table></figure>
+
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>由於同學在課堂中提及這個應用，然後實作的效能稍微感到懷疑，再加上這一題的難度跟演算法上相當簡單，難的地方在於如何解決 DP 平行。</p>
+<h3 id="一般平行化"><a href="#一般平行化" class="headerlink" title="一般平行化"></a>一般平行化</h3><p>從遞迴公式來看，</p>
+<span>$$\begin{align*}
+dp[x][y] = \left\{\begin{matrix}
+&Tab;dp[x-1][y-1] + 1 &amp; \text{if } A_x = B_x \\
+&Tab;\max(dp[x-1][y],dp[x][y-1]) &amp; \text{otherwise}\\
+\end{matrix}\right.
+\end{align*}$$</span><!-- Has MathJax -->
+
+<p>唯一的解決方案就是把紀錄矩陣旋轉 45 度，並且搭配滾動數組，需要保留三排進行完成遞迴轉移。</p>
+<p>然而，在旋轉 45 度後，平行度在每一列是呈現波形，逐漸變大後又逐漸變小，這導致快取效果不是很好，當分配在不同的 CPU 上時，他們之間先前代入的資料可能不是這次所需，因為變大變小的原因，分配的區段不與之前重疊，傳到另一個 CPU 上平行的效率非常低落，若是在數個 core 在同一個 CPU 上，就能不掉出 L3 cache，但平行度也因此受到限制。</p>
+<p>在我們實驗主機上，一個 CPU 總共有 6 個 core，加速最多 6 倍。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">65536</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">char</span> A[MAXN], B[MAXN];</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DP_TYPE unsigned short</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lcs_len</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *A, <span class="keyword">int</span> na, <span class="keyword">const</span> <span class="keyword">char</span> *B, <span class="keyword">int</span> nb, <span class="keyword">int</span> dpf[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (na &gt; nb)</span><br><span class="line">        <span class="built_in">swap</span>(A, B), <span class="built_in">swap</span>(na, nb);</span><br><span class="line">    <span class="keyword">static</span> DP_TYPE dp[<span class="number">3</span>][MAXN&lt;&lt;<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++)</span><br><span class="line">        <span class="built_in">memset</span>(dp[i], <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(DP_TYPE)*(nb+na+<span class="number">2</span>));</span><br><span class="line">    <span class="built_in">memset</span>(dpf, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(DP_TYPE)*(nb+<span class="number">1</span>));</span><br><span class="line">    <span class="built_in">omp_set_num_threads</span>(<span class="number">4</span>);</span><br><span class="line">    <span class="keyword">int</span> last_l = <span class="number">0</span>, last_r = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; na+nb<span class="number">-1</span>; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> l = <span class="built_in">max</span>(<span class="number">0</span>, i-na+<span class="number">1</span>), r = <span class="built_in">min</span>(i, nb<span class="number">-1</span>);</span><br><span class="line">        <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(static) firstprivate(na, A, B)</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = l; j &lt;= r; j++) &#123;</span><br><span class="line">            <span class="keyword">int</span> x = i-j, y = j;</span><br><span class="line">            <span class="keyword">if</span> (A[x] == B[y])</span><br><span class="line">                dp[<span class="number">2</span>][j+<span class="number">1</span>] = dp[<span class="number">0</span>][j]+<span class="number">1</span>;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                dp[<span class="number">2</span>][j+<span class="number">1</span>] = dp[<span class="number">1</span>][j] &gt; dp[<span class="number">1</span>][j+<span class="number">1</span>] ? dp[<span class="number">1</span>][j] : dp[<span class="number">1</span>][j+<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (i-l == na<span class="number">-1</span>)</span><br><span class="line">            dpf[l+<span class="number">1</span>] = dp[<span class="number">2</span>][l+<span class="number">1</span>];</span><br><span class="line">        <span class="built_in">memcpy</span>(dp[<span class="number">0</span>]+last_l+<span class="number">1</span>, dp[<span class="number">1</span>]+last_l+<span class="number">1</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(DP_TYPE)*(last_r-last_l+<span class="number">1</span>));</span><br><span class="line">        <span class="built_in">memcpy</span>(dp[<span class="number">1</span>]+l+<span class="number">1</span>, dp[<span class="number">2</span>]+l+<span class="number">1</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(DP_TYPE)*(r-l+<span class="number">1</span>));</span><br><span class="line">        last_l = l, last_r = r;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dpf[nb];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> dp[MAXN];</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%s %s&quot;</span>, A, B) == <span class="number">2</span>) &#123;</span><br><span class="line">        string a = A, b = B;</span><br><span class="line">        <span class="keyword">int</span> len = <span class="built_in">lcs_len</span>(a.<span class="built_in">c_str</span>(), <span class="built_in">strlen</span>(A), b.<span class="built_in">c_str</span>(), <span class="built_in">strlen</span>(B), dp);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="高速平行化"><a href="#高速平行化" class="headerlink" title="高速平行化"></a>高速平行化</h3><ul>
+<li>參考論文 An Efficient Parallel Algorithm for Longest Common Subsequence Problem on GPUs</li>
+</ul>
+<p>感謝 R04922075 古耕竹同學提供相關資訊，將這一題越推越快。</p>
+<p>在論文中，他將原先的 LCS 的遞迴公式改變，多一個額外的輔助數組，其輔助數組的空間大小為 <span>$O(|\alpha|\cdot N)$</span><!-- Has MathJax -->。仍然 <span>$dp[i][j]$</span><!-- Has MathJax --> 為字串 $A$ 前 $i$ 個字元與字串 $B$ 前 $j$ 個字元的最常共同子字串長度。藉由輔助數組 $P[c][j]$ 為上一個字串 $c$ 出現在位置 $j$ 之前的位置在哪。  </p>
+<p>遞迴公式改為 (這裡我們先忽略邊界條件)：</p>
+<span>$$dp[x][y] = 
+&Tab;\max(dp[x-1][y],dp[x-1][P[A[x]][y]-1]+1)$$</span><!-- Has MathJax -->
+
+<p>從最優子結構分析，分成最後 $A[x]$ 是否與 $B[y]$ 匹配，在不匹配的情況下選擇 $dp[x-1][y]$，匹配的情況下選擇 $dp[x-1][P[A[x]][y]-1]+1$。</p>
+<blockquote>
+<p>下述提及的特殊陣列宣告方式，採用 linux 常用的 -std=c99 標準贊助</p>
+</blockquote>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 60005</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CHARSET 4</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">short</span> uint16;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">char</span> A[MAXN], B[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lcs_len</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *A, <span class="keyword">int</span> na, <span class="keyword">const</span> <span class="keyword">char</span> *B, <span class="keyword">int</span> nb, <span class="keyword">int</span> dpf[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> c2i[<span class="number">128</span>] = &#123;[<span class="string">&#x27;A&#x27;</span>] = <span class="number">0</span>, [<span class="string">&#x27;C&#x27;</span>] = <span class="number">1</span>, [<span class="string">&#x27;G&#x27;</span>] = <span class="number">2</span>, [<span class="string">&#x27;T&#x27;</span>] = <span class="number">3</span>&#125;;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">char</span> i2c[CHARSET] = &#123;<span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;C&#x27;</span>, <span class="string">&#x27;G&#x27;</span>, <span class="string">&#x27;T&#x27;</span>&#125;;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> P[CHARSET][MAXN] = &#123;&#125;;</span><br><span class="line">    <span class="keyword">static</span> uint16 dp[<span class="number">2</span>][MAXN];</span><br><span class="line">    A--, B--;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; CHARSET; i++) &#123;</span><br><span class="line">    	<span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= nb; j++)</span><br><span class="line">    		P[i][j] = (B[j] == i2c[i])? j : P[i][j<span class="number">-1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">2</span>; i++)</span><br><span class="line">        <span class="built_in">memset</span>(dp[i], <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(uint16)*(nb+<span class="number">1</span>));</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel </span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= na; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> *Pv = P[c2i[A[i]]];</span><br><span class="line">        uint16 *dpIn = dp[i&amp;<span class="number">1</span>^<span class="number">1</span>];</span><br><span class="line">        uint16 *dpOut = dp[i&amp;<span class="number">1</span>];</span><br><span class="line">    	<span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= nb; j++) &#123;</span><br><span class="line">            <span class="keyword">int</span> last_match = Pv[j];</span><br><span class="line">            uint16 t1 = last_match ? dpIn[last_match<span class="number">-1</span>]+<span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">            uint16 t2 = dpIn[j];</span><br><span class="line">            dpOut[j] = t1 &gt; t2 ? t1 : t2;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= nb; i++) </span><br><span class="line">        dpf[i] = dp[na&amp;<span class="number">1</span>][i];</span><br><span class="line">    <span class="keyword">return</span> dpf[nb];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> dp[MAXN];</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%s %s&quot;</span>, A, B) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> len = <span class="built_in">lcs_len</span>(A, <span class="built_in">strlen</span>(A), B, <span class="built_in">strlen</span>(B), dp);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="最終優化"><a href="#最終優化" class="headerlink" title="最終優化"></a>最終優化</h4><blockquote>
+<p>這部分由高等編譯器課程獨家贊助 Advanced Compiler Support</p>
+</blockquote>
+<p>由於 OpenMP 有很多 shared memory 存取，導致在平行區塊儘管開了 <code>-O2</code> 優化，很多表達式都要重複計算，沒辦法像一般序列化程式，可以讓編譯器理解到要做 Strength reduction 或者是 Common subexpression elimination，因此由程序員自己將 C 寫得接近組合語言，這樣效能才會達到最好。</p>
+<p>因此在遞迴公式中，經常存取二維陣列，假設不會重疊或相同的情況，直接用兩個指針維護，意即在 inner loop 常常呼叫 <code>... += dp[i][j] ...</code> 的話，改成 <code>... += dpI[j] ...</code>，就可以減少 <code>i * SIZE2D</code> 的 offset 計算。同理找到一些 loop invariant，如 <code>A[x]</code>，將變數往前提，就能減少 share memory 存取次數。</p>
+<p>那為了處理邊界條件，可能會需要一些 branch 完成，這裡採用前處理和失敗指針的方式避開 branch 發生，這樣效能又有小幅度地上升。若在 intel CPU 上，可以透過 intel Parallel Studio XE 2016 下的 Analyzers 中其中一個 VTune Amplifier 調校看出。</p>
+<p>這樣還不是極限，甚至可以加入 <code>static __thread</code> 或者利用 <code>#pragma omp threadprivate(var)</code> 進行 copy optimization 來提高資料局部性 (data local locality)，但這會牽涉到 cache size，屬於 machine dependency 的相關優化，加或不加要看機器硬體情況。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 60005</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CHARSET 4</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">short</span> uint16;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">char</span> A[MAXN], B[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lcs_len</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *A, <span class="keyword">int</span> na, <span class="keyword">const</span> <span class="keyword">char</span> *B, <span class="keyword">int</span> nb, <span class="keyword">int</span> dpf[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> c2i[<span class="number">128</span>] = &#123;[<span class="string">&#x27;A&#x27;</span>] = <span class="number">0</span>, [<span class="string">&#x27;C&#x27;</span>] = <span class="number">1</span>, [<span class="string">&#x27;G&#x27;</span>] = <span class="number">2</span>, [<span class="string">&#x27;T&#x27;</span>] = <span class="number">3</span>&#125;;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">char</span> i2c[CHARSET] = &#123;<span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;C&#x27;</span>, <span class="string">&#x27;G&#x27;</span>, <span class="string">&#x27;T&#x27;</span>&#125;;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> P[CHARSET][MAXN] = &#123;&#125;;</span><br><span class="line">    <span class="keyword">static</span> uint16 dp[<span class="number">2</span>][MAXN];</span><br><span class="line">    A--, B--;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; CHARSET; i++) &#123;</span><br><span class="line">        P[i][<span class="number">0</span>] = nb+<span class="number">1</span>;</span><br><span class="line">    	<span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= nb; j++)</span><br><span class="line">    		P[i][j] = (B[j] == i2c[i]) ? j<span class="number">-1</span> : P[i][j<span class="number">-1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">2</span>; i++) &#123;</span><br><span class="line">        <span class="built_in">memset</span>(dp[i], <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(uint16)*(nb+<span class="number">1</span>));</span><br><span class="line">        dp[i][nb+<span class="number">1</span>] = <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel </span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= na; i++) &#123;</span><br><span class="line">        <span class="keyword">int</span> *Pv = P[c2i[A[i]]];</span><br><span class="line">        uint16 *dpIn = dp[i&amp;<span class="number">1</span>^<span class="number">1</span>];</span><br><span class="line">        uint16 *dpOut = dp[i&amp;<span class="number">1</span>];</span><br><span class="line">    	<span class="meta">#<span class="meta-keyword">pragma</span> omp for</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= nb; j++) &#123;</span><br><span class="line">            uint16 t1 = dpIn[Pv[j]]+<span class="number">1</span>;</span><br><span class="line">            uint16 t2 = dpIn[j];</span><br><span class="line">            dpOut[j] = t1 &gt; t2 ? t1 : t2;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= nb; i++) </span><br><span class="line">        dpf[i] = dp[na&amp;<span class="number">1</span>][i];</span><br><span class="line">    <span class="keyword">return</span> dpf[nb];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> dp[MAXN];</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%s %s&quot;</span>, A, B) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> len = <span class="built_in">lcs_len</span>(A, <span class="built_in">strlen</span>(A), B, <span class="built_in">strlen</span>(B), dp);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/28/jg-10111/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10111. Longest Common Subsequence II (OpenMP)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/06/28/jg-10109/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10109. Sorting (CUDA)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/06/28/jg-10110/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

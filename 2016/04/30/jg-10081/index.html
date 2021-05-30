@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>批改娘 10081. Fast Game of Life | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<meta name="keywords" content="優化,OpenMP,批改娘,循環展開">
+<meta property="og:type" content="article">
+<meta property="og:title" content="批改娘 10081. Fast Game of Life">
+<meta property="og:url" content="http://morris821028.github.io/2016/04/30/jg-10081/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2016-04-30T03:07:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批改娘 10081. Fast Game of Life">
+<meta name="twitter:description" content="題目描述生命遊戲中，對於任意細胞，規則如下：每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。  當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。 當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。 當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。 當前細胞為死亡狀態時">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-jg-10081" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/30/jg-10081/" class="article-date">
+  <time datetime="2016-04-30T02:58:49.000Z" itemprop="datePublished">2016-04-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      批改娘 10081. Fast Game of Life
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/04/30/jg-10081/" data-id="ckpaivc7i001zn8vn1ry5040n" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/04/30/jg-10081/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/循環展開/">循環展開</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#題目描述"><span class="toc-number">1.</span> <span class="toc-text">題目描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸入格式"><span class="toc-number">2.</span> <span class="toc-text">輸入格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#輸出格式"><span class="toc-number">3.</span> <span class="toc-text">輸出格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入-1"><span class="toc-number">4.</span> <span class="toc-text">範例輸入 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出-1"><span class="toc-number">5.</span> <span class="toc-text">範例輸出 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸入-2"><span class="toc-number">6.</span> <span class="toc-text">範例輸入 2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#範例輸出-2"><span class="toc-number">7.</span> <span class="toc-text">範例輸出 2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-number">8.</span> <span class="toc-text">Solution</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#循環展開"><span class="toc-number">8.1.</span> <span class="toc-text">循環展開</span></a></li></ol></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>生命遊戲中，對於任意細胞，規則如下：<br>每個細胞有兩種狀態-存活或死亡，每個細胞與以自身為中心的周圍八格細胞產生互動。</p>
+<ul>
+<li>當前細胞為存活狀態時，當周圍低於 2 個 (不包含 2 個) 存活細胞時，該細胞變成死亡狀態。</li>
+<li>當前細胞為存活狀態時，當周圍有 2 個或 3 個存活細胞時， 該細胞保持原樣。</li>
+<li>當前細胞為存活狀態時，當周圍有 3 個以上的存活細胞時，該細胞變成死亡狀態。</li>
+<li>當前細胞為死亡狀態時，當周圍有 3 個存活細胞時，該細胞變成存活狀態。</li>
+</ul>
+<p>可以把最初的細胞結構定義為種子，當所有在種子中的細胞同時被以上規則處理後，可以得到第一代細胞圖。按規則繼續處理當前的細胞圖，可以得到下一代的細胞圖，周而復始。</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>輸入第一行有兩個整數 $N$, $M$，表示盤面大小為 $N \times N$，模擬週期次數 $M$。接下來會有 $N$ 行，每一行上會有 $N$ 個字符，以 <code>0</code> 表示 $(i, j)$ 格子上的細胞屬於死亡狀態，反之 <code>1</code> 為存活狀態。</p>
+<ul>
+<li>$1 \le N \le 2000$</li>
+<li>$0 \le M \le 1000$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每一組測資輸出 $N$ 行，每一行上有 $N$ 個字元表示模擬 $M$ 次的最終盤面結果。</p>
+<h2 id="範例輸入-1"><a href="#範例輸入-1" class="headerlink" title="範例輸入 1"></a>範例輸入 1</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">5 1</span><br><span class="line">10001</span><br><span class="line">00100</span><br><span class="line">01110</span><br><span class="line">00100</span><br><span class="line">01010</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出-1"><a href="#範例輸出-1" class="headerlink" title="範例輸出 1"></a>範例輸出 1</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">00000</span><br><span class="line">00100</span><br><span class="line">01010</span><br><span class="line">00000</span><br><span class="line">00100</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸入-2"><a href="#範例輸入-2" class="headerlink" title="範例輸入 2"></a>範例輸入 2</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">5 3</span><br><span class="line">10001</span><br><span class="line">00100</span><br><span class="line">01110</span><br><span class="line">00100</span><br><span class="line">01010</span><br></pre></td></tr></table></figure>
+
+<h2 id="範例輸出-2"><a href="#範例輸出-2" class="headerlink" title="範例輸出 2"></a>範例輸出 2</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">00000</span><br><span class="line">00000</span><br><span class="line">01110</span><br><span class="line">00000</span><br><span class="line">00000</span><br></pre></td></tr></table></figure>
+
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>在還沒有做任何平行前，生命遊戲的模擬非常簡單，只需要統計鄰近八格的狀態即可，然而由於是常數範圍，直接打八個加法比起迴圈去累計八格的結果快上非常多，別忽視 for loop 在做 branch 的 cycle 數量。</p>
+<ul>
+<li>樸素平行 Accepted (378 ms, 24 MB)</li>
+<li>循環展開 Accepted (289 ms, 39 MB)</li>
+</ul>
+<p>平行採用 big chunk 的方式，考慮到 cache miss 的關係，最好是每一個處理器都把相鄰的列放置在各自的 L1-L2-L3 cache，防止使用時不在自己的 cache，而產生嚴重的 cache miss。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UINT unsigned long</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 2048</span></span><br><span class="line"><span class="keyword">char</span> g[<span class="number">2</span>][MAXN][MAXN];</span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;n, &amp;m) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="built_in">getchar</span>() != <span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// read input</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">            <span class="built_in">fgets</span>(g[<span class="number">0</span>][i]+<span class="number">1</span>, MAXN, stdin);</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; j++)</span><br><span class="line">                g[<span class="number">0</span>][i][j] -= <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">            g[<span class="number">0</span>][i][n+<span class="number">1</span>] = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// game of life</span></span><br><span class="line">        <span class="keyword">int</span> flag = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> chunk = <span class="number">64</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; m; it++) &#123;</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(static, chunk)</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; j++) &#123;</span><br><span class="line">                    <span class="keyword">int</span> adj = g[flag][i<span class="number">-1</span>][j<span class="number">-1</span>] + g[flag][i<span class="number">-1</span>][j] + g[flag][i<span class="number">-1</span>][j+<span class="number">1</span>] +</span><br><span class="line">                        g[flag][i  ][j<span class="number">-1</span>] + g[flag][i  ][j+<span class="number">1</span>] +</span><br><span class="line">                        g[flag][i+<span class="number">1</span>][j<span class="number">-1</span>] + g[flag][i+<span class="number">1</span>][j] + g[flag][i+<span class="number">1</span>][j+<span class="number">1</span>];</span><br><span class="line">                    g[!flag][i][j] = (g[flag][i][j] == <span class="number">0</span> &amp;&amp; adj == <span class="number">3</span>) || </span><br><span class="line">                                        (g[flag][i][j] == <span class="number">1</span> &amp;&amp; (adj == <span class="number">2</span> || adj == <span class="number">3</span>));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            flag = !flag;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// print result</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; j++)</span><br><span class="line">                g[flag][i][j] += <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">            g[flag][i][n+<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">            <span class="built_in">puts</span>(g[flag][i]+<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="循環展開"><a href="#循環展開" class="headerlink" title="循環展開"></a>循環展開</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UINT unsigned long</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 2048</span></span><br><span class="line"><span class="keyword">char</span> g[<span class="number">2</span>][MAXN][MAXN];</span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;n, &amp;m) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="built_in">getchar</span>() != <span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// read input</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">            <span class="built_in">fgets</span>(g[<span class="number">0</span>][i]+<span class="number">1</span>, MAXN, stdin);</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; j++)</span><br><span class="line">                g[<span class="number">0</span>][i][j] -= <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">            g[<span class="number">0</span>][i][n+<span class="number">1</span>] = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// game of life</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _OPENMP</span></span><br><span class="line">        <span class="keyword">int</span> chunk = n / <span class="built_in">omp_get_max_threads</span>();</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; m; it++) &#123;</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(static, chunk)</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">                <span class="keyword">int</span> adj, j = <span class="number">1</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UNLOOP &#123; \</span></span><br><span class="line"><span class="meta">    adj = g[0][i-1][j-1] + g[0][i-1][j] + g[0][i-1][j+1] + \</span></span><br><span class="line"><span class="meta">        g[0][i  ][j-1] + g[0][i  ][j+1] + \</span></span><br><span class="line"><span class="meta">        g[0][i+1][j-1] + g[0][i+1][j] + g[0][i+1][j+1]; \</span></span><br><span class="line"><span class="meta">    g[1][i][j] = (g[0][i][j] == 0 &amp;&amp; adj == 3) || \</span></span><br><span class="line"><span class="meta">                    (g[0][i][j] == 1 &amp;&amp; (adj == 2 || adj == 3)); j++; \</span></span><br><span class="line"><span class="meta">    &#125;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UNLOOP4 &#123;UNLOOP UNLOOP UNLOOP UNLOOP&#125;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> UNLOOP8 &#123;UNLOOP4 UNLOOP4&#125;</span></span><br><span class="line">                <span class="keyword">for</span> (; j + <span class="number">8</span> &lt;= n; )</span><br><span class="line">                    UNLOOP8;</span><br><span class="line">                <span class="keyword">for</span> (; j &lt;= n; )</span><br><span class="line">                    UNLOOP;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for schedule(static, chunk)</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++)</span><br><span class="line">                <span class="built_in">memcpy</span>(g[<span class="number">0</span>][i], g[<span class="number">1</span>][i], <span class="built_in"><span class="keyword">sizeof</span></span>(g[<span class="number">0</span>][<span class="number">0</span>][<span class="number">0</span>]) * (n+<span class="number">1</span>));</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// print result</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; j++)</span><br><span class="line">                g[<span class="number">0</span>][i][j] += <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">            g[<span class="number">0</span>][i][n+<span class="number">1</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">            <span class="built_in">puts</span>(g[<span class="number">0</span>][i]+<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/30/jg-10082/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          批改娘 10082. Fast Find Prime Number (OpenMP)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/30/jg-10026/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">批改娘 10026. Fast N-Queen</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2016/04/30/jg-10081/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Morris&#39; Blog</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://morris821028.github.io/"/>
+  <updated>2021-05-30T02:05:47.097Z</updated>
+  <id>http://morris821028.github.io/</id>
+  
+  <author>
+    <name>Shiang-Yun Yang</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Java 優化內存使用 結構篇</title>
+    <link href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/"/>
+    <id>http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/</id>
+    <published>2021-05-30T10:00:00.000Z</published>
+    <updated>2021-05-30T02:05:47.097Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h2><p>首先，針對 JVM 這一類的語言設計，所有事物皆為物件，那麼就表示每一個物件都必須額外紀錄 object header，也就是說一個物件在 64 位元的作業系統環境下，通常會額外帶有 12 bytes 資料 (mark word:4 bytes 和 klass word:8 bytes)，但 64 位元計算機架構需對齊 8 bytes 的規範，使得每一個物件都大上許多。</p><p>例如，一個 <code>struct Point</code> 在 C 語言裡面，</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Point</span> &#123;</span></span><br><span class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></span><br><span class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>我們輕易地就明白單一物件大小為 16 bytes，而在 Java 撰寫時，卻會變成 <span>$32 \; \text{bytes} \;(\text{header:}12 + \text{x:}8 + \text{y:}8 + \text{padding:}4)$</span><!-- Has MathJax -->。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span> </span>&#123; <span class="comment">// object header 12 byte</span></span><br><span class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></span><br><span class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></span><br><span class="line">    <span class="comment">// padding 4 byte</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>這樣看起來並不妙。相同的演算法、配上相同的數據，Java 處理時的內容硬是比 C 還多出整整兩倍。物件導向有其優點，必然存在一些缺點，可以很彈性地開發、豐富的權限管理、方便追蹤剖析，卻容易在非常基礎的大量計算中暴露記憶體方面的問題。</p><h2 id="打包物件-packed-object"><a href="#打包物件-packed-object" class="headerlink" title="打包物件 (packed object)"></a>打包物件 (packed object)</h2><p>對於基礎物件，就只能倚靠撰寫 JNI 或者修改 JVM 的參數，來降低每一個單一物件的大小。對於底層不夠熟悉的開發者而言，還是可以透過一些實作方法來完成。但必須犧牲一點物件導向的方法論，喪失維護性，面對真實問題。</p><p>例如，我們儲存一個矩形，需要一個左上角和右下角的點。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</span><br><span class="line">    Point a; <span class="comment">// pointer: 8 bytes</span></span><br><span class="line">    Point b; <span class="comment">// pointer: 8 bytes</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>資深工程師總會很直覺地 <strong>重複使用</strong>，這個原則並沒有錯，但對於大量的基礎物件而言，宣告一個矩形實際上會占用 <span>$32 + 2 \times 32 = 96 \; \text{bytes}$</span><!-- Has MathJax -->。接著，老是有人跟我唱反調說「效能分析工具 (Profiler) 只給出 <span>$32 \; \text{bytes}$</span><!-- Has MathJax -->，你肯定算錯了！」別忘了，你寫的不是 C/C++，是一切皆為指標的 Java。</p><p>那我們要怎麼打包物件呢？或者說 <strong>攤平</strong>，目標要減少 <code>Point</code> 多出來的 object header。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> lx;</span><br><span class="line">    <span class="keyword">long</span> ly;</span><br><span class="line">    <span class="keyword">long</span> rx;</span><br><span class="line">    <span class="keyword">long</span> ry;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>返璞歸真，直接將欄位往上提取，破壞一點基礎建設，在一些 API 上犧牲一點效能。這樣就變成了 <span>$48 \; \text{bytes} = 12 + 8 \times 4 + 4 \; \text{bytes}$</span><!-- Has MathJax --> 的物件。如此一來，減少了一半的內存用量。</p><h2 id="原始型別-Primitive-Type"><a href="#原始型別-Primitive-Type" class="headerlink" title="原始型別 (Primitive Type)"></a>原始型別 (Primitive Type)</h2><p>在很多不經意的操作下，很容易將原始型別 (primitive type) 儲存成物件型別 (object type)，也就是物件導向最容易造成的問題，從整體用法來分析，並不影響程式正確性，但會造成記憶體用量飆高。如 <code>long</code> 原本為 8-byte 物件，轉換成 <code>Long</code> 會變成 24-byte 物件。</p><h3 id="繼承與泛型影響"><a href="#繼承與泛型影響" class="headerlink" title="繼承與泛型影響"></a>繼承與泛型影響</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> <span class="keyword">extends</span> <span class="title">Pair</span>&lt;<span class="title">Long</span>, <span class="title">Long</span>&gt; </span>&#123;&#125;</span><br></pre></td></tr></table></figure><p>當想重複使用類別，透過繼承的泛型很容易自動轉換成物件型別。這個問題在 C# 內並不存在，CIL 能允許宣告 <code>Pair&lt;long, long&gt;</code>，並且不透過型別抹除，分別建立相應的代碼，能解決此問題。在 Java 上要解決這個問題，只能更樸素一點。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> major;</span><br><span class="line">    <span class="keyword">long</span> minor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>代碼多了一點，取而代之的是記憶體量減少，物件轉換次數的降低。</p><h3 id="多形使用"><a href="#多形使用" class="headerlink" title="多形使用"></a>多形使用</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Object&gt; list;</span><br><span class="line">list.add(<span class="number">1</span>);</span><br><span class="line">Map&lt;Object, Object&gt; map;</span><br><span class="line">map.put(<span class="number">2</span>, <span class="number">3</span>);</span><br></pre></td></tr></table></figure><p>多形操作下，將好幾種不同類別的物件一起使用，隱式轉換問題就會發生，一般要追到底層才知道最後發生什麼事情。由於 Java 官方的庫並沒有預設大量的原生型別的資料結構，我們只能透過像 trove4j、eclipse collections 等插件來補足，必要時自己刻一個。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TLongObjectMap&lt;T&gt; a;</span><br><span class="line">TLongArrayList b;</span><br><span class="line">...</span><br></pre></td></tr></table></figure><h2 id="資料結構-Data-Structure"><a href="#資料結構-Data-Structure" class="headerlink" title="資料結構 (Data Structure)"></a>資料結構 (Data Structure)</h2><h3 id="雜湊表-Hash-Table"><a href="#雜湊表-Hash-Table" class="headerlink" title="雜湊表 (Hash Table)"></a>雜湊表 (Hash Table)</h3><p>在大多數的實作下，雜湊表佔據線性空間 <span>$\mathcal{O}(n)$</span><!-- Has MathJax -->，存取時間 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->，理論分析上也近乎完美。在處理碰撞的技巧上，影響常數級別的空間用量。通常分成以下兩種</p><h4 id="開放定址法-Open-Addressing"><a href="#開放定址法-Open-Addressing" class="headerlink" title="開放定址法 (Open Addressing)"></a>開放定址法 (Open Addressing)</h4><p>trove4j 和 eclipse collections 採用此方法。</p><ul><li>使用記憶體空間最小<br>  僅有兩個陣列 <code>key[]</code> 和 <code>value[]</code>，沒有多餘的 object header。</li><li>存取常數大，調整時間較長<br>  通常會有兩個以上的 probing 操作，中間穿插刪除操作時，容易造成退化。</li></ul><h4 id="串鏈法-Chaining"><a href="#串鏈法-Chaining" class="headerlink" title="串鏈法 (Chaining)"></a>串鏈法 (Chaining)</h4><p>jdk 預設採用此方法。</p><ul><li>使用記憶體空間最大<br>  <code>HashNode &#123;val, next, prev&#125;</code> 佔據了大部分的記憶體，且大量的 object header 出現。</li><li>存取常數較小</li></ul><p>從穩定性分析上，串鏈法在某種程度上可以複合許多結構，如 unrolled linked list (bucket) 或者是 binary tree 來降低最慘複雜度。而開放定址法，雖然有記憶體用量小，快取能力更高，但數據量一大，很容易在 rehash 的階段花太久的時間，而且不容易做到刪除操作。</p><h3 id="固定長度陣列-Fixed-length-Array"><a href="#固定長度陣列-Fixed-length-Array" class="headerlink" title="固定長度陣列 (Fixed-length Array)"></a>固定長度陣列 (Fixed-length Array)</h3><p>Java 開發久了，連宣告陣列都很吃技術。有時候，並沒仔細探討固定長度與不固定長度的差異。劈頭就寫一個</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</span><br><span class="line">    ArrayList&lt;Field&gt; fields;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>這樣的設計擴充性佳，具有彈性。在底層設計時，卻會發現 <code>ArrayList</code> 至少包含了 <code>size</code> 和 <code>val[]</code> 兩個欄位，而 <code>val[]</code> 包含了真正的 <code>array pointer</code> 和 <code>length</code> 兩個欄位。如果已知固定長度且不再變更，或者變更的使用量極低，且能保證 <code>size == val.length</code>，那不如直接宣告</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</span><br><span class="line">    Field[] fields;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>如此一來，一個 <code>Scheme</code> 物件便能減少 <span>$16 \; \text{bytes}$</span><!-- Has MathJax -->。更進一步，我們可以利用封裝 (Encapsulation) 和多型技術，再降低 <span>$8 \; \text{bytes}$</span><!-- Has MathJax -->。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme1</span> </span>&#123;</span><br><span class="line">    Field f1;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme2</span> </span>&#123;</span><br><span class="line">    Field f1;</span><br><span class="line">    Field f2;</span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure><h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>根據實際應用的數據分布，對最常用的物件進行優化。醜了點，但能解決問題。雖然並不是黑魔法，更能了解實作。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;概要&quot;&gt;&lt;a href=&quot;#概要&quot; class=&quot;headerlink&quot; title=&quot;概要&quot;&gt;&lt;/a&gt;概要&lt;/h2&gt;&lt;p&gt;首先，針對 JVM 這一類的語言設計，所有事物皆為物件，那麼就表示每一個物件都必須額外紀錄 object header，也就是說一個物件在 
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
+    
+    
+      <category term="優化" scheme="http://morris821028.github.io/tags/%E5%84%AA%E5%8C%96/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
+    
+      <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
+    
+      <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
+    
+      <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>二八進展</title>
+    <link href="http://morris821028.github.io/2021/01/31/diary-202101/"/>
+    <id>http://morris821028.github.io/2021/01/31/diary-202101/</id>
+    <published>2021-01-31T10:00:00.000Z</published>
+    <updated>2021-01-31T07:09:49.858Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="工作狀況"><a href="#工作狀況" class="headerlink" title="工作狀況"></a>工作狀況</h2><p>繼去年十月升職後，得處理的工作難度也更加艱難。開會密度上升了一個層次，工作時間也因為在家辦公而拉長，在本來就沒加班費制度的工作崗位，這些早有心理準備。</p><p>工作挑戰到一個懷疑人生的地步，每天可能五、六點起床，七、八點就坐在電腦前工作十二小時，不然抽不出時間寫代碼。開會時間外，得處理不少回信和規劃一些未來架構，著手運行實驗的過程，還得不斷地補教學文件給新手入門。不得不說，不管是電機系還是資工系，著手 EDA 都有不同面向的挑戰，這裡的後端並不像外界所理解的後端，全部都要親自實作，不是像了解用法或原理道理後，單純組合使用的那一類型。</p><p>在年底的幾個月中，幾乎每天都開會，從早到晚的會議從前一個星期就開始排到下周，突發會議也再所難免。身為工程師，連續聽一個小時的話就很疲倦，一天至少聽四、五個小時，到最後都是精神渙散。</p><h2 id="轉職計畫"><a href="#轉職計畫" class="headerlink" title="轉職計畫"></a>轉職計畫</h2><p>因為工作壓力過大，起初很想換工作，請假參加了今年度的 JCConf Taiwan 2020 (Java Community Conference Taiwan)，原本想說問能不能報公司帳，問了之後還要寫一堆提交文件申請，不是送件去新竹就是上海，就像寫國科會計畫一樣麻煩，只好自掏腰包去。不意外地，現場有不少媒合工作機會的攤子，如像 <a href="https://meet.jobs/zh-TW">meet jobs</a> 發了一張薪資報價單，放眼望去不少資深工程師職位有年薪百萬等級。這時候，就得想一下工作內容的難易程度，畢竟一點也沒有外界所稱的後端經驗，做基礎科學久了，多面向應用層級的後端似乎有挑戰。</p><p>之前 Google 和 Synopsys 來找人的時候，感覺就像面試從 104 的狀況一樣，老實說我還挺不喜歡 HR 在不確定實際工作內容的狀況下，諮詢轉換工作意願。自己就面試不少 HR 找來的，大部分都很難適應高強度的工作，而且行為準則也不好評量出來。如果是在公司的小產品中可能還無關緊要，在關鍵第一線產品中，每一個環節都很關鍵，能自我成長和要求才是重要的。不幸地，對大部分的人而言，只不過是為了生活而工作，那可能就不適合做第一線的挑戰，秉持「差不多就好」的心態，卻讓我花了太多時間處理那些瑣事。</p><p>想當然耳，更別說被 HR 以這種方式邀約，準備面試的工作相當地耗費精力，而且不知道有沒有稱得上工作，若只是收進去放置，吸引力就不高。主要是別因此造成其他同事的負擔。</p><h2 id="另類工作"><a href="#另類工作" class="headerlink" title="另類工作"></a>另類工作</h2><p>先前提到的高中生的 APCS 考試，實驗室學長創建了 <a href="https://sqfx.tw/">「松鼠狐狸資訊學院」</a>，也讓我從中接觸了不少外界資訊。在公司工作充其量也是替老闆工作，誰也不會知道那項目你有參與並有重大貢獻。而教職能影響的方位與工作不同，同時也會影響到不少人的一生。</p><p><img src="https://i.imgur.com/qEpxXQR.jpg" alt="「應該沒有經歷過社會吧」－《咒術迴戰》"></p><p>那看看現今補習班的狀況，就會感嘆很多老師並沒有實際工作過，也不知道那些知識學來是為了什麼，在這種情況下就像考大學一樣，高中學了不少學科，上了大學全忘記。這全都是因為不知道目標與應用，當然就無法連接所學的知識。</p><p>還有更慘的是最厭煩的錯誤，做過助教就明白哪一些錯誤不該發生，身為老師就像大學只學了幾年就出來教人，沒有融會貫通的狀況下，按照書本念很難讓學生啟蒙。</p><p>學程式的確可以採 <strong>非監督式學習</strong>，就像 <strong>對抗網路</strong> 一樣，因為程式整套是很容易自我反饋和評估的。但前提是程式語言的選擇，C/C++ 和 Java 各有自己的盲區，訓練所需時間差異極大，視野深廣也不同。可謂魚與熊掌不可兼得，才會有補習班這種 <strong>監督式學習</strong>，大幅度縮短學習成本，才能對整個社會文化的進程加速。</p><p>薪水的部分也不亞於公司社畜。但目前社會歷練尚未成熟，還不敢貿然辭去工作。</p><h2 id="另類邀約"><a href="#另類邀約" class="headerlink" title="另類邀約"></a>另類邀約</h2><p>在中央大學時，與一脈單傳的學長們一起活動，畢業後各奔東西。有次來個全部跨一屆的大學長們聚餐，才知道最終的目標不見得是 Google，也可以為了自己個某些理想或機緣而努力。</p><p>隔了幾年後，大學長從大公司離職，跑去做遊戲開發。就我所知，那一行八成產品都難以賺錢，而且橫跨好幾層的美術、物理領域。學長跑來問我對遊戲有沒有興趣，心想在大學做了不少遊戲相關的技術，草創階段的難度和時間壓力跟現在不能比。</p><p>對這次的邀約，內心是雀躍的，表示先前的技術和開發經驗有被關注。但在大學課程中卻被老教授抨擊設計不符學術理論，那時對於跟人有關的開發有點動搖，沒有確切理論可以證明方向，必須全靠感覺來抓緊機會。</p><p>目前與理念有點差距，心理準備未到。</p><h2 id="轉角分支"><a href="#轉角分支" class="headerlink" title="轉角分支"></a>轉角分支</h2><h3 id="相親發展"><a href="#相親發展" class="headerlink" title="相親發展"></a>相親發展</h3><p>在一個沒有公司內部聯誼機制的環境，找到另一半只能靠自己。如在聯發科 (MTK) 還有一個特殊的交友佈告欄，外界的男女都可以跑上去諮詢，學長在那還可以煩惱要不要寄送好友邀請，Google 也有類似的內部產品。</p><p>這些事情很現實，對方要求就是身高、公司行號，這個在高級人肉市場相當常見，突然發現自己身高未達標、公司也沒名氣，連煩惱的機會都沒有。至於竹科到底有多綠，或者哪一方有多現實，也許從一開始就知道了。</p><p>在某個周末，家父打電話跟我說朋友的女兒不排斥認識，要我在台北約一約聊一聊。同樣是花蓮教育界的家庭背景，就不用煩惱價值觀差異。仔細思考一番，便覺得有所道理。要在茫茫人海中，找到那麼一個類型的女性是多麼困難。</p><p>聊了一陣子後，雙方父母的催促下，才單獨約出去餐廳吃個飯、見個面，如同相同帳號的命名規則，知道對方生日並不是難事。找餐廳的時候，店員順口提及了有沒有要慶生，想了想時間點也對，但對於第一次單獨約人吃飯就走這一險棋，真不知道那天的我在想什麼。</p><p>陸陸續續聊到了年底，覺得可能是時間點不對，對方剛入職為了試用期而努力，而自己也因為公司繁重的工作沒什麼特別心思，普通的聊聊就得顧慮太多項目，並不是像大部分的主流商品，能夠樂觀、開放、愛旅遊、健身的全能人才，的確沒什麼吸引力讓對方主動邀約。</p><p>時間久了，主動發話就沒了主題，敗給無趣的自己。</p><h3 id="參與婚宴"><a href="#參與婚宴" class="headerlink" title="參與婚宴"></a>參與婚宴</h3><p>到了這個年紀後，作為賓客被邀約去婚宴的機會更多，不再是被爸媽帶去的情況。不經感嘆，原來我還有朋友會要我去參加，明明那個時候的我是多麼地頹廢，為了挨過那個階段的障礙，表現得一點也不成熟。</p><p>畢業後的幾年裡，參加了學弟、大學同學、實驗室同學、及高中同學的婚宴，有的還特別從台北搭車跑到台南參加。每一次婚宴都像久違朋友的大型聚會，大家都不計前嫌地聊著近況，商討著哪裡有更好的工作，自己人生的下一階段目標是什麼。</p><p>看到不少認識的朋友帶著男伴、女伴參加，有點後悔自己在讀書階段都沒好好留意身邊的人，現在開始要找個隊友，卻敗給時間成本的疑慮。不時看到各大公司的花邊新聞，就會煩惱要怎麼選擇。</p><p>年底飛到台南參與，時至今日，高中畢業已十年，整班三十人，卻有三分之二的出席率。當醫生的都可以坐一桌，有的還在國外發展，有的還在進修博士，形形色色的發展都有，高中班級導師還特地從花蓮趕來，可以說是老同學聚會。如果有機會辦，也能這麼風光嗎？</p><h3 id="下個階段"><a href="#下個階段" class="headerlink" title="下個階段"></a>下個階段</h3><p>疫情剛開始時，受到親戚的邀約跑去看房子，那時候一個人做不了什麼決定，身上也沒足夠的錢，對於買賣也沒足夠的社會經驗。有幾次在同學聚會中談論到，他自己貸款買了上千萬的透天，跟準新娘一起共同努力的感覺就不一樣。有了目標，眼界與嘗試的機會也有所不同。</p><p>時隔一年，大部分時間都在家工作的我，遇上了室友要飛往美國讀書的情況，不經得深思台北省錢合租的生活，充滿了多不穩定的因素。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;工作狀況&quot;&gt;&lt;a href=&quot;#工作狀況&quot; class=&quot;headerlink&quot; title=&quot;工作狀況&quot;&gt;&lt;/a&gt;工作狀況&lt;/h2&gt;&lt;p&gt;繼去年十月升職後，得處理的工作難度也更加艱難。開會密度上升了一個層次，工作時間也因為在家辦公而拉長，在本來就沒加班費制度的工
+      
+    
+    </summary>
+    
+      <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>File Extension</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:11:29.235Z</updated>
+    
+    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
+&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Global Variable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:07:03.197Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>Global variable is convenient for me.</p></blockquote><p>當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無法成立</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;Global variable is convenient for me.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:39:01.704Z</updated>
+    
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Interview &amp; Recursion</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:29:12.465Z</updated>
+    
+    <content type="html"><![CDATA[<p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Job Build</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-job-build/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-job-build/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:17:20.930Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>Disconnected to server. Not enough quota is available.</p></blockquote><p>通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。而不幸地，有人設計 CI 的專案，每執行一次就會永久耗掉 GB 級的硬碟空間。明明設置保留近期數量，和不把整個中間產物丟到保留項目就完善了。</p><p>而我們卻常常看到手動刪除的蠢事，事情卻一而三、再而三地發生。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;Disconnected to server. Not enough quota is available.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Programming Language Impostors</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:04:37.709Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>“There are many Impostors among us”</p></blockquote><p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;“There are many Impostors among us”&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Machine Learning for Newbie</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:33:45.182Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。</p><p>然後，得知這一年的台灣大學資訊工程學系，大一課程不學 C，直接 python，越來越接近西方的美式教育。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。&lt;/p&gt;
+&lt;p&gt;然後，得知這一年的台灣大學資訊工
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Parallel &amp; Garbage Collection</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:25:34.110Z</updated>
+    
+    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Parallel &amp; Unstable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:21:10.607Z</updated>
+    
+    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Work from Home &amp; Overwork Survey</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:36:28.205Z</updated>
+    
+    <content type="html"><![CDATA[<p>當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。</p><p>✓ 覺得「我快要撐不下去了。」<br>✓ 覺得心力交瘁<br>✓ 覺得有挫折<br>✓ 一想到上班，你就覺得沒力<br>✓ 上班的每一刻都很煎熬<br>☓ 不工作的時候，你有足夠的精力陪朋友或家人</p><p>等等，要是一直沒來的話 …</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。&lt;/p&gt;
+&lt;p&gt;✓ 覺得「我快要撐不下去了。」&lt;br&gt;✓ 覺得心力交瘁&lt;br&gt;✓ 覺得有挫折&lt;br&gt;✓ 一想到上班，你就覺得沒力&lt;br&gt;✓ 上班的每一刻都很煎熬&lt;br&gt;☓ 不工作的時候，你有足夠的精力陪朋友或家人&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 9</title>
+    <link href="http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/"/>
+    <id>http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/</id>
+    <published>2021-01-30T04:00:00.000Z</published>
+    <updated>2021-01-30T02:36:22.235Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="BufferWriter-StringBuilder"><a href="#BufferWriter-StringBuilder" class="headerlink" title="BufferWriter/StringBuilder"></a>BufferWriter/StringBuilder</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">writeLong</span><span class="params">(<span class="keyword">long</span> v)</span> </span>&#123;</span><br><span class="line">    StringBuilder sb = <span class="keyword">new</span> StringBuilder(<span class="number">8192</span>); <span class="comment">// ?</span></span><br><span class="line">    sb.append(Long.toString(v));</span><br><span class="line">    writer.write(sb.toString());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>每一次轉換，別浪費額外的空間 8192 的 <code>StringBuilder</code>。如果真的需要這種 IO 的緩衝區，可以直接宣告在 <code>BufferWriter</code> 給定預設大小的緩衝區。</p><h3 id="BufferWriter-StringBuilder-1"><a href="#BufferWriter-StringBuilder-1" class="headerlink" title="BufferWriter/StringBuilder"></a>BufferWriter/StringBuilder</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> String <span class="title">writeTwo</span><span class="params">(String token0, String token1)</span> </span>&#123;</span><br><span class="line">    writer.write(token0 + token1); <span class="comment">// why not write separately without intermediate result.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>既然都知道了字串串接會有中間結果，我們可以直接分開寫 <code>writer.write(token0);</code> 和 <code>writer.write(token1);</code> 來達到相同效果。</p><h3 id="StringBuilder-Helper"><a href="#StringBuilder-Helper" class="headerlink" title="StringBuilder Helper"></a>StringBuilder Helper</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> StringBuilder <span class="title">append</span><span class="params">(StringBuilder sb, String... tokens)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (String t : tokens)</span><br><span class="line">        sb.append(t);</span><br><span class="line">    <span class="keyword">return</span> sb;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">append(sb, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>).append(<span class="string">&quot;d&quot;</span>, <span class="string">&quot;e&quot;</span>);</span><br><span class="line"><span class="comment">// if performance it critical, please write all statements without sugar syntax</span></span><br><span class="line">append(ab, <span class="string">&quot;a&quot;</span> + <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>);</span><br><span class="line"><span class="comment">// ... why?</span></span><br></pre></td></tr></table></figure><p>這種可變參數的寫法會額外產生一個陣列，對於效能來說會很傷。</p><h3 id="Math-Getter-Setter"><a href="#Math-Getter-Setter" class="headerlink" title="Math Getter/Setter"></a>Math Getter/Setter</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// convert x&#x27; = a x + b</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">convert</span><span class="params">(Point p)</span> </span>&#123;</span><br><span class="line">    p.setX(p.getX() * a);</span><br><span class="line">    p.setX(p.getX() + b); <span class="comment">// why not p.setX(p.getX() * a + b);</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>別中毒於 Java 或者是 OOP 的寫法。</p><h3 id="Lookup-by-Key"><a href="#Lookup-by-Key" class="headerlink" title="Lookup by Key"></a>Lookup by Key</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> T <span class="title">getSelected</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (T c : candidates) &#123;</span><br><span class="line">        <span class="keyword">if</span> (Objects.equals(c.toKey(), mSelected))</span><br><span class="line">            <span class="keyword">return</span> c;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setSelected</span><span class="params">(T s)</span> </span>&#123;</span><br><span class="line">    mSelected = s.toKey(); <span class="comment">// why not store `s` directly?</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>在大多數的狀況下都可以直接存原本的物件。除非是在一些特定的序列化，或者是橫跨兩個不同 domain 的交互資料，這時候我們必須採用字串作為中介對象。</p><h3 id="Default-Value-by-Wrapper-Class"><a href="#Default-Value-by-Wrapper-Class" class="headerlink" title="Default Value by Wrapper Class"></a>Default Value by Wrapper Class</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Boolean mirror = <span class="keyword">false</span>; <span class="comment">// why use wrapper class here?</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setMirror</span><span class="params">(<span class="keyword">boolean</span> m)</span> </span>&#123;</span><br><span class="line">    mirror = m;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mirror != <span class="keyword">null</span>) &#123; <span class="comment">// why?</span></span><br><span class="line">        <span class="comment">// must do here</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>多餘的寫法。如果 wrapper class 有預設值，而且還不能被設置 null。那必然有些地方出錯。</p><h3 id="Constant-Value-by-Wrapper-Class"><a href="#Constant-Value-by-Wrapper-Class" class="headerlink" title="Constant Value by Wrapper Class"></a>Constant Value by Wrapper Class</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Double SIZE = <span class="number">50L</span>; <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">exec</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> v = SIZE.longValue(); <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>這傢伙到底在宣告什麼？想用什麼？</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;BufferWriter-StringBuilder&quot;&gt;&lt;a href=&quot;#BufferWriter-String
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Java JNI Thread Error (EINVAL)</title>
+    <link href="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/"/>
+    <id>http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/</id>
+    <published>2020-12-12T10:00:00.000Z</published>
+    <updated>2020-12-12T14:08:41.489Z</updated>
+    
+    <content type="html"><![CDATA[<p>Keywords: JNI, Java, ProcessBuilder, Thread Error</p><p>Error message: <code>[os,thread] Failed to start thread - pthread_create failed (EINVAL) for attributes: stacksize: 136k, guardsize: 0k, detached.</code></p><p>Solution: <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code></p><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>From JNI process, it is fine to execute Java internal multi-threading, but can not use Runetime.exec or <code>ProcessBuilder</code> to do anything. Even through adjust java stack-related option</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setenv _JAVA_OPTIONS &quot;-ea -Xlog -XX:ThreadStackSize=31744 -XX:VMThreadStackSize=1024 -XX:CompilerThreadStackSize=1024&quot;</span><br></pre></td></tr></table></figure><p>cgroup (Linux control group) limition, and set_rlimit. Same error message will be displayed.</p><p>When you link large C/C++ program with large thread local storage (TLS), default minimum stacksize computation is not enough to create pthread in OS-level. Only to set <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> to apply default pthread arguments.  Then, it will be working for you.</p><h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>無法透過 JNI 啟動的 JVM 運行外部程序，如 <code>Runtime.exec</code> 或者是 <code>Process</code> 都無法使用，卻可以使用內部執行緒，甚至達到了數百個執行緒。</p><p>首先，JVM 內部拆分了好幾種不同的執行緒使用策略，也有不同的資源需求判斷，去挖原始碼的時候會追到底層的 C 部分，就可以看出這些問題。但是錯誤訊息仍然不足，到了 JDK15 後，才能透過 <code>-Xlog</code> dump 更多的配置訊息，但有些配置訊息的翻譯仍然有錯，還是得看原始碼去得知實際情況。</p><p>追了好幾天，調適了許多不同的 stack 配置都沒有起色。自己寫的小短碼 JNI 都沒有事情，架在產品上就突然運行失敗。因此，只能去找有沒有現有的產品開發或使用上發生類似的問題，不該去找任何的教學文件。最後挖到幾篇安裝不同版本的產品失敗，據說更改 JDK 版本就能解決，然後有人分析說因為 TLS 的大小變動才導致新版本突然無法工作，才明白果然是 JNI 上的問題。</p><p>實作 JNI 介面的時候，若連接的 C++ 程式中存在大量的 <code>thread_local</code> 變數時，那麼在每一個執行緒中都必須給予相對應的大小進行初始化。而對於 JVM 內部會透過一些預設 stack 配置進行最小化，透過 JNI 連接的時候，便會受到影響。</p><p>透過 <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> 取消最小化 stack 配置，直接使用預設的構造行為，這樣就能暫時解決 JNI 啟動的 JVM 無法運行外部程序的問題。很明顯地，每一條執行緒都會開相當大的 stack size，大部分的情況下預設最多為 4 MB，而實際工作的產品中預設就要 20 MB，這個得從其關聯函數庫去分析為什麼需要這麼大的堆疊，可能是寫錯，也或者是連結太多沒有必要的庫進來。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Keywords: JNI, Java, ProcessBuilder, Thread Error&lt;/p&gt;
+&lt;p&gt;Error message: &lt;code&gt;[os,thread] Failed to start thread - pthread_create failed 
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
+    
+    
+      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
+    
+      <category term="JNI" scheme="http://morris821028.github.io/tags/JNI/"/>
+    
+      <category term="TLS" scheme="http://morris821028.github.io/tags/TLS/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 8</title>
+    <link href="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/"/>
+    <id>http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/</id>
+    <published>2020-11-08T10:00:00.000Z</published>
+    <updated>2020-11-08T07:24:32.340Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Format-String"><a href="#Format-String" class="headerlink" title="Format String"></a>Format String</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String.format(<span class="string">&quot;ABC%s&quot;</span>, <span class="string">&quot;D&quot;</span>); <span class="comment">// const string should be written directly</span></span><br><span class="line">String.format(<span class="string">&quot;%s.%s&quot;</span>, A.class.getName(), <span class="string">&quot;C&quot;</span>);</span><br></pre></td></tr></table></figure><p>對於可以直接計算得到的，應該直接展開。</p><h3 id="Math"><a href="#Math" class="headerlink" title="Math"></a>Math</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">double</span> theta = dx != <span class="number">0</span> ? Math.atan(dy/dx) : (dy &lt; <span class="number">0</span> ? ... : ...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// or</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (dx &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (dy &lt; <span class="number">0</span>)</span><br><span class="line">        ...</span><br><span class="line">&#125; <span class="keyword">else</span> (dx == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (dy &lt; <span class="number">0</span>)</span><br><span class="line">        ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// why not be simple?</span></span><br><span class="line"><span class="keyword">double</span> theta = Math.atan2(dy, dx);</span><br></pre></td></tr></table></figure><p>數學很重要，可以減少很多分支判斷。</p><h3 id="Variable-Name"><a href="#Variable-Name" class="headerlink" title="Variable Name"></a>Variable Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;T&gt; set = <span class="keyword">new</span> LinkedList&lt;&gt;(); <span class="comment">// what does `set` means?</span></span><br><span class="line"><span class="comment">// perhaps, I need to ask what does `list` means for you.</span></span><br></pre></td></tr></table></figure><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TextField okBtn; <span class="comment">// why name button for text field?</span></span><br><span class="line">enableCancelButton(okBtn); <span class="comment">// are you sure about it?</span></span><br></pre></td></tr></table></figure><p>命名盡量貼切型態，不然有時候真的會有很奇怪。</p><h3 id="Initialize-Member"><a href="#Initialize-Member" class="headerlink" title="Initialize Member"></a>Initialize Member</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MPanel</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> JButton mButton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MPanel</span><span class="params">()</span> </span>&#123; <span class="comment">// consturctor</span></span><br><span class="line">        ...</span><br><span class="line">        mButton = <span class="keyword">new</span> JButton(<span class="string">&quot;A&quot;</span>); <span class="comment">// what?</span></span><br><span class="line">        panel.add(mButton);</span><br><span class="line">        mButton = <span class="keyword">new</span> JButton(<span class="string">&quot;B&quot;</span>); <span class="comment">// what?</span></span><br><span class="line">        panel.add(mButton);</span><br><span class="line">        <span class="comment">// finally, which result you want to express mButton?</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>在建構子中，每一個成員變數盡量只存放一次，採用 <code>final</code> 對每個成員變數檢查只初始化一次。</p><h3 id="Lambda-with-Final"><a href="#Lambda-with-Final" class="headerlink" title="Lambda with Final"></a>Lambda with Final</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(...)</span> </span>&#123;</span><br><span class="line">    String s = <span class="string">&quot;default&quot;</span>;</span><br><span class="line">    <span class="keyword">if</span> (isA())</span><br><span class="line">        s = <span class="string">&quot;A&quot;</span>;</span><br><span class="line">    <span class="keyword">final</span> String _s = s;<span class="comment">// shut up, don&#x27;t explain</span></span><br><span class="line">    blackhole(() -&gt; map(_s));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>Lambda 函數抓取的時候都要抓取可推斷出 <code>final</code> 的變數。為了 lambda 而額外宣告一個變數作為 final 的話，應該要額外宣告一個 getter 函數去抓取，不然觀感上會覺得代碼有點多餘。</p><h3 id="Method-Name"><a href="#Method-Name" class="headerlink" title="Method Name"></a>Method Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">increment</span><span class="params">()</span> </span>&#123; <span class="comment">// why is noun?</span></span><br><span class="line">    i++;</span><br><span class="line">    i++;  <span class="comment">// why call it twice?</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>函數盡量使用動詞開頭，名詞有點奇怪。</p><h3 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">enableA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    a = <span class="keyword">true</span>;</span><br><span class="line">    b = <span class="keyword">true</span>;  <span class="comment">// why is b here?</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">disableA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    a = <span class="keyword">false</span>; <span class="comment">// wait ... where is B?</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>當名稱對應到成員變數時，就應該一件事情對應一個操作。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Format-String&quot;&gt;&lt;a href=&quot;#Format-String&quot; class=&quot;headerlink
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 7</title>
+    <link href="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/"/>
+    <id>http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/</id>
+    <published>2020-11-01T10:00:00.000Z</published>
+    <updated>2020-11-01T08:20:57.822Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="try-catch-exception"><a href="#try-catch-exception" class="headerlink" title="try-catch-exception"></a>try-catch-exception</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Object <span class="title">getSomething</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Exception abort = <span class="keyword">new</span> RuntimeException();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="keyword">if</span> (e == abort)</span><br><span class="line">            <span class="comment">// fine</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>每次呼叫這個函數都要先建立一個例外，然後看裡面會不會丟出來，這個其實很浪費空間和時間建立。可以考慮建立一個特殊 <code>AbortException</code> 來取代預先建立的例外，或者建立一個全局的靜態例外物件來使用。</p><h3 id="Double-Brace-Initialization"><a href="#Double-Brace-Initialization" class="headerlink" title="Double Brace Initialization"></a>Double Brace Initialization</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> Set&lt;String&gt; set = <span class="keyword">new</span> HashSet&lt;&gt; &#123;</span><br><span class="line">    &#123;</span><br><span class="line">        add(<span class="string">&quot;A&quot;</span>);</span><br><span class="line">        add(<span class="string">&quot;B&quot;</span>);</span><br><span class="line">        add(<span class="string">&quot;C&quot;</span>);</span><br><span class="line">    &#125; <span class="comment">// no more</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// why not?</span></span><br><span class="line">set.add(<span class="string">&quot;A&quot;</span>);</span><br><span class="line">set.add(<span class="string">&quot;B&quot;</span>);</span><br><span class="line">set.add(<span class="string">&quot;C&quot;</span>);</span><br></pre></td></tr></table></figure><p>這會額外建立匿名類別。如果宣告在一般的成員方法中，還會捕抓成員變數，造成內存洩漏而無法回收的狀況。</p><h3 id="No-More-Inheritance"><a href="#No-More-Inheritance" class="headerlink" title="No More Inheritance"></a>No More Inheritance</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span> <span class="keyword">extends</span> <span class="title">Pair</span>&lt;<span class="title">Integer</span>, <span class="title">Integer</span>&gt; </span>&#123;</span><br><span class="line">    Point(<span class="keyword">int</span> x, <span class="keyword">int</span> y) &#123;</span><br><span class="line">        <span class="keyword">super</span>(x, y);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object o)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (o <span class="keyword">instanceof</span> Point) &#123;</span><br><span class="line">            Point p = (Point) o;</span><br><span class="line">            <span class="keyword">return</span> first == p.first &amp;&amp; second == p.second; <span class="comment">// wrong</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>別忘了，Java 中的 wrapper class 可是一個物件，光靠 <code>==</code> 是不能比較相同與否。雖然對於數值小於某個定值的時候，他們會在常數內存池中取得，讓你覺得一切都好像沒事。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;try-catch-exception&quot;&gt;&lt;a href=&quot;#try-catch-exception&quot; class
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ADA 2020 Fall P3. ADA Party</title>
+    <link href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/"/>
+    <id>http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/</id>
+    <published>2020-10-31T08:30:00.000Z</published>
+    <updated>2021-05-30T02:04:42.518Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>Algorithm Design and Analysis (NTU CSIE, Fall 2020)</p></blockquote><h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>給 <span>$N$</span><!-- Has MathJax --> 個堆，每個堆有 <span>$a_i$</span><!-- Has MathJax --> 個糖果，現在邀請 <span>$K$</span><!-- Has MathJax --> 個人，現在問有多少種挑選區間的方法，滿足扣掉最大堆和最小堆後，區間內的糖果總數可以被 <span>$K$</span><!-- Has MathJax --> 整除。</p><h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">10 2</span><br><span class="line">6 9 3 4 5 6 1 7 8 3</span><br></pre></td></tr></table></figure><h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">25</span><br></pre></td></tr></table></figure><h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><blockquote><p>由於沒辦法參與課程，就測測自己產的測試資料，正確性有待確認。</p></blockquote><p>分治處理可行解的組合，每一次剖半計算，統計跨區間的答案個數。</p><p>討論項目分別為</p><ul><li>最大值、最小值嚴格都在左側</li><li>最大值、最小值嚴格都在右側</li><li>最大值在左側、最小值在右側</li><li>最大值在右側、最小值在左側</li></ul><p>最後兩項會有交集部分，則扣除 在左側的最大最小值接等於右側的最大最小值。對於每一項回答，搭配單調運行的滑動窗口解決。</p><p>時間複雜度 <span>$\mathcal{O}(n \log n)$</span><!-- Has MathJax -->、空間複雜度 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> </p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Algorithm Design and Analysis (NTU CSIE, Fall 2020)</span></span><br><span class="line"><span class="comment">// Problem 3. ADA Party</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">500005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int32_t</span> MIN = LONG_MIN;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int32_t</span> MAX = LONG_MAX;</span><br><span class="line"><span class="keyword">int32_t</span> a[MAXN];</span><br><span class="line"><span class="keyword">int32_t</span> lsum[MAXN], rsum[MAXN];</span><br><span class="line"><span class="keyword">int32_t</span> lmin[MAXN], lmax[MAXN];</span><br><span class="line"><span class="keyword">int32_t</span> rmin[MAXN], rmax[MAXN];</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> cases = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">int</span> mark[MAXN];</span><br><span class="line"><span class="keyword">int</span> counter[MAXN];</span><br><span class="line"><span class="keyword">int</span> n, k;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">inc</span><span class="params">(<span class="keyword">int32_t</span> val)</span> </span>&#123;</span><br><span class="line">    val = (val%k+k)%k;</span><br><span class="line">    <span class="keyword">if</span> (mark[val] != cases)</span><br><span class="line">        mark[val] = cases, counter[val] = <span class="number">0</span>;</span><br><span class="line">    counter[val]++;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dec</span><span class="params">(<span class="keyword">int32_t</span> val)</span> </span>&#123;</span><br><span class="line">    val = (val%k+k)%k;</span><br><span class="line">    <span class="keyword">if</span> (mark[val] != cases)</span><br><span class="line">        mark[val] = cases, counter[val] = <span class="number">0</span>;</span><br><span class="line">    counter[val]--;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">get</span><span class="params">(<span class="keyword">int32_t</span> val)</span> </span>&#123;</span><br><span class="line">    val = (val%k+k)%k;</span><br><span class="line">    <span class="keyword">if</span> (mark[val] != cases)</span><br><span class="line">        mark[val] = cases, counter[val] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> counter[val];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int64_t</span> <span class="title">common</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> m, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int64_t</span> ret = <span class="number">0</span>;</span><br><span class="line">    cases++;  <span class="comment">// max and min is same on both end</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m, j = m+<span class="number">1</span>, jl = m+<span class="number">1</span>; i &gt;= l; i--) &#123;</span><br><span class="line">        <span class="keyword">while</span> (j &lt;= r &amp;&amp; (rmax[j] &lt;= lmax[i] &amp;&amp; rmin[j] &gt;= lmin[i])) &#123;</span><br><span class="line">            <span class="built_in">inc</span>(rsum[j]-rmin[j]);</span><br><span class="line">            j++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (jl &lt; j &amp;&amp; (rmin[jl] &gt; lmin[i] || rmax[jl] &lt; lmax[i])) &#123;</span><br><span class="line">            <span class="built_in">dec</span>(rsum[jl]-rmin[jl]);</span><br><span class="line">            jl++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (j &gt; m+<span class="number">1</span> &amp;&amp; lmin[i] == rmin[j<span class="number">-1</span>] &amp;&amp; lmax[i] == rmax[j<span class="number">-1</span>])</span><br><span class="line">            ret += <span class="built_in">get</span>(k-(lsum[i]-lmax[i]));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int64_t</span> <span class="title">divide</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (l &gt;= r)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> m = (l+r)/<span class="number">2</span>;</span><br><span class="line">    <span class="keyword">int32_t</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int32_t</span> mn = MAX, mx = MIN;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m; i &gt;= l; i--) &#123;</span><br><span class="line">        sum += a[i], mn = <span class="built_in">min</span>(mn, a[i]), mx = <span class="built_in">max</span>(mx, a[i]);</span><br><span class="line">        <span class="keyword">if</span> (sum &gt;= k)sum %= k;</span><br><span class="line">        lsum[i] = sum, lmin[i] = mn, lmax[i] = mx;</span><br><span class="line">    &#125;</span><br><span class="line">    sum = <span class="number">0</span>, mn = MAX, mx = MIN;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m+<span class="number">1</span>; i &lt;= r; i++) &#123;</span><br><span class="line">        sum += a[i], mn = <span class="built_in">min</span>(mn, a[i]), mx = <span class="built_in">max</span>(mx, a[i]);</span><br><span class="line">        <span class="keyword">if</span> (sum &gt;= k)sum %= k;</span><br><span class="line">        rsum[i] = sum, rmin[i] = mn, rmax[i] = mx;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int64_t</span> c1 = <span class="number">0</span>, c2 = <span class="number">0</span>, c3 = <span class="number">0</span>, c4 = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    cases++; <span class="comment">// min max on the left</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m, j = m+<span class="number">1</span>; i &gt;= l; i--) &#123;</span><br><span class="line">        <span class="keyword">while</span> (j &lt;= r &amp;&amp; lmin[i] &lt; a[j] &amp;&amp; a[j] &lt; lmax[i]) &#123;</span><br><span class="line">            <span class="built_in">inc</span>(rsum[j]);</span><br><span class="line">            j++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (i &lt; m)</span><br><span class="line">            c1 += <span class="built_in">get</span>(k-(lsum[i]-lmin[i]-lmax[i]));</span><br><span class="line">    &#125;</span><br><span class="line">    cases++; <span class="comment">// min max on the right</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m+<span class="number">1</span>, j = m; i &lt;= r; i++) &#123;</span><br><span class="line">        <span class="keyword">while</span> (j &gt;= l &amp;&amp; rmin[i] &lt; a[j] &amp;&amp; a[j] &lt; rmax[i]) &#123;</span><br><span class="line">            <span class="built_in">inc</span>(lsum[j]);</span><br><span class="line">            j--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (i &gt; m+<span class="number">1</span>)</span><br><span class="line">            c2 += <span class="built_in">get</span>(k-(rsum[i]-rmin[i]-rmax[i]));</span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">    cases++;  <span class="comment">// min on the left, max on the right</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m, j = m+<span class="number">1</span>, jl = m+<span class="number">1</span>; i &gt;= l; i--) &#123;</span><br><span class="line">        <span class="keyword">while</span> (j &lt;= r &amp;&amp; rmin[j] &gt;= lmin[i]) &#123;</span><br><span class="line">            <span class="built_in">inc</span>(rsum[j]-rmax[j]);</span><br><span class="line">            j++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (jl &lt; j &amp;&amp; rmax[jl] &lt; lmax[i]) &#123;</span><br><span class="line">            <span class="built_in">dec</span>(rsum[jl]-rmax[jl]);</span><br><span class="line">            jl++;</span><br><span class="line">        &#125;</span><br><span class="line">        c3 += <span class="built_in">get</span>(k-(lsum[i]-lmin[i]));</span><br><span class="line">    &#125;</span><br><span class="line">    cases++; <span class="comment">// min on the right, max on the left</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m+<span class="number">1</span>, j = m, jl = m; i &lt;= r; i++) &#123;</span><br><span class="line">        <span class="keyword">while</span> (j &gt;= l &amp;&amp; lmin[j] &gt;= rmin[i]) &#123;</span><br><span class="line">            <span class="built_in">inc</span>(lsum[j]-lmax[j]);</span><br><span class="line">            j--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (jl &gt; j &amp;&amp; lmax[jl] &lt; rmax[i]) &#123;</span><br><span class="line">            <span class="built_in">dec</span>(lsum[jl]-lmax[jl]);</span><br><span class="line">            jl--;</span><br><span class="line">        &#125;</span><br><span class="line">        c4 += <span class="built_in">get</span>(k-(rsum[i]-rmin[i]));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int64_t</span> local = c1 + c2 + c3 + c4 - <span class="built_in">common</span>(l, m, r);</span><br><span class="line">    <span class="keyword">return</span> local + <span class="built_in">divide</span>(l, m) + <span class="built_in">divide</span>(m+<span class="number">1</span>, r);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;n, &amp;k) == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>, &amp;a[i]);</span><br><span class="line">        <span class="built_in">memset</span>(counter, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(counter[<span class="number">0</span>])*k);</span><br><span class="line">        <span class="keyword">int64_t</span> ret = <span class="built_in">divide</span>(<span class="number">0</span>, n<span class="number">-1</span>);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%lld\n&quot;</span>, ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;Algorithm Design and Analysis (NTU CSIE, Fall 2020)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&quot;Problem&quot;&gt;&lt;a href=&quot;#Problem&quot; class=&quot;headerlink&quot;
+      
+    
+    </summary>
+    
+      <category term="解題區" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/"/>
+    
+      <category term="解題區 - 其他題目" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/%E8%A7%A3%E9%A1%8C%E5%8D%80-%E5%85%B6%E4%BB%96%E9%A1%8C%E7%9B%AE/"/>
+    
+    
+      <category term="分治" scheme="http://morris821028.github.io/tags/%E5%88%86%E6%B2%BB/"/>
+    
+      <category term="排容" scheme="http://morris821028.github.io/tags/%E6%8E%92%E5%AE%B9/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ADA 2020 Fall P2. Bomb Game</title>
+    <link href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/"/>
+    <id>http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/</id>
+    <published>2020-10-31T08:00:00.000Z</published>
+    <updated>2021-05-30T02:04:42.518Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>Algorithm Design and Analysis (NTU CSIE, Fall 2020)</p></blockquote><h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>有數名玩家依序抵達遊戲，並且落在位置 <span>$c_i$</span><!-- Has MathJax -->，並且具有防禦力 <span>$d_i$</span><!-- Has MathJax -->，過程中會有炸彈發生於 <span>$[l_i, r_i]$</span><!-- Has MathJax -->，對防禦力小於等於 <span>$p_i$</span><!-- Has MathJax --> 造成 <span>$k_i$</span><!-- Has MathJax --> 點傷害。</p><p>回報遊戲最後每一名玩家所受的傷害總額。</p><h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">10 10</span><br><span class="line">P 3 5</span><br><span class="line">A 2 8 15 5</span><br><span class="line">P 7 10</span><br><span class="line">A 4 10 5 3</span><br><span class="line">A 1 9 10 7</span><br><span class="line">P 6 20</span><br><span class="line">P 5 1</span><br><span class="line">A 4 9 17 2</span><br><span class="line">A 1 2 20 4</span><br><span class="line">P 9 5</span><br></pre></td></tr></table></figure><h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">12</span><br><span class="line">9</span><br><span class="line">0</span><br><span class="line">2</span><br><span class="line">0</span><br></pre></td></tr></table></figure><h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><blockquote><p>由於沒辦法參與課程，就測測自己產的測試資料，正確性有待確認。</p></blockquote><p>如果這一題目強制在線對答，則需要一個樹套樹在 <span>$\mathcal{O}(\log^2 n)$</span><!-- Has MathJax --> 內回答每一個結果，需要一個動態開區間的實作方法。</p><p>如果採用離線處理，則可以透過逆序處理來回答，可以透過二維空間的 BIT 結構來完成，這時候空間上會是另一個問題，即使使用懶惰標記，預期可能會達到 <span>$\mathcal{O}(C \; D)$</span><!-- Has MathJax -->，通常是不允許的。</p><p>從分治算法切入，預想防禦能力高影響不受到攻擊力低的炸彈影響，無論時間與否都不受到影響。接下來，對防禦能力和攻擊力統稱力量。在分治的時候，對力量低的累計出答案，在合併階段受時間順序的影響才能回答。最後：</p><ol><li>對力量從小到大排序</li><li>分治算法<ol><li>對左區間和右區間按照時間由大到小排序</li><li>對於每一個左區間的詢問，插入所有滿足的右區間</li></ol></li></ol><p>時間複雜度 <span>$\mathcal{O}(n \log^2 n)$</span><!-- Has MathJax -->、空間複雜度 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> </p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Algorithm Design and Analysis (NTU CSIE, Fall 2020)</span></span><br><span class="line"><span class="comment">// Problem 2. Bomb Game</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">200005</span>;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BIT</span> &#123;</span></span><br><span class="line">    <span class="keyword">int64_t</span> a[MAXN];</span><br><span class="line">    <span class="keyword">int</span> l[MAXN];</span><br><span class="line">    <span class="keyword">int</span> cases = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> val, <span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">while</span> (x &lt;= n) &#123;</span><br><span class="line">            <span class="keyword">if</span> (l[x] != cases)</span><br><span class="line">                l[x] = cases, a[x] = <span class="number">0</span>;</span><br><span class="line">            a[x] += val, x += x&amp;(-x);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int64_t</span> <span class="title">sum</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int64_t</span> ret = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (x) &#123;</span><br><span class="line">            <span class="keyword">if</span> (l[x] != cases)</span><br><span class="line">                l[x] = cases, a[x] = <span class="number">0</span>;</span><br><span class="line">            ret += a[x], x -= x&amp;(-x);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">reset</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">        cases++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> k, <span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">        <span class="built_in">add</span>(l, k, n);</span><br><span class="line">        <span class="built_in">add</span>(r+<span class="number">1</span>, -k, n);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; bit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">PEvent</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> c, d, i;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">AEvent</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> l, r, p, k;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Event</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> type; <span class="comment">// &#x27;P&#x27; 0 or &#x27;A&#x27; 1</span></span><br><span class="line">    <span class="keyword">int</span> time; <span class="comment">// input order</span></span><br><span class="line">    <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">        PEvent p;</span><br><span class="line">        AEvent a;</span><br><span class="line">    &#125; data;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">power</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (type == <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">return</span> data.p.d;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> data.a.p;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">println</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (type == <span class="number">0</span>)</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;P %d %d\n&quot;</span>, data.p.c, data.p.d);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;A %d %d %d %d\n&quot;</span>, data.a.l, data.a.r, data.a.p, data.a.k);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; events[MAXN];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">cmp_p</span><span class="params">(Event &amp;a, Event &amp;b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> pa = a.<span class="built_in">power</span>();</span><br><span class="line">    <span class="keyword">int</span> pb = b.<span class="built_in">power</span>();</span><br><span class="line">    <span class="keyword">if</span> (pa != pb)</span><br><span class="line">        <span class="keyword">return</span> pa &lt; pb;</span><br><span class="line">    <span class="keyword">return</span> a.time &lt; b.time;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">cmp_t</span><span class="params">(Event &amp;a, Event &amp;b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a.time &gt; b.time;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> ret[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">resolve</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> m, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">sort</span>(events+l, events+m+<span class="number">1</span>, <span class="keyword">cmp_t</span>);</span><br><span class="line">    <span class="built_in">sort</span>(events+m+<span class="number">1</span>, events+r+<span class="number">1</span>, <span class="keyword">cmp_t</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//printf(&quot;resolve %d %d =========\n&quot;, l, r);</span></span><br><span class="line">    <span class="comment">//for (int i = l; i &lt;= m; i++)</span></span><br><span class="line">    <span class="comment">//events[i].println();</span></span><br><span class="line">    <span class="comment">//puts(&quot;---&quot;);</span></span><br><span class="line">    <span class="comment">//for (int i = m+1; i &lt;= r; i++)</span></span><br><span class="line">    <span class="comment">//events[i].println();</span></span><br><span class="line">    bit.<span class="built_in">reset</span>(n);</span><br><span class="line">    <span class="keyword">int</span> j = m+<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = l; i &lt;= m; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (events[i].type)</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">int</span> qtime = events[i].time;</span><br><span class="line">        <span class="keyword">while</span> (j &lt;= r &amp;&amp; events[j].time &gt; qtime) &#123;</span><br><span class="line">            <span class="keyword">if</span> (events[j].type) &#123;</span><br><span class="line">                bit.<span class="built_in">add</span>(events[j].data.a.l,</span><br><span class="line">                        events[j].data.a.r,</span><br><span class="line">                        events[j].data.a.k,</span><br><span class="line">                        n);</span><br><span class="line">                <span class="comment">//printf(&quot;add %d %d %d %d\n&quot;, events[j].data.a.l,</span></span><br><span class="line">                <span class="comment">//events[j].data.a.r,</span></span><br><span class="line">                <span class="comment">//events[j].data.a.p,</span></span><br><span class="line">                <span class="comment">//events[j].data.a.k);</span></span><br><span class="line">            &#125;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//printf(&quot;%d --- %d\n&quot;, events[i].data.p.i, bit.sum(events[i].data.p.c));</span></span><br><span class="line">        ret[events[i].data.p.i] += bit.<span class="built_in">sum</span>(events[i].data.p.c);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">divide</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (l &gt;= r)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">int</span> m = (l+r)/<span class="number">2</span>;</span><br><span class="line">    <span class="built_in">divide</span>(l, m);</span><br><span class="line">    <span class="built_in">divide</span>(m+<span class="number">1</span>, r);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">resolve</span>(l, m, r);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> m;</span><br><span class="line">    <span class="keyword">char</span> s[<span class="number">2</span>];</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>, &amp;n, &amp;m);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> id = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%s&quot;</span>, s);</span><br><span class="line">        events[i].time = i;</span><br><span class="line">        <span class="keyword">if</span> (s[<span class="number">0</span>] == <span class="string">&#x27;P&#x27;</span>) &#123;</span><br><span class="line">            events[i].type = <span class="number">0</span>;</span><br><span class="line">            events[i].data.p.i = id++;</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d %d&quot;</span>,</span><br><span class="line">                    &amp;events[i].data.p.c,</span><br><span class="line">                    &amp;events[i].data.p.d);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            events[i].type = <span class="number">1</span>;</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d %d %d %d&quot;</span>,</span><br><span class="line">                    &amp;events[i].data.a.l, </span><br><span class="line">                    &amp;events[i].data.a.r,</span><br><span class="line">                    &amp;events[i].data.a.p,</span><br><span class="line">                    &amp;events[i].data.a.k);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">sort</span>(events, events+m, cmp_p);</span><br><span class="line">    <span class="built_in">divide</span>(<span class="number">0</span>, m<span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; id; i++)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, ret[i]);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;Algorithm Design and Analysis (NTU CSIE, Fall 2020)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&quot;Problem&quot;&gt;&lt;a href=&quot;#Problem&quot; class=&quot;headerlink&quot;
+      
+    
+    </summary>
+    
+      <category term="解題區" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/"/>
+    
+      <category term="解題區 - 其他題目" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/%E8%A7%A3%E9%A1%8C%E5%8D%80-%E5%85%B6%E4%BB%96%E9%A1%8C%E7%9B%AE/"/>
+    
+    
+      <category term="BIT" scheme="http://morris821028.github.io/tags/BIT/"/>
+    
+      <category term="分治" scheme="http://morris821028.github.io/tags/%E5%88%86%E6%B2%BB/"/>
+    
+      <category term="整體二分" scheme="http://morris821028.github.io/tags/%E6%95%B4%E9%AB%94%E4%BA%8C%E5%88%86/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>資訊科學的偏科生 面試者篇</title>
+    <link href="http://morris821028.github.io/2020/10/25/diary-202010/"/>
+    <id>http://morris821028.github.io/2020/10/25/diary-202010/</id>
+    <published>2020-10-25T11:16:06.000Z</published>
+    <updated>2021-05-30T02:04:42.495Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>從實習一年、正式工作三年，從一般的軟體工程職位軟體工程師 II (Software Enginner II) 開始爬，一年後升到資深工程師 (Senior Software Engineer)，第三年升到首席工程師 (Principal Software Engineer)，依照正常流程，這樣的躍遷是快的。</p><p>在薪水上可能會有點失望，必須了解到能力好與不好之間並沒有太大的差別，也就是說薪水不會有 30% 的差異，同時職位之間的差別也不到 20%。但工作量卻顯著地增加，這社會相當奇怪，這也難怪很多高科技的高手最後反而會想離開大公司的體制，自行創業或者轉行都是會發生的狀況。</p><p>從成功嶺出獄的第一天上班，頂著小平頭也參與面試流程，從那開始三年間面試了不少人，也與一些身歷百戰的朋友聊了一下狀況，而我卻沒站在白板上參與真的面試，大部分都是工作直接來找，看到需要繁瑣面試的公司都想直接忽略，畢竟身為一個偏科生，肯定是會被刷掉的，要找通才去找血統純正的學歷吧。</p><h2 id="面試狀況"><a href="#面試狀況" class="headerlink" title="面試狀況"></a>面試狀況</h2><h3 id="電話面試"><a href="#電話面試" class="headerlink" title="電話面試"></a>電話面試</h3><p>最近受到疫情影響，會盡量先以 <strong>電話面試</strong> 為第一關，通常會從簡單的問答看出端倪，如基礎的時間複雜度分析、程式架構、開發經歷上著手提問。有時會配上線上共享文件撰寫簡單的程式，這對刷 leetcode 準備面試的人都不算難。</p><p>通常用解說定義為主，或者可以分享一些使用經驗，對於模糊不清的項目直接表達說知道但是不熟悉，一旦描述錯誤或者是甚至在使用完全錯誤的方向，就會凸顯沒有仔細了解，在錯誤理解下又有大量的錯誤衍生，下場就會非常慘。</p><p>雷點如下：</p><ul><li>不知道二元樹的定義 (到底是怎麼碩班畢業的？)</li><li>不知道遞迴的實際流程 (到底是怎麼大學畢業的？)</li><li>要求指定語言的工作條件，卻不知物件導向 (可以不滿足所有應徵條件，但請理解每一項大概是什麼內容再來。)</li></ul><h3 id="自我介紹"><a href="#自我介紹" class="headerlink" title="自我介紹"></a>自我介紹</h3><p>通過第一階段後，很多人就會來到這個環節，通常要準備三十分鐘自我介紹，我比較喜歡稱作武力展示，但不是像相親那樣的自我介紹，如學歷、出生年月、興趣嗜好都不需要。如果早已遞交履歷，那些訊息不需要提第二次，這些口頭描述就像流水帳，聽起來也很無趣。</p><p>對於碩博剛畢業的人而言，大部分都直接拿論文出來講，對於程式能力比較吃重的職位，偏好程度很低，實在是不想當論文口委，畢竟研究領域差太遠，也不能驗證對錯與否。如果用口述方式表達，專有名詞與公式都也無法理解是否具有該實力。</p><p>從以前讀過碩班的經驗，很多碩士都是老師放水過關的，也有可能完全不需要寫程式的經驗也能畢業。對於那些跨科系的碩士及學碩學歷差異大的，都需配上其他的實務經驗，才能讓面試官比較有信心。</p><p>履歷部分請參考相關文章</p><ul><li><a href="https://blog.roga.tw/2009/11/2329">《How the HR department and a programmer reads your resume?》 — roga’s blog</a></li><li><a href="https://kheresy.wordpress.com/2010/05/24/hr-%e5%92%8c%e7%a8%8b%e5%bc%8f%e8%a8%ad%e8%a8%88%e5%b8%ab%e6%80%8e%e9%ba%bc%e7%9c%8b%e4%bd%a0%e7%9a%84%e5%b1%a5%e6%ad%b7%ef%bc%9f/">《HR 和程式設計師怎麼看你的履歷？》 — Heresy’s Space</a></li></ul><p>在過程中的確有幾個實際發生的項目</p><ol><li>博士學位的面試者容易遇到本公司可能無法讓你發展所才，請另尋他路的勸導<ul><li>原本想要的，但實在是太高學歷了。</li></ul></li><li>以 Microsoft Office Word/Excel 出現在技巧描述中<ul><li>因為大部分的工作工作都是之後再學，像這種被 GUI 固化的工具，很難拓展。</li></ul></li><li>只有在課堂上寫過程式，完全沒有課堂以外的程式項目或參與專案<ul><li>課堂以內是可接受的，但需要體現足夠自我挖掘與學習能力</li></ul></li><li>履歷上的縮排混雜著空白字元和跳脫字元<ul><li>若採用中文履歷，可參閱 <a href="https://github.com/sparanoid/chinese-copywriting-guidelines">github/中文文案排版指北</a></li><li>體現細心與自我要求的程度，通常會視為考量部分。</li></ul></li></ol><p>在其他未提及和重點項目，</p><ol><li>履歷鏈結中出現 <code>?fbclid=XXX</code>，作為一個從事資訊行業的人會直接出局。</li><li>強調的內容卻用淡色系的文字或其他方式呈現，脫離一般的思考模式。</li><li>個人網站<ul><li>能提高具有該實力的證明。</li><li>展示出資訊整合的高度能力就是寫作，也可以從中看出溝通能力。</li><li>因分享教學是最好的學習，請參閱「費曼學習法」。</li></ul></li><li>github/bitbucket 等代碼託管帳號<ul><li>自行開發的項目架構一覽無遺，直接進行武力展示。</li><li>參與的開放項目，展現其求知慾與發現問題並解決的能力。</li><li>參與的專案討論，展現其挖掘與辯論分析的能力。</li></ul></li></ol><p>在過程中可以透過白板直接介紹，也可以純口頭表達，亦可以採用簡報的方式，手法不受任何限制，但盡量貼合目標工作內容所需要的技能或是該公司缺少的項目為主軸。千萬別忘記體現自己所做過，拉回自己擅長的領域。</p><p>有時面試官突然問個太細節的問題，則需要準備概要和講給不同領域的人能理解的一句話，否則將容易錯失表現機會。畢竟那些項目細節上網搜尋即可，就像論文描述幾十頁，而摘要卻只有幾百個字一樣，唯有充分理解的人，才能做到的能力。千萬別花半個小時去描述需要解決的問題定義，適可而止！</p><h3 id="筆試"><a href="#筆試" class="headerlink" title="筆試"></a>筆試</h3><p>好的公司是不會有筆試的。若有，則筆試應該只是參考依據。對沒有推薦人或認識的狀況下，筆試都是從嚴審核。反之，就不會佔有太大的比重。</p><blockquote><p>不同類型的公司對筆試的考核方式皆不同。</p></blockquote><p>對於著重實作細節的公司，如指定語言下的語法考試，甚至有一些未定義行為 (undefined behavior) 的項目需要注意，有的還會考以前大學教科書上附錄不想見的問題。這類型因為工作環境和需求，可能會讓新人非常受挫，對於新人的要求會比較高，才剛畢業的人通常要具備在沒有搜尋資源下，也能略知一二的能力。</p><p>對於跨領域的公司，會有一些其他領域題型，具有博學能力的人就會特別被選拔出來。像我們 EDA 公司，就有機會看到電子電路的題目，實際上答不出來也很正常，不用太沮喪，導致下一個階段表現不好。</p><p>對於應用方面，題目描述的手法也不一定像學校所學的非一即二的要求。若看到含糊不清的描述，那表示接下來的工作環境就是那種含糊不清的需求，則在答題上要自己以自身經驗去約束和討論問題，才能符合需求，原則上是以申論題的模式作答。</p><p>雷點如下：</p><ul><li>沒有檢查輸入、輸出的定義<ul><li>那個不是已知的條件，不能假設，常理上是絕對不行的啦。</li></ul></li><li>不完整的程式片段<ul><li>到底要回傳什麼，記得寫。</li></ul></li><li>不完整的上下文描述</li><li>沒有計算過程的答案<ul><li>直接迸出一個數值。如果答錯，是完全沒有轉圜的餘地的。畢竟不知道你是不是費馬，還是把過程列出來吧。</li></ul></li><li>全然忘卻高中數學<ul><li>如為什麼 <span>$\sin \theta$</span><!-- Has MathJax --> 是 <span>$\frac{a}{c}$</span><!-- Has MathJax --></li></ul></li><li>相關題目的邏輯矛盾<ul><li>如在前一題答說 A 是缺點，卻在下一題答 A 是優點</li></ul></li><li>履歷中有提及此項目，卻無法以此作答<ul><li>履歷上的項目看起來只是掛名的對吧？像是上百人團隊的工作項目。</li></ul></li><li>論述內容呈現大學必修科目沒有學好<ul><li>如說雜湊的整體空間複雜度是 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --></li></ul></li><li>在行為準則考題中，連演都不演的真性格<ul><li>Q: 能不能與同事合作 A: 完全無法</li></ul></li></ul><p>同時，在撰寫的代碼中很容易展現出經驗差距，容易出錯的寫法雖然沒錯，卻間接告訴面試官有經驗不足的缺點。</p><h3 id="白板題"><a href="#白板題" class="headerlink" title="白板題"></a>白板題</h3><p>解決只刷 leetcode 的假工程師的回合 (與考驗同事的時候)。</p><p>每題作答 30 分鐘，採用白板討論構思方向與實作細節。通常考三題，答題過快會有第四個防破台題目出現，題目對於以前打比賽的都是水題，基本上都會在十分鐘內解決。</p><p>類型通常都是教科書上每一章節的經典算法，答不出來或者構思錯誤，多半都會被刷掉。即使答出來，討論實務經驗時，也會從中觀察出是否有足夠的學習基礎，以及對所學的概念應用的能力。那些培訓班出來的假高手通常會在變化題型受挫，分析相關問題時無法應答，及缺少實務相關經驗。</p><h2 id="後話"><a href="#後話" class="headerlink" title="後話"></a>後話</h2><p>不太選用從短程培訓班出來的，風險相當大，因為太多沒有實戰或者過時技術的老師在外頭開補習班。試想過，為什麼能力好卻不從事開發工作，卻跑來當老師的原因嗎？再者，程式補習班老師多半沒有學過教育學程，跟教授一樣不需要，那麼教學品質很難有所保證。</p><p>現在又有大學入學程式考試 APCS (Advanced Placement Computer Science)，自稱老師的越來越多，家長又瘋狂地看著老師的名號去選擇，而不知道科技業每一個職位與工作時間是有很大的差異，就像工作沒幾年就轉戰的 youtuber ，的確是高學歷也很聰明，但對於整體知識的養成與發展概念，通常都還沒沒達到融會貫通，只有問 A 答 B 的快速反應，缺少對 A 的定義及其他種非正規的可應用解的能力。</p><p>如何了解、觀察、解決、應用問題，適當地啟蒙學生才是老師要引導的。若像大學教授一樣教學生，九成的大學生畢業之後都不到八成內容。只是要知道問題的解決方法，可能還贏不了 Google，看看複製貼上的工程師就明白了。</p><p>有一些認識的學長，也開始從事家教和補習班老師，希望能遏止這種劣質的教學環境，就看看近期有沒有發展吧。</p><p>藉此，了解到不少學校的學生都找家教當槍手，學歷似乎也不能證明任何能力，家長資助和選對槍手才是當代的生存之道。面對欺瞞的文化，不行就說不行，請不要裝作很行，在面試過程中試出來，公司可是會記錄評價的。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h2&gt;&lt;p&gt;從實習一年、正式工作三年，從一般的軟體工程職位軟體工程師 II (Software Enginner II) 開始爬，一年後升到資深工程師 
+      
+    
+    </summary>
+    
+      <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 6</title>
+    <link href="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/"/>
+    <id>http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/</id>
+    <published>2020-10-24T10:00:00.000Z</published>
+    <updated>2020-10-24T09:29:26.402Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Observer-vs-Inheritor"><a href="#Observer-vs-Inheritor" class="headerlink" title="Observer vs. Inheritor"></a>Observer vs. Inheritor</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Tool tool = <span class="keyword">new</span> Tool() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">fireSomething</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.fireSomething(t);</span><br><span class="line">        updateProcess(t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">updateProcess</span><span class="params">(T t)</span> </span>&#123;...&#125;</span><br></pre></td></tr></table></figure><p>當觀察者模式 (observer pattern) 的介面應優先考量 attach/addListener，不應該以繼承的方式覆寫 update/fireListener/notify 等函數。</p><h3 id="WhatIf"><a href="#WhatIf" class="headerlink" title="WhatIf?"></a>WhatIf?</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (isA()) &#123;</span><br><span class="line">    <span class="comment">// something</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (isA() &amp;&amp; isB()) &#123;</span><br><span class="line">    <span class="comment">// dead code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>第二個 else-if 並不會執行到。</p><h3 id="Equals-vs"><a href="#Equals-vs" class="headerlink" title="Equals vs. =="></a>Equals vs. ==</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (a == b &amp;&amp; a.equals(b)) &#123;...&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (a == b || a.equals(b)) &#123;...&#125;</span><br></pre></td></tr></table></figure><p>對 Java 而言，有 <code>Objects.equals</code> 可以替代呼叫，又或者在 <code>boolean equals(Object)</code> 中包含 <code>==</code> 才對。</p><h3 id="String-format"><a href="#String-format" class="headerlink" title="String.format"></a>String.format</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String.format(<span class="string">&quot;Move %s&quot;</span>, fromObj, toObj);</span><br></pre></td></tr></table></figure><p>對上參數數量是很重要的。</p><h3 id="Mapper-Function"><a href="#Mapper-Function" class="headerlink" title="Mapper Function"></a>Mapper Function</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> T <span class="title">a2b</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">    Map&lt;String, T&gt; mapper = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    mapper.put(<span class="string">&quot;...&quot;</span>, ...);</span><br><span class="line">    mapper.put(<span class="string">&quot;...&quot;</span>, ...);</span><br><span class="line">    mapper.put(<span class="string">&quot;...&quot;</span>, ...);</span><br><span class="line">    mapper.put(<span class="string">&quot;...&quot;</span>, ...);</span><br><span class="line">    <span class="keyword">return</span> mapper.get(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>手動做 if-else 比較快的，建立 hash 可不是這麼簡單，記憶體宣告等因素需要考慮。而它也不屬於只宣告一次的靜態變數，因此並不適合這樣處理。</p><h3 id="Comparable"><a href="#Comparable" class="headerlink" title="Comparable"></a>Comparable</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">compareTo</span><span class="params">(T other)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span>[] c = &#123;fa.compareTo(other.fa), fb.compareTo(other.fb) ...&#125;;</span><br><span class="line">    <span class="keyword">return</span> firstNotZero(c);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>if-else 不應該這樣被偷懶的，整個效能都爛了。</p><h3 id="Argument-vs-Method-Name"><a href="#Argument-vs-Method-Name" class="headerlink" title="Argument vs. Method Name"></a>Argument vs. Method Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">doExpand</span><span class="params">(<span class="keyword">boolean</span> isExpand)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!isExpand)</span><br><span class="line">        doCollapse();</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>好的命名決定品質。</p><h3 id="Switch"><a href="#Switch" class="headerlink" title="Switch"></a>Switch</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">enableAListener</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">removeAListener</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">addBListener</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">stopBListener</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setCListener</span><span class="params">()</span> </span>&#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">disableCListener</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    sListeners.remove(sAListener);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>有一種被玩弄的感覺 …</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Observer-vs-Inheritor&quot;&gt;&lt;a href=&quot;#Observer-vs-Inheritor&quot; c
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
+  
+</feed>

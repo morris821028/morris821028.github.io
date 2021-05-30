@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>優化技巧 - 排序/優先隊列 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="主要問題在算法問題中，時常結合到排序，而排序的常數也大大影響到我們整體的效能。 基數排序降低常數若是一般原始型別的排序，可以透過基數排序 (radix sort)。從排序的範圍來決定是否要劃分 8-bit 一組一組。若範圍介於可容忍的 $[0, v]$，當 $v &amp;lt; n$ 時，直接開 $n$ 個 bucket 的方式更好。因為大多數的複雜度都大於線性 $O(n)$ 非負整數基數排序12345">
+<meta name="keywords" content="堆,基數排序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="優化技巧 - 排序&#x2F;優先隊列">
+<meta property="og:url" content="http://morris821028.github.io/2018/07/22/optimize-skill-sort/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="主要問題在算法問題中，時常結合到排序，而排序的常數也大大影響到我們整體的效能。 基數排序降低常數若是一般原始型別的排序，可以透過基數排序 (radix sort)。從排序的範圍來決定是否要劃分 8-bit 一組一組。若範圍介於可容忍的 $[0, v]$，當 $v &amp;lt; n$ 時，直接開 $n$ 個 bucket 的方式更好。因為大多數的複雜度都大於線性 $O(n)$ 非負整數基數排序12345">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T02:04:42.537Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="優化技巧 - 排序&#x2F;優先隊列">
+<meta name="twitter:description" content="主要問題在算法問題中，時常結合到排序，而排序的常數也大大影響到我們整體的效能。 基數排序降低常數若是一般原始型別的排序，可以透過基數排序 (radix sort)。從排序的範圍來決定是否要劃分 8-bit 一組一組。若範圍介於可容忍的 $[0, v]$，當 $v &amp;lt; n$ 時，直接開 $n$ 個 bucket 的方式更好。因為大多數的複雜度都大於線性 $O(n)$ 非負整數基數排序12345">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-optimize-skill-sort" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/07/22/optimize-skill-sort/" class="article-date">
+  <time datetime="2018-07-22T00:20:18.000Z" itemprop="datePublished">2018-07-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      優化技巧 - 排序/優先隊列
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2018/07/22/optimize-skill-sort/" data-id="ckpaivc81003tn8vn4i7u583t" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2018/07/22/optimize-skill-sort/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/基數排序/">基數排序</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/堆/">堆</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#主要問題"><span class="toc-number">1.</span> <span class="toc-text">主要問題</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基數排序降低常數"><span class="toc-number">2.</span> <span class="toc-text">基數排序降低常數</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#非負整數基數排序"><span class="toc-number">2.1.</span> <span class="toc-text">非負整數基數排序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#浮點數基數排序"><span class="toc-number">2.2.</span> <span class="toc-text">浮點數基數排序</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#慎選內建排序"><span class="toc-number">3.</span> <span class="toc-text">慎選內建排序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#優先隊列"><span class="toc-number">4.</span> <span class="toc-text">優先隊列</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="主要問題"><a href="#主要問題" class="headerlink" title="主要問題"></a>主要問題</h2><p>在算法問題中，時常結合到排序，而排序的常數也大大影響到我們整體的效能。</p>
+<h2 id="基數排序降低常數"><a href="#基數排序降低常數" class="headerlink" title="基數排序降低常數"></a>基數排序降低常數</h2><p>若是一般原始型別的排序，可以透過基數排序 (radix sort)。從排序的範圍來決定是否要劃分 8-bit 一組一組。若範圍介於可容忍的 <span>$[0, v]$</span><!-- Has MathJax -->，當 <span>$v &lt; n$</span><!-- Has MathJax --> 時，直接開 <span>$n$</span><!-- Has MathJax --> 個 bucket 的方式更好。因為大多數的複雜度都大於線性 <span>$O(n)$</span><!-- Has MathJax --></p>
+<h3 id="非負整數基數排序"><a href="#非負整數基數排序" class="headerlink" title="非負整數基數排序"></a>非負整數基數排序</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> _radix_sort(Pt *A, <span class="keyword">int</span> n) &#123;</span><br><span class="line">    <span class="keyword">static</span> Pt _tmp[MAXN];</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> CHUNK = <span class="number">256</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> C[CHUNK];</span><br><span class="line">    Pt *B = _tmp, *T;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">0</span>; x &lt; <span class="number">8</span>; x++) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">int</span> d = x*<span class="number">8</span>;</span><br><span class="line">        <span class="built_in">memset</span>(C, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(C));</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</span><br><span class="line">            C[(A[i].x&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]++;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; CHUNK; i++)</span><br><span class="line">            C[i] += C[i<span class="number">-1</span>];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = n<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--)</span><br><span class="line">            B[--C[(A[i].x&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]] = A[i];</span><br><span class="line">        T = A, A = B, B = T;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="浮點數基數排序"><a href="#浮點數基數排序" class="headerlink" title="浮點數基數排序"></a>浮點數基數排序</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">radix_sort</span><span class="params">(Pt *A, <span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="keyword">int32_t</span> &amp;v = *((<span class="keyword">int32_t</span> *) &amp;(A[i].s));</span><br><span class="line">        <span class="keyword">if</span> ((v&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>)</span><br><span class="line">            v = ~v;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            v = v | <span class="number">0x80000000</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">static</span> Pt _tmp[MAXN*<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> CHUNK = <span class="number">256</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> C[<span class="number">1</span>&lt;&lt;<span class="number">8</span>];</span><br><span class="line">    Pt *B = _tmp, *T;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">0</span>; x &lt; <span class="number">4</span>; x++) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">int</span> d = x*<span class="number">8</span>;</span><br><span class="line">        <span class="built_in">memset</span>(C, <span class="number">0</span>, <span class="built_in"><span class="keyword">sizeof</span></span>(C));</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</span><br><span class="line">            C[((*((<span class="keyword">int32_t</span> *) &amp;(A[i].s)))&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]++;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; CHUNK; i++)</span><br><span class="line">            C[i] += C[i<span class="number">-1</span>];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = n<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--)</span><br><span class="line">            B[--C[((*((<span class="keyword">int32_t</span> *) &amp;(A[i].s)))&gt;&gt;d)&amp;(CHUNK<span class="number">-1</span>)]] = A[i];</span><br><span class="line">        T = A, A = B, B = T;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        <span class="keyword">int32_t</span> &amp;v = *((<span class="keyword">int32_t</span> *) &amp;(A[i].s));</span><br><span class="line">        <span class="keyword">if</span> ((v&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>)</span><br><span class="line">            v = v &amp; <span class="number">0x7fffffff</span>;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            v = ~v;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="慎選內建排序"><a href="#慎選內建排序" class="headerlink" title="慎選內建排序"></a>慎選內建排序</h2><p>內建排序常見的有 <code>qsort</code>, <code>sort</code>, <code>stable_sort</code>，我不推薦使用 <code>qsort</code>，因為它在很久以前找到了一個退化情況 <a href="https://news.ycombinator.com/item?id=10476466">A Killer Adversary for Quicksort - 1995</a>，有些題目的測資會出這種特別案例，導致當年的萌新內心受創。除非只有 C 的情況，否則請避開 <code>qsort</code>。如果算法屬於調整某些元素後，再對整體進行排序，這時候 <code>sort</code> 比 <code>stable_sort</code> 慢很多。當情況非常接近已經排序的時候，就使用 <code>stable_sort</code>。</p>
+<h2 id="優先隊列"><a href="#優先隊列" class="headerlink" title="優先隊列"></a>優先隊列</h2><p>使用 priority queue 的方法通常有三種 <code>set</code>, <code>priority_queue</code>, <code>heap</code>。</p>
+<ul>
+<li>功能最多的 <code>set</code>、次少的 <code>priority_queue</code>，最少的 <code>heap</code>。</li>
+<li>效能方面則是 <code>heap</code> 最快、次著 <code>priority_queue</code>、最後 <code>set</code>。</li>
+<li>代碼維護最容易的 <code>set</code>、最差的 <code>heap</code>。</li>
+</ul>
+<p>之前很排斥使用 <code>priority_queue</code>，原因在於撰寫 <code>operator&lt;</code> 與我的邏輯相反，因此都偏愛使用 <code>set</code>，但是效能被拉出來的時候，又必須退回類似 C 的 <code>make_heap</code>、<code>pop_heap</code> … 的接口。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/08/19/uva-12254/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          UVa 12254 - Electricity Connection
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/07/08/uva-12310/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">UVa 12310 - Point Location</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2018/07/22/optimize-skill-sort/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>
