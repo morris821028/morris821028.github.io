@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
-  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  <!-- <link rel="import" href="/bower_components/app-layout/app-layout.html"> --><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 </head>
 <body>
   <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
@@ -117,7 +117,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckpaivc7y003in8vn1h9434g3" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckpak9v8m00bhwsvn0t73z8v7" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -160,7 +160,6 @@
 \textit{rot}(L, R, A) &amp;= \text{hd} \; R : A &amp; \{ |L| = 0 \} \\
                       &amp;= \text{hd} \; L : \textit{rot}(\text{tl} \; L, \text{tl} \; R, \text{hd} \; R : A) &amp; \{ |L| &gt; 0 \}
 \end{aligned}$$</span><!-- Has MathJax -->
-
 <p>看到這一大串的語法樹，就要開始構思曾經在編譯器學到的 LL Parser，操作完之後仍然是一個隊列，為了找到隊列的頭，我們要去完成 LL(1) 的計算，使用向前探查 (lookahead) 問第一個元素為何。</p>
 <p>不幸地，上述語法的 <span>$\textit{remove}$</span><!-- Has MathJax --> 為 <span>$\mathcal{O}(\log n)$</span><!-- Has MathJax -->，其他操作為 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->。原因很簡單，當我們不斷地 <span>$\textit{insert}$</span><!-- Has MathJax --> 進去時，根據語法樹會不斷地構造長度為 <span>$1,\; 2,\; 4, \cdots, 2^n$</span><!-- Has MathJax --> 長度的 <span>$\textit{rot}$</span><!-- Has MathJax --> 堆疊，這時候若要看第一個元素為何，運算量就等同於遞迴深度。</p>
 <p>縱使我們在每個堆疊建構時，預先計算出 <code>front()</code> 的結果，那麼在 <code>pop()</code> 回傳的時候，仍需要付出代價，而我們更不能在建構子中預先計算出 <code>pop()</code> ，這違反遞迴定義，更會落入退化成線性操作，而不是想要的惰性操作。當瞭解上述的問題後，接下來要想辦法把 <span>$\textit{remove}$</span><!-- Has MathJax --> 變成 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 操作。</p>
@@ -184,11 +183,10 @@
 \textit{rot}(L, R, A) &amp;= \text{hd} \; R : A &amp; \{ |L| = 0 \} \\
                       &amp;= \text{hd} \; L : \textit{rot}(\text{tl} \; L, \text{tl} \; R, \text{hd} \; R : A) &amp; \{ |L| &gt; 0 \}
 \end{aligned}$$</span><!-- Has MathJax -->
-
 <p>透過額外的 <span>$\hat{L}$</span><!-- Has MathJax -->，避開了 LL Parser 和 lookahead 造成的遞迴定義，如此一來每一個操作複雜度皆為 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->。其概念也很簡單，為了維持條件 <span>$|R| \le |L|$</span><!-- Has MathJax -->，我們將 <span>$\hat{L}$</span><!-- Has MathJax --> 定義為其差值，為即將地部分 <span>$R$</span><!-- Has MathJax --> 反轉到變成 <span>$L$</span><!-- Has MathJax --> 計數做準備。</p>
 <p>特別注意到，在 <span>$\text{makeq}$</span><!-- Has MathJax --> 的時候，同步移除掉了一部分的 <span>$\hat{L}$</span><!-- Has MathJax -->，而在長度 <span>$|\hat{L}| = 0$</span><!-- Has MathJax --> 觸發反轉。實作上，可以當作一個長度數值去看待，而在可持久化概念上，它們實際上共享同一塊內存，所以也就沒有太大的差別。</p>
 <p>概念與前一篇的 Realtime Queue 構造方式類同。只不過，我們預先將答案放置於 <span>$\textit{rot}$</span><!-- Has MathJax --> 堆疊定義中的 <span>$A$</span><!-- Has MathJax --> 中，而重複使用了 <span>$\hat{L}$</span><!-- Has MathJax --> 找到完成時刻。</p>
-<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish">morris821028/immortal-jellyfish</a></p>
+<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p>
 
         
       

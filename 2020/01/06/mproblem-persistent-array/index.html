@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
-  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  <!-- <link rel="import" href="/bower_components/app-layout/app-layout.html"> --><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 </head>
 <body>
   <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
@@ -117,7 +117,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/01/06/mproblem-persistent-array/" data-id="ckpaivc7x003fn8vnhk9i519e" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/01/06/mproblem-persistent-array/" data-id="ckpak9v8j00bbwsvno5hblprc" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/01/06/mproblem-persistent-array/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -148,16 +148,13 @@
 <p>當年初學者的我，切入觀點有二元樹 (binary tree)、塊狀表 (unrolled linked list)，前者讓操作必為 <span>$\mathcal{\Theta}(\log n)$</span><!-- Has MathJax -->、後者為 <span>$\mathcal{\Theta}(\sqrt{n})$</span><!-- Has MathJax -->，從理論分析上一定優先選擇前者實作，但如果操作有特別的比例問題，如 <code>get(index)</code>、<code>pushBack()</code> … 等，這時候快取能力好的塊狀表反而有優勢，二元樹因指標的使用導致整體的內存使用率不高，透過 2-3 tree 那一種將節點儲存多個元素的設計，就相當於把塊狀表拉成樹狀，其效果也不錯，但在計算上會更需要耗費工夫。</p>
 <h2 id="塊狀表-Unrolled-Linked-List"><a href="#塊狀表-Unrolled-Linked-List" class="headerlink" title="塊狀表 (Unrolled Linked List)"></a>塊狀表 (Unrolled Linked List)</h2><p>任何操作皆為 <span>$\mathcal{\Theta}(\sqrt{n})$</span><!-- Has MathJax -->，修改操作皆需要複製整個節點。在可持久化情況時，預先每一個塊的大小較為不可行，故做不到動態調整塊狀大小。</p>
 <h2 id="二元樹-Binary-Tree"><a href="#二元樹-Binary-Tree" class="headerlink" title="二元樹 (Binary Tree)"></a>二元樹 (Binary Tree)</h2><p>利用二元樹建立可持久化的情況有很多種編碼，以及紀錄節點的優化方式，這將會影響到我們的效率。盡可能地不在節點中儲存欄位 <code>size</code> 即可達到索引。若二元樹節點定義為</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    Node *lson;</span><br><span class="line">    Node *rson;</span><br><span class="line">    <span class="keyword">int</span> size;</span><br><span class="line">    T value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">    Node *lson;</div><div class="line">    Node *rson;</div><div class="line">    <span class="keyword">int</span> size;</div><div class="line">    T value;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>葉與內部節點皆帶有元素值，那麼在陣列的新增刪除尾端的操作，我們可以透過類似 heap 的方式，將其設計成不用旋轉操作、不用紀錄樹大小的編碼。當節點編碼為 <span>$k$</span><!-- Has MathJax -->，則兩個子節點 <span>$2k$</span><!-- Has MathJax --> 和 <span>$2k+1$</span><!-- Has MathJax -->，實作時只需要紀錄整體大小，接著在走訪過程中，採用位元運算得到其子樹大小作為操作依據。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">      1</span><br><span class="line">     / \</span><br><span class="line">    2   3</span><br><span class="line">   / \ / \</span><br><span class="line">  4  5 6 7</span><br><span class="line"> /</span><br><span class="line">8</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">      1</div><div class="line">     / \</div><div class="line">    2   3</div><div class="line">   / \ / \</div><div class="line">  4  5 6 7</div><div class="line"> /</div><div class="line">8</div></pre></td></tr></table></figure>
 <p>這樣的編碼問題，對於陣列實作時，發現 <code>push/set(index, value)</code> 時，時間複雜度為 <span>$\mathcal{\Theta}(\log \text{index})$</span><!-- Has MathJax -->，那動態將 <span>$n$</span><!-- Has MathJax --> 個元素推入的時間必為 <span>$\mathcal{\Theta}(n \log n)$</span><!-- Has MathJax -->，靜態建造則為 <span>$\mathcal{\Theta}(n)$</span><!-- Has MathJax -->。索引值越大的元素，其操作花費越高。</p>
 <p>設計函數庫時，我們通常希望盡可能地讓複雜度對稱，也就是兩端的索引速度不會差太多，即使是亂數也好，因為演算法設計、真實生活中的應用大多都會偏向一方，很可能總是觸發最慘情況。</p>
 <h3 id="Braun-Tree"><a href="#Braun-Tree" class="headerlink" title="Braun Tree"></a>Braun Tree</h3><p>另一種編碼設計，對於每一個節點皆滿足右子樹大小最多比左子樹大小多一個，由於每一個節點都滿足，按照插入順序，可以得到下圖</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">          1</span><br><span class="line">     2         3</span><br><span class="line"> 4     6    5     7</span><br><span class="line">8 10 12 14 9 11 13 15</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">          1</div><div class="line">     2         3</div><div class="line"> 4     6    5     7</div><div class="line">8 10 12 14 9 11 13 15</div></pre></td></tr></table></figure>
 <p>明顯地，如同霍夫曼編碼一樣，這一個 1-indexed 的情況，最低位 0 則往左子樹、反之為右子樹。每一個操作皆為對稱的，但複雜度如同一般的二元搜尋樹，作為陣列操作也不滿足期待。</p>
 <p>若用於可持久化陣列的基底，代碼量非常少，遞迴定義使得操作簡單，我們甚至可以連整體大小都不用儲存，透過其遞迴定義可在 <span>$\mathcal{O}(\log^2 n)$</span><!-- Has MathJax --> 得到，但大部分陣列使用都是會希望 <code>A.size()</code> 是可以在 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 完成的。這樣的設計在優先隊列 (priority queue) 更友善，因為鮮少需要去拿到 <code>size</code>，只需要回傳這個優先隊列是否為空。</p>
 <p>同樣地，這依舊不是實作可持久化陣列的首選。</p>
@@ -168,7 +165,7 @@
 <p>例如：當 <code>n = dec(11) = bin(1011)</code> 時，用三棵大小分別為 8, 2, 1 的樹表示之。當 push 一個新的元素至尾端時，與最右邊的子樹 1 合併成大小為 2 的樹，再與左邊的子樹合併成大小為 4 的子樹，最後成為 <code>n&#39; = dec(12) = bin(1100)</code>，用兩棵子樹表示之。同理 pop 操作，模擬二進制的退位。</p>
 <p>每一個操作皆為 <span>$\mathcal{O}(\log n)$</span><!-- Has MathJax -->，且分布較為一般的二元樹均勻。並解決一開始我們在二元樹上遇到的問題，<strong>動態將 <span>$n$</span><!-- Has MathJax --> 個元素推入的時間</strong>，整體複雜度為 <span>$\mathcal{\Theta}(n)$</span><!-- Has MathJax -->。因此，這是目前實作可持久化隊列的首選。</p>
 <h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>函數式理論複雜度最好的結構為 finger tree，實作複雜度相當高，卻具備了合併兩個陣列的特殊操作，這是以上結構皆不具有操作。實際的效能無法預測，通常常數過大而無法使用。有朝一日，我們再來挑戰這偉大的結構吧。</p>
-<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish">morris821028/immortal-jellyfish</a></p>
+<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p>
 
         
       

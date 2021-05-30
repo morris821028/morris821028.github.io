@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
-  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  <!-- <link rel="import" href="/bower_components/app-layout/app-layout.html"> --><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 </head>
 <body>
   <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
@@ -117,7 +117,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/07/31/parallel-opt/" data-id="ckpaivc82003vn8vn0dm57b6r" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/07/31/parallel-opt/" data-id="ckpak9v9500ctwsvnj7pc38jf" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/07/31/parallel-opt/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -138,7 +138,7 @@
         
           <p>在撰寫平行程式時，仍會使用到編譯器的技巧，大幅度地減少指令個數，有時候這些優化甚至會把寫壞的分享記憶體 (shared memory) 存取給移除掉，如果能充分理解這些不好的設計，就不會造成實驗上發生的謬誤，還以為自己跑得很慢，平行根本沒加速到，這樣草草交出的報告，助教也收到煩了 (這裡不討論實驗方法本身就是錯的情況)。</p>
 <h2 id="內存篇"><a href="#內存篇" class="headerlink" title="內存篇"></a>內存篇</h2><p>首先，來談談 cache line 是什麼吧？現在的機器都有著記憶體階層架構 (memory hierarchy)，按照大小排序，其中最小的就是 cache line，接下來才是 L1, L2, L3 cache，最後是最大的主記憶體 (main memory)，但某些超級電腦的設計就不是如此，而有些輔助處理器 (如 intel xeon phi) 缺少 L3 cache，而像 GPU 則沒有 cache 設計，但有提供有 bank 存取資料。這些都跟處理問題的類型有關，才導致有那些特殊設計。</p>
-<h3 id="Multicore"><a href="#Multicore" class="headerlink" title="Multicore"></a>Multicore</h3><h4 id="Cache-Size"><a href="#Cache-Size" class="headerlink" title="Cache Size"></a>Cache Size</h4><p>為什麼 cache line 很重要？因為存取速度最快，但能存放的資料也很小，通常是 64 bytes 或者 32 bytes。在快取設計中，一次把位址連續的資料一起搬靠近 CPU，這樣簡單的設計，導致我們在撰寫程式時，若能將結構定義得好便能讓使用率高，這非常仰賴編成者對於系統架構的了解。例如色彩 RGB，可以宣告成 <code>struct RGB &#123;flaot R, G, B&#125;;</code> 或者 <code>float R[], G[], B[]</code>，如果 RGB 三者會共同計算，例如色彩轉換通常是三者交互作用的表達式，因此前者構造方式較為妥當。</p>
+<h3 id="Multicore"><a href="#Multicore" class="headerlink" title="Multicore"></a>Multicore</h3><h4 id="Cache-Size"><a href="#Cache-Size" class="headerlink" title="Cache Size"></a>Cache Size</h4><p>為什麼 cache line 很重要？因為存取速度最快，但能存放的資料也很小，通常是 64 bytes 或者 32 bytes。在快取設計中，一次把位址連續的資料一起搬靠近 CPU，這樣簡單的設計，導致我們在撰寫程式時，若能將結構定義得好便能讓使用率高，這非常仰賴編成者對於系統架構的了解。例如色彩 RGB，可以宣告成 <code>struct RGB {flaot R, G, B};</code> 或者 <code>float R[], G[], B[]</code>，如果 RGB 三者會共同計算，例如色彩轉換通常是三者交互作用的表達式，因此前者構造方式較為妥當。</p>
 <blockquote>
 <p>例題：批改娘 10087. Sparse Matrix Multiplication (OpenMP) </p>
 </blockquote>

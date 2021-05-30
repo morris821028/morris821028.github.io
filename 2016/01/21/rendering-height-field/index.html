@@ -50,7 +50,7 @@
   <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
-  <link rel="import" href="/bower_components/app-layout/app-layout.html"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  <!-- <link rel="import" href="/bower_components/app-layout/app-layout.html"> --><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 </head>
 <body>
   <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
@@ -133,7 +133,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckpaivc850047n8vngy8od0ql" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckpak9v9l00dywsvnlv7at09t" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -162,11 +162,9 @@
 <p>由於要找 ray 碰度到 uniform grid 的第一個格子，需要預處理 Height Field Bound Box，計算 Bound Box 需要 <span>$O(N \times M)$</span><!-- Has MathJax -->，若不預處理會造成 3D-DDA 與暴力法 <span>$O(N \times M)$</span><!-- Has MathJax --> 無異。</p>
 <p>若對 Height Field 進行 2D-DDA 好處在於一定是數個三角形構成，因此不用等到 <code>ray.maxT</code> 小於下一格交點的 <code>NextCrossingT[stepAxis]</code> 才能結束，一與三角形有交點就可以離開，因為每一格之間都有獨立性。</p>
 <h4 id="實作與測試細節"><a href="#實作與測試細節" class="headerlink" title="實作與測試細節"></a>實作與測試細節</h4><h4 id="測試環境"><a href="#測試環境" class="headerlink" title="測試環境"></a>測試環境</h4><p>一開始為了熟悉 pbrt 架構環境只實作求出交點的函數，</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Heightfield2::Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;r, <span class="keyword">float</span> *tHit, <span class="keyword">float</span> *rayEpsilon,</span></span></span><br><span class="line"><span class="params"><span class="function">        DifferentialGeometry *dg)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 3D DDA</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">bool</span> Heightfield2::Intersect(<span class="keyword">const</span> Ray &amp;r, <span class="keyword">float</span> *tHit, <span class="keyword">float</span> *rayEpsilon,</div><div class="line">        DifferentialGeometry *dg) <span class="keyword">const</span> &#123;</div><div class="line">    <span class="comment">// 3D DDA</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>而直接忽略單純詢問交點是否存在，這會導致畫面一片黑，因為每打到一個交點會嘗試從物體表面的交點連到點光源。若下述函數恆真，則不存在光源到交點的路徑，因此產出來的圖片是一片黑。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">Heightfield2::IntersectP</span><span class="params">(<span class="keyword">const</span> Ray &amp;r)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">bool</span> Heightfield2::IntersectP(<span class="keyword">const</span> Ray &amp;r) <span class="keyword">const</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <h4 id="紋理模糊"><a href="#紋理模糊" class="headerlink" title="紋理模糊"></a>紋理模糊</h4><p>找出紋理的兩個參數 <span>$(u, v)$</span><!-- Has MathJax --> 時，從 <code>trianglemesh.cpp</code> 複製過來的 <code>class Triangle</code> 其 <code>bool Triangle::Intersect()</code> 函數得到的 <span>$u, v$</span><!-- Has MathJax --> 都是相對於三角形的 <span>$0 \le u, v \le 1$</span><!-- Has MathJax --> (直接 rendering 會看起來很多小格子點)，因此得到相對的 <span>$u, v$</span><!-- Has MathJax --> 和交點 <span>$p_{hit}$</span><!-- Has MathJax --> (Object coordinate)，則把 <span>$p_{hit}$</span><!-- Has MathJax --> 再次投影到 x-y 平面上，由於 height field 在 x-y 平面上長寬都是 1，投影到平面後得到 <span>$p_{projection}$</span><!-- Has MathJax -->，對於整個 height field <span>$u = p_{projection}.x, \; v = p_{projection}.y$</span><!-- Has MathJax -->。</p>
 <blockquote>
 <p>若測試 texture.pbrt 時，發生過模糊情況，其主要原因在於過多次座標轉換，如 <code>Object -&gt; World -&gt; Object -&gt; World</code>，求出來的 <span>$u, v$</span><!-- Has MathJax --> 誤差就會放大。</p>
@@ -174,8 +172,8 @@
 <p>將 height field 存成好幾個 triangle 可以像 <code>class TriangleMesh</code> 利用 <code>index</code> 標籤來壓縮記憶體，但實作為方便仍然每一個三角形都有實體的 <code>Point</code>，儲存三角形每一個點座標採用 object coordinate，先把 <span>$ray$</span><!-- Has MathJax --> 從 <code>WorldToObject</code> 得到 <span>$ray&apos;$</span><!-- Has MathJax -->，得到的交點 <span>$p_{hit}$</span><!-- Has MathJax --> 再進行 <code>ObjectToWorld</code>，如此一來模糊情況就會消失。</p>
 <h4 id="Phong-圓滑化"><a href="#Phong-圓滑化" class="headerlink" title="Phong 圓滑化"></a>Phong 圓滑化</h4><p>Phong interpolation 方法在三角形上面操作時，需要得知三個頂點的法向量，給予 height field 的資訊，並不曉得每一個頂點的法向量為何。得到每一個頂點的法向量，採用預先處理所有頂點的法向量並儲存起來，因為不斷地正規化是很耗時間的 (<code>float sqrt(float x)</code> 儘管採用 fast inverse square root 算法，也要極力避免多餘的運算)。</p>
 <p>再計算頂點法向量時，根據影像處理中常用的一次差分 (differentiation) 遮罩</p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_1.png"></p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_2.png"></p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_1.png" alt=""></p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/hftest_2.png" alt=""></p>
 <h5 id="Case-1-邊緣"><a href="#Case-1-邊緣" class="headerlink" title="Case 1 邊緣"></a>Case 1 邊緣</h5><span>$$N_x = \begin{bmatrix}
 0 &amp; 0 &amp; 0 \\
 -1 &amp; 1 &amp; 0 \\
@@ -186,7 +184,6 @@ N_y = \begin{bmatrix}
 0 &amp; 1 &amp; 0 \\
 0 &amp; -1 &amp; 0 \\
 \end{bmatrix}$$</span><!-- Has MathJax -->
-
 <h5 id="Case-2-非邊緣"><a href="#Case-2-非邊緣" class="headerlink" title="Case 2 非邊緣"></a>Case 2 非邊緣</h5><span>$$N_x = \begin{bmatrix}
 0 &amp; 0 &amp; 0 \\
 -1 &amp; 0 &amp; 1 \\
@@ -197,167 +194,17 @@ N_y = \begin{bmatrix}
 0 &amp; 0 &amp; 0 \\
 0 &amp; -1 &amp; 0 \\
 \end{bmatrix}$$</span><!-- Has MathJax -->
-
 <p>上圖矩陣的中心座標為 <span>$(x, y)$</span><!-- Has MathJax -->，將相鄰座標的高度值 <span>$z$</span><!-- Has MathJax --> 相減得到兩個方向的向量 <span>$N_x, \; N_y$</span><!-- Has MathJax -->，外積得到座標 <span>$(x, y)$</span><!-- Has MathJax --> 的法向量 <span>$N_{x, y} = \mathrm{Cross}(N_x, N_y)$</span><!-- Has MathJax -->。</p>
 <p>從另一個角度來看，將 height field 三角化後，每一個頂點原則上有 6 個鄰居，可以對每一個鄰居進行差分，接著順時針或者逆時針將兩兩相臨的向量外積，得到 6 個法向量平均後得到 <span>$N_{x, y}$</span><!-- Has MathJax -->，這做法看起來比上述的差分來得穩定，但初始化消耗的時間會比較長，且撰寫的外積順序不對容易造成零向量的正規化錯誤。</p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_1.png"></p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_2.png"></p>
-<h3>Final Images Rendered with my implementation of heightfield.cpp</h3>
-<p>&nbsp;
-<table border="0" width="100%" cellspacing="0" cellpadding="0">
-  <tr>
-     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/hftest_2.jpg" width="400" height="400">
-      <p><font><tt>hftest.pbrt </tt> (without Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 0.125 seconds</font></li>
-        <li><font>My implementation: 0.130 seconds (104% original)</font></li>
-      </ul>
-    </td>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-0_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-0.pbrt </tt> (without Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 0.815 seconds</font></li>
-        <li><font>My implementation: 1.050 seconds (128% original)</font></li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-1_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (without Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 0.850 seconds</font></li>
-        <li><font>My implementation: 1.020 seconds (120% original)</font></li>
-      </ul>
-    </td>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-2_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (without Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 0.780 seconds</font></li>
-        <li><font>My implementation: 0.870 seconds (115% original)</font></li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/texture_2.jpg" width="400" height="400">
-      <p><font><tt>texture.pbrt </tt> (without Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 0.450 seconds</font></li>
-        <li><font>My implementation: 0.520 seconds (120% original)</font></li>
-      </ul>
-    </td>
-    <td width="50%">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="100%" colspan="2">
-     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-big_2.jpg" width="600" height="600">
-      <p><font><tt>landsea-big.pbrt </tt> (without Phong
-            interpolation)</font></p>
-            <p><font>Timings:</font>
-      <ul>
-        <li><font>Original: 6.200 seconds</font></li>
-        <li><font>My implementation: 2.200 seconds (35% original)</font></li>
-      </ul>
-    </td>
-  </tr>
-</table>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_1.png" alt=""></p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong_interpolation_2.png" alt=""></p>
+<p></p><h3>Final Images Rendered with my implementation of heightfield.cpp</h3><p></p>
+<p></p><p>&nbsp;</p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/hftest_2.jpg" width="400" height="400"><br>      <p><font><tt>hftest.pbrt </tt> (without Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 0.125 seconds</font></li><br>        <li><font>My implementation: 0.130 seconds (104% original)</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-0_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-0.pbrt </tt> (without Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 0.815 seconds</font></li><br>        <li><font>My implementation: 1.050 seconds (128% original)</font></li><br>      </ul><br>    </p></td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-1_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (without Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 0.850 seconds</font></li><br>        <li><font>My implementation: 1.020 seconds (120% original)</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-2_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (without Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 0.780 seconds</font></li><br>        <li><font>My implementation: 0.870 seconds (115% original)</font></li><br>      </ul><br>    </p></td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/texture_2.jpg" width="400" height="400"><br>      <p><font><tt>texture.pbrt </tt> (without Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 0.450 seconds</font></li><br>        <li><font>My implementation: 0.520 seconds (120% original)</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><br>    </td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="100%" colspan="2"><br>     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/3ddda/landsea-big_2.jpg" width="600" height="600"><br>      <p><font><tt>landsea-big.pbrt </tt> (without Phong<br>            interpolation)</font></p><br>            <p><font>Timings:</font><br>      <ul><br>        <li><font>Original: 6.200 seconds</font></li><br>        <li><font>My implementation: 2.200 seconds (35% original)</font></li><br>      </ul><br>    </p></td><br>  </tr><br></table>
 
-<h3>Final Images Rendered with my implementation of heightfield.cpp</h3>
-<p>&nbsp;
-<table border="0" width="100%" cellspacing="0" cellpadding="0">
-  <tr>
-     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/hftest_2.jpg" width="400" height="400">
-      <p><font><tt>hftest.pbrt </tt> (with Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>My implementation: 0.135 seconds</font></li>
-      </ul>
-    </td>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-0_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-0.pbrt </tt> (with Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>My implementation: 1.100 seconds</font></li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-1_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (with Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>My implementation: 1.050 seconds</font></li>
-      </ul>
-    </td>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-2_2.jpg" width="400" height="400">
-      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (with Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>My implementation: 0.900 seconds</font></li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/texture_2.jpg" width="400" height="400">
-      <p><font><tt>texture.pbrt </tt> (with Phong
-      interpolation)</font>
-      <p><font>Timings:</font>
-      <ul>
-        <li><font>My implementation: 0.530 seconds</font></li>
-      </ul>
-    </td>
-    <td width="50%">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%"></td>
-    <td width="50%"></td>
-  </tr>
-  <tr>
-    <td width="100%" colspan="2">
-     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-big_2.jpg" width="600" height="600">
-    <p><font><tt>landsea-big.pbrt </tt> (with Phong interpolation)</font></p>
-          <p><font>Timings:</font>
-    <ul>
-      <li><font>My implementation: 2.300 seconds</font></li>
-    </ul>
-    </td>
-  </tr>
-</table>
+<p></p><h3>Final Images Rendered with my implementation of heightfield.cpp</h3><p></p>
+<p></p><p>&nbsp;</p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/hftest_2.jpg" width="400" height="400"><br>      <p><font><tt>hftest.pbrt </tt> (with Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>My implementation: 0.135 seconds</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-0_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-0.pbrt </tt> (with Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>My implementation: 1.100 seconds</font></li><br>      </ul><br>    </p></td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-1_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-1.pbrt </tt> <tt> </tt> (with Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>My implementation: 1.050 seconds</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-2_2.jpg" width="400" height="400"><br>      <p><font><tt>landsea-2.pbrt </tt> <tt> </tt> (with Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>My implementation: 0.900 seconds</font></li><br>      </ul><br>    </p></td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="50%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/texture_2.jpg" width="400" height="400"><br>      <p><font><tt>texture.pbrt </tt> (with Phong<br>      interpolation)</font><br>      </p><p><font>Timings:</font><br>      <ul><br>        <li><font>My implementation: 0.530 seconds</font></li><br>      </ul><br>    </p></td><br>    <td width="50%"><br>    </td><br>  </tr><br>  <tr><br>    <td width="50%"></td><br>    <td width="50%"></td><br>  </tr><br>  <tr><br>    <td width="100%" colspan="2"><br>     <img border="0" src="http://morris821028.github.io/hw-rendering/homework1/submission/images/phong/landsea-big_2.jpg" width="600" height="600"><br>    <p><font><tt>landsea-big.pbrt </tt> (with Phong interpolation)</font></p><br>          <p><font>Timings:</font><br>    <ul><br>      <li><font>My implementation: 2.300 seconds</font></li><br>    </ul><br>    </p></td><br>  </tr><br></table>
 
         
       
