@@ -89,6 +89,90 @@
           
           <section id="main">
   
+    <article id="post-zj-a458" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/23/zj-a458/" class="article-date">
+  <time datetime="2015-07-23T08:01:33.000Z" itemprop="datePublished">2015-07-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+<div class="article-gallery">
+  <div class="article-gallery-photos">
+    
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/oESgaLX.jpg" rel="gallery_ckpal45gy0130o0vny8jmnyzo">
+        <img src="http://i.imgur.com/oESgaLX.jpg" itemprop="image">
+      </a>
+    
+  </div>
+</div>
+
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/07/23/zj-a458/">a458. Beats of the Angel 加強版</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/07/23/zj-a458/" data-id="ckpal45gy0130o0vny8jmnyzo" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/07/23/zj-a458/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dijkstra/">dijkstra</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/sssp/">sssp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/掃描線/">掃描線</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/離線處理/">離線處理</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>給一張圖，給定起點 S、終點 T，把任意邊的權重放大兩倍，請問最多能拉長最短道路長度為何。</p>
+<p>意即修改一條邊找替代道路，使得替代道路越長越好。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">5 7</div><div class="line">2 1 5</div><div class="line">1 3 1</div><div class="line">3 2 8</div><div class="line">3 5 7</div><div class="line">3 4 3</div><div class="line">2 4 7</div><div class="line">4 5 2</div><div class="line">1 5</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">2</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>終於向 liouzhou101 問到解法，類似 <a href="http://zrt.github.io/2014/08/13/bzoj2725/" target="_blank" rel="external">BZOJ 2725 Violet 6 故乡的梦</a>，過了三年多，才把 Angel Beats 加強版寫出來，終於完成了，代碼是如此地迷人，一堆掃描線算法，找瓶頸也用掃描線代替感覺萌萌哒。</p>
+<p>移除掉一條邊，找到 S-T 最短路徑的替代道路 <span>$O(E \log E)$</span><!-- Has MathJax --> 離線處理。</p>
+<ol>
+<li>先在 DAG 上找瓶頸，只有瓶頸發生變化才受影響。</li>
+<li>計算 DAG 上，經過瓶頸的最小次數。</li>
+<li>接著，對瓶頸由近至遠進行掃描，維護一個最小堆 <code>multiset</code>，維護替代道路的可行性，保持掃描線左右兩方各自通過的瓶頸數接起來不會通過瓶頸。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">       B -- C        H -- I</div><div class="line">      /      \      /      \</div><div class="line">S - A         D -- G ------ J - T</div><div class="line">      \      /  </div><div class="line">       E -- F</div></pre></td></tr></table></figure>
+<p>變數說明</p>
+<ul>
+<li><code>Ds(u)</code> 表示從起點 S 到 u 的最短路徑</li>
+<li><code>De(u)</code> 表示從 u 到終點 T 的最短路徑</li>
+<li><code>Bs(u)</code> 表示從起點 S 到 u 保持在最短路徑上，經過最少的瓶頸數</li>
+<li><code>Be(u)</code> 表示從 u 到終點 T 保持在最短路徑上，經過最少的瓶頸數</li>
+</ul>
+<p>例如先找到 shortest-path DAG 圖如上，則 <code>D - G</code> 和 <code>J - T</code> 都是瓶頸。瓶頸有兩種找法，第一種是類似最大流的最小割，第二種是轉換成區間，例如 <code>e(u, v)</code> 則可以得到區間 <code>[Ds(u), Ds(v)]</code>，然後做掃描線算法，得到哪個時候只有一個區間，則那個邊就是瓶頸。</p>
+<p>得到所有瓶頸後，依序掃描離 S 近到遠的瓶頸，維護一個 <code>mutliset&lt;int&gt;</code>，當窮舉瓶頸 <code>e(u, v)</code>，則替代道路為 <code>min(Ds(a) + w(a, b) + De(b))</code>，滿足 <code>Bs(a) &lt;= Bs(u)</code> 和 <code>Be(b) &lt;= Be(v)</code>。條件 <code>Bs(a) &lt;= Bs(u)</code> 和 <code>Be(b) &lt;= Be(v)</code> 是為了保證不經過這個瓶頸。</p>
+<p>隨著掃描線移動，<code>Be(b)</code> 遞減，<code>Bs(a)</code> 遞增，因此先排序 <code>Bs[]</code> 和 <code>Be[]</code>，每當掃描到一個瓶頸，鬆弛新的路徑，同時移除掉最小堆中 <code>Ds(a) + w(a, b) + De(b)</code> 且 <code>Be(b) &gt; Be(v)</code> 的所有元素。</p>
+<p>英文名稱 <a href="http://www.di.univaq.it/~proietti/slide_algdist2009/SelfishSP.ppt" target="_blank" rel="external">The selfish-edges Shortest-Path problem</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="comment">// http://zrt.github.io/2014/08/13/bzoj2725/</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXV = <span class="number">200005</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXE = <span class="number">200005</span>&lt;&lt;<span class="number">1</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = <span class="number">1L</span>L&lt;&lt;<span class="number">60</span>;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Edge</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> to, eid;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> w;</div><div class="line">    Edge *next;</div><div class="line">&#125;;</div><div class="line">Edge edge[MAXE], *adj[MAXV];</div><div class="line"><span class="keyword">int</span> e = <span class="number">0</span>;</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> Ds[MAXV], De[MAXV];</div><div class="line"><span class="keyword">int</span> Bs[MAXV], Be[MAXV], keye[MAXE];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">addEdge</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">long</span> <span class="keyword">long</span> v)</span>  </span>&#123;</div><div class="line">    edge[e].to = y, edge[e].w = v, edge[e].eid = e;</div><div class="line">    edge[e].next = adj[x], adj[x] = &amp;edge[e++];</div><div class="line">    edge[e].to = x, edge[e].w = v, edge[e].eid = e;</div><div class="line">    edge[e].next = adj[y], adj[y] = &amp;edge[e++];</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">dijkstra</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">long</span> <span class="keyword">long</span> dist[], <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line"><span class="keyword">typedef</span> pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; PLL;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; i++)</div><div class="line">        dist[i] = INF;</div><div class="line">    <span class="built_in">set</span>&lt;PLL&gt; pQ;</div><div class="line">    PLL u;</div><div class="line">    pQ.insert(PLL(<span class="number">0</span>, st)), dist[st] = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (!pQ.empty()) &#123;</div><div class="line">        u = *pQ.begin(), pQ.erase(pQ.begin());</div><div class="line">        <span class="keyword">for</span> (Edge *p = adj[u.second]; p; p = p-&gt;next) &#123;</div><div class="line">            <span class="keyword">if</span> (dist[p-&gt;to] &gt; dist[u.second] + p-&gt;w) &#123;</div><div class="line">                <span class="keyword">if</span> (dist[p-&gt;to] != INF)</div><div class="line">                    pQ.erase(pQ.find(PLL(dist[p-&gt;to], p-&gt;to)));</div><div class="line">                dist[p-&gt;to] = dist[u.second] + p-&gt;w;</div><div class="line">                pQ.insert(PLL(dist[p-&gt;to], p-&gt;to));</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">bottleneck</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">int</span> ed, <span class="keyword">long</span> <span class="keyword">long</span> Ds[], <span class="keyword">long</span> <span class="keyword">long</span> De[], <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line"><span class="keyword">typedef</span> pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; &gt; PLL;</div><div class="line">    <span class="built_in">vector</span>&lt;PLL&gt; A;</div><div class="line">    <span class="comment">// short path DAG st-ed</span></div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> d = Ds[ed];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (Edge *p = adj[i]; p; p = p-&gt;next) &#123;</div><div class="line">            <span class="keyword">if</span> (Ds[p-&gt;to] == Ds[i] + p-&gt;w &amp;&amp; Ds[p-&gt;to] + De[p-&gt;to] == d) &#123;</div><div class="line">                A.push_back(PLL(Ds[i], &#123;Ds[p-&gt;to], p-&gt;eid&#125;));</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="comment">// bottleneck edge st-ed</span></div><div class="line">    sort(A.begin(), A.end());</div><div class="line">    priority_queue&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="built_in">vector</span>&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;, <span class="built_in">std</span>::greater&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; pQ;</div><div class="line">    <span class="keyword">int</span> cnt = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e; i++)</div><div class="line">        keye[i] = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; A.size(); ) &#123;</div><div class="line">        <span class="keyword">long</span> <span class="keyword">long</span> l = A[i].first;</div><div class="line">        <span class="keyword">while</span> (!pQ.empty() &amp;&amp; pQ.top() &lt;= l)</div><div class="line">            pQ.pop();</div><div class="line">        <span class="keyword">while</span> (i &lt; A.size() &amp;&amp; A[i].first &lt;= l)</div><div class="line">            pQ.push(A[i].second.first), i++;</div><div class="line">        <span class="keyword">if</span> (pQ.size() == <span class="number">1</span>) &#123;</div><div class="line">            keye[A[i<span class="number">-1</span>].second.second] = <span class="number">1</span>;</div><div class="line">            keye[A[i<span class="number">-1</span>].second.second^<span class="number">1</span>] = <span class="number">-1</span>;</div><div class="line">            cnt++;</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">    <span class="keyword">return</span> cnt;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">bfs</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">int</span> dist[], <span class="keyword">long</span> <span class="keyword">long</span> Ds[], <span class="keyword">int</span> n, <span class="keyword">int</span> f)</span> </span>&#123;</div><div class="line"><span class="keyword">typedef</span> pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; PLL;</div><div class="line">    <span class="comment">// work for short-path DAG, weight: key edge</span></div><div class="line">    <span class="built_in">vector</span>&lt;PLL&gt; A;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++)</div><div class="line">        A.push_back(PLL(Ds[i], i)), dist[i] = <span class="number">0x3f3f3f3f</span>;</div><div class="line">    dist[st] = <span class="number">0</span>;</div><div class="line">    sort(A.begin(), A.end());</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">int</span> x = A[i].second;</div><div class="line">        <span class="keyword">for</span> (Edge *p = adj[x]; p; p = p-&gt;next) &#123;</div><div class="line">            <span class="keyword">if</span> (Ds[p-&gt;to] == Ds[x] + p-&gt;w)</div><div class="line">                dist[p-&gt;to] = min(dist[p-&gt;to], dist[x] + (keye[p-&gt;eid] == f));</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">solve</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">int</span> ed, <span class="keyword">long</span> <span class="keyword">long</span> Ds[], <span class="keyword">long</span> <span class="keyword">long</span> De[], <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line"><span class="keyword">typedef</span> pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; PLL;</div><div class="line"><span class="keyword">typedef</span> pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; PII;</div><div class="line"><span class="keyword">typedef</span> <span class="built_in">multiset</span>&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;::iterator MIT;</div><div class="line">    bfs(st, Bs, Ds, n, <span class="number">1</span>);</div><div class="line">    bfs(ed, Be, De, n, <span class="number">-1</span>);</div><div class="line">    <span class="built_in">vector</span>&lt;PLL&gt; A;</div><div class="line">    <span class="built_in">vector</span>&lt;PII&gt; B, C;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</div><div class="line">        A.push_back(PLL(Ds[i], i));</div><div class="line">        B.push_back(PII(Bs[i], i));</div><div class="line">        C.push_back(PII(Be[i], i));</div><div class="line">    &#125;</div><div class="line">    sort(A.begin(), A.end());</div><div class="line">    sort(B.begin(), B.end());</div><div class="line">    sort(C.begin(), C.end());</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> d = Ds[ed];</div><div class="line">    <span class="keyword">int</span> Bidx = <span class="number">0</span>, Cidx = n<span class="number">-1</span>;</div><div class="line">    <span class="built_in">multiset</span>&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; S;</div><div class="line">    <span class="built_in">vector</span>&lt; <span class="built_in">vector</span>&lt;MIT&gt; &gt; RM(n+<span class="number">1</span>, <span class="built_in">vector</span>&lt;MIT&gt;());</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">int</span> x = A[i].second;</div><div class="line">        <span class="keyword">for</span> (Edge *p = adj[x]; p; p = p-&gt;next) &#123;</div><div class="line">            <span class="keyword">if</span> (Ds[p-&gt;to] == Ds[x] + p-&gt;w &amp;&amp; Ds[p-&gt;to] + De[p-&gt;to] == d) &#123;</div><div class="line">                <span class="keyword">if</span> (keye[p-&gt;eid]) &#123;</div><div class="line">                    <span class="keyword">int</span> bb = Bs[x], cut = Be[p-&gt;to];</div><div class="line">                    <span class="comment">// relax</span></div><div class="line">                    <span class="keyword">for</span> (; Bidx &lt; B.size() &amp;&amp; B[Bidx].first &lt;= bb; Bidx++) &#123;</div><div class="line">                        <span class="keyword">int</span> u = B[Bidx].second;</div><div class="line">                        <span class="keyword">for</span> (Edge *q = adj[u]; q; q = q-&gt;next) &#123;</div><div class="line">                            <span class="keyword">if</span> (Be[q-&gt;to] &lt;= cut &amp;&amp; p != q) &#123;</div><div class="line">                                MIT it = S.insert(Ds[u] + q-&gt;w + De[q-&gt;to]);</div><div class="line">                                RM[q-&gt;to].push_back(it);</div><div class="line">                            &#125;</div><div class="line">                        &#125;</div><div class="line">                    &#125;</div><div class="line">                    <span class="comment">// remove</span></div><div class="line">                    <span class="keyword">for</span> (; Cidx &gt;= <span class="number">0</span> &amp;&amp; C[Cidx].first &gt; cut; Cidx--) &#123;</div><div class="line">                        <span class="keyword">int</span> u = C[Cidx].second;</div><div class="line">                        <span class="keyword">for</span> (<span class="keyword">auto</span> e : RM[u])</div><div class="line">                            S.erase(e);</div><div class="line">                    &#125;</div><div class="line">                    <span class="keyword">long</span> <span class="keyword">long</span> replace_path = INF;</div><div class="line">                    <span class="keyword">if</span> (!S.empty())</div><div class="line">                        replace_path = *S.begin();</div><div class="line">                    replace_path = min(replace_path, d + p-&gt;w); <span class="comment">// this edge double weight</span></div><div class="line">                    ret = max(ret, replace_path - d);</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> n, m, x, y;</div><div class="line">    <span class="keyword">int</span> st, ed;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> v;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;n, &amp;m) == <span class="number">2</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++)</div><div class="line">            adj[i] = <span class="literal">NULL</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %lld"</span>, &amp;x, &amp;y, &amp;v);</div><div class="line">            addEdge(x, y, v);</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;st, &amp;ed);</div><div class="line">        dijkstra(st, Ds, n);</div><div class="line">        dijkstra(ed, De, n);</div><div class="line">        <span class="keyword">int</span> cnt = bottleneck(st, ed, Ds, De, n);</div><div class="line">        <span class="keyword">if</span> (cnt == <span class="number">0</span>)</div><div class="line">            <span class="built_in">puts</span>(<span class="string">"0"</span>);</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, solve(st, ed, Ds, De, n));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-zj-b454" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/07/23/zj-b454/" class="article-date">
@@ -114,7 +198,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/23/zj-b454/" data-id="ckpak9vld0145wsvnsflh6qn8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/23/zj-b454/" data-id="ckpal45iz016uo0vn8skengn1" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/23/zj-b454/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -205,7 +289,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/21/zj-b451/" data-id="ckpak9vla0140wsvnjxrsom18" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/21/zj-b451/" data-id="ckpal45iw016oo0vn3pe864f9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/21/zj-b451/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -295,7 +379,7 @@ b3 &amp; b4\\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/21/zj-b325/" data-id="ckpak9vju0114wsvnlyejkxwt" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/21/zj-b325/" data-id="ckpal45ha013oo0vngovtdj89" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/21/zj-b325/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -354,7 +438,7 @@ b3 &amp; b4\\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/20/zj-a739/" data-id="ckpak9vjo010rwsvns0whqwrd" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/20/zj-a739/" data-id="ckpal45h20138o0vnfls4hait" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/20/zj-a739/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -410,7 +494,7 @@ b3 &amp; b4\\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/20/zj-b449/" data-id="ckpak9vl8013xwsvnal7jbojq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/20/zj-b449/" data-id="ckpal45iu016lo0vnex6c3k8o" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/20/zj-b449/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -485,7 +569,7 @@ b3 &amp; b4\\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/15/zj-b446/" data-id="ckpak9vl7013vwsvnyq3wemng" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/15/zj-b446/" data-id="ckpal45ir016go0vnzb8vaxln" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/15/zj-b446/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -568,7 +652,7 @@ b3 &amp; b4\\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/15/zj-b443/" data-id="ckpak9vl4013qwsvn7yj1mj9x" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/15/zj-b443/" data-id="ckpal45io0169o0vnicm29myk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/15/zj-b443/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -661,7 +745,7 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/13/zj-b444/" data-id="ckpak9vl6013twsvn6vjkrjfc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/13/zj-b444/" data-id="ckpal45ip016co0vnoajqvls8" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/13/zj-b444/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -783,7 +867,7 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/EFcvJ1J.png" rel="gallery_ckpak9v51002hwsvn7s5talcw">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/EFcvJ1J.png" rel="gallery_ckpal44zp002to0vnecje78wk">
         <img src="http://i.imgur.com/EFcvJ1J.png" itemprop="image">
       </a>
     
@@ -802,7 +886,7 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/12/diary-20150712/" data-id="ckpak9v51002hwsvn7s5talcw" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/12/diary-20150712/" data-id="ckpal44zp002to0vnecje78wk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/12/diary-20150712/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -845,121 +929,6 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
 
 
   
-    <article id="post-zj-b440" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/07/12/zj-b440/" class="article-date">
-  <time datetime="2015-07-12T07:53:49.000Z" itemprop="datePublished">2015-07-12</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/07/12/zj-b440/">b440. 互質對</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/12/zj-b440/" data-id="ckpak9vl1013kwsvnrr3aejv4" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/07/12/zj-b440/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分塊/">分塊</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數論基礎/">數論基礎</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/莫比烏斯反演/">莫比烏斯反演</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>給定 <span>$n$</span><!-- Has MathJax --> 和 <span>$m$</span><!-- Has MathJax -->，請你統計有序對 <span>$(a,b)$</span><!-- Has MathJax --> 的個數，其中 <span>$1 \le a \le n, 1 \le b \le m$</span><!-- Has MathJax --> 且 <span>$a$</span><!-- Has MathJax --> 與 <span>$b$</span><!-- Has MathJax --> 互質。</p>
-<span>$a$</span><!-- Has MathJax --> 與 <span>$b$</span><!-- Has MathJax --> 互質的定義是：<span>$a$</span><!-- Has MathJax --> 與 <span>$b$</span><!-- Has MathJax --> 的最大公約數等於 <span>$1$</span><!-- Has MathJax -->。<br><br>&gt; count coprime pair<br><br>## Sample Input ##<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line">3 4</div><div class="line">10000000 10000000</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">9</div><div class="line">60792712854483</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>柳柳州出數論基礎－「莫比烏斯反演 (Möbius inversion formula)」</p>
-<p>之前放棄看完的內容又要撿回來看，百般痛苦，之前沒看懂啊。但能知道的是莫比烏斯反演類似排容原理，就像錯排依樣。先不管莫比烏斯，看到「線性時間求出所有乘法反元素」真的可以嗎？那也是件很有趣的事情。</p>
-<h3 id="參考資源"><a href="#參考資源" class="headerlink" title="參考資源"></a>參考資源</h3><ul>
-<li>莫比烏斯參考《線性篩法與積性函數》－賈志鵬 <a href="http://wenku.baidu.com/view/542961fdba0d4a7302763ad5.html" target="_blank" rel="external">link</a></li>
-<li>分塊優化參考《POI XIV Stage.1 Queries Zap 解题报告》－Kwc Oliver <a href="http://wenku.baidu.com/view/fbe263d384254b35eefd34eb.html" target="_blank" rel="external">link</a></li>
-</ul>
-<h3 id="基礎定義"><a href="#基礎定義" class="headerlink" title="基礎定義"></a>基礎定義</h3><p>了解莫比烏斯反演之前，要先介紹積性函數</p>
-<h4 id="積性函數"><a href="#積性函數" class="headerlink" title="積性函數"></a>積性函數</h4><ul>
-<li>何謂積性函數 (Multiplicative function)？<br>對於定義域 <span>$\mathbb{N}^+$</span><!-- Has MathJax --> 的函數 <span>$f$</span><!-- Has MathJax --> 而言，任兩個互質的 <span>$gcd(a, b) = 1$</span><!-- Has MathJax --> 正整數 <span>$a, b$</span><!-- Has MathJax --> 滿足 <span>$f(ab) = f(a)f(b)$</span><!-- Has MathJax -->。</li>
-<li>何謂完全積性函數？<br><span>$f$</span><!-- Has MathJax --> 是一個積性函數，同時滿足 <span>$f(p^n) = f(p)^n$</span><!-- Has MathJax -->。</li>
-<li>若 <span>$f(n), g(n)$</span><!-- Has MathJax --> 是積性函數，則 <span>$h(n) = f(n) g(n)$</span><!-- Has MathJax --> 也是積性函數。</li>
-<li>若 <span>$f(n)$</span><!-- Has MathJax --> 為積性函數，則函數 <span>$g(n) = \sum_{d|n} f(d)$</span><!-- Has MathJax --> 也是積性函數。</li>
-</ul>
-<h4 id="歐拉函數"><a href="#歐拉函數" class="headerlink" title="歐拉函數"></a>歐拉函數</h4><p>回顧歐拉函數 (Euler’s totient function) <span>$\phi$</span><!-- Has MathJax --></p>
-<ul>
-<li>定義 <span>$\phi(n)$</span><!-- Has MathJax --> 為 <span>$1 \cdots n$</span><!-- Has MathJax --> 中與 <span>$n$</span><!-- Has MathJax --> 互質的個數。</li>
-<li><p><span>$\phi(n)$</span><!-- Has MathJax --> 是一個積性函數，但不是完全積性函數。根據中國餘數定理 或者 基本算術可以證明之。</p>
-</li>
-<li><p>歐拉定理 <span>$a^{\phi(n)} \equiv 1 \mod n, \text{ when } gcd(a, n) = 1$</span><!-- Has MathJax -->。</p>
-</li>
-<li><p>特性 1：<span>$\sum_{d|n} \phi(d) = n$</span><!-- Has MathJax -->。當作把互質個數 <span>$\phi(n)$</span><!-- Has MathJax --> 相加不互質個數 <span>$s$</span><!-- Has MathJax -->，由於 <span>$d$</span><!-- Has MathJax --> 是 <span>$n$</span><!-- Has MathJax --> 的因數，則與 <span>$d$</span><!-- Has MathJax --> 互質 <span>$x$</span><!-- Has MathJax --> 個數 <span>$\phi(d)$</span><!-- Has MathJax -->，把那些 <span>$x&apos; = x \times d/n$</span><!-- Has MathJax --> 就會補上那些不互質的個數 <span>$s = |set(x&apos;)|$</span><!-- Has MathJax -->。</p>
-</li>
-<li><p>特性 2：<span>$1 \cdots n$</span><!-- Has MathJax --> 與 <span>$n$</span><!-- Has MathJax --> 互質的數和為 <span>$n\phi(n)/2$</span><!-- Has MathJax -->。原因很簡單，若 <span>$gcd(x, n) = 1$</span><!-- Has MathJax -->，則會滿足 <span>$gcd(n-x, n) = 1$</span><!-- Has MathJax -->，看起來就是一個對稱總和。</p>
-</li>
-</ul>
-<h4 id="莫比烏斯"><a href="#莫比烏斯" class="headerlink" title="莫比烏斯"></a>莫比烏斯</h4><p>根據積性函數的性質，我們得到莫比烏斯反演的基礎：</p>
-<p>莫比烏斯反演公式 <span>$f(n)$</span><!-- Has MathJax --></p>
-<span>$f(n) = \sum_{d|n} \mu(d) g(\frac{n}{d})$</span><!-- Has MathJax -->
-<p>莫比烏斯函數 <span>$\mu(n)$</span><!-- Has MathJax --></p>
-<span>$$\mu(n) = \left\{\begin{matrix}
-1 &amp;&amp; n = 1\\
-(-1)^k &amp;&amp; n = p_1 p_2 \cdots p_k \\
-0 &amp;&amp; \text{otherwise}
-\end{matrix}\right.$$</span><!-- Has MathJax -->
-<ul>
-<li>特性 1：<span>$\sum_{d|n} \mu(d) = [n = 1]$</span><!-- Has MathJax --></li>
-</ul>
-<p>在此簡單說一次，莫比烏斯反演公式就像排容原理，而莫比烏斯函數 <span>$\mu(n)$</span><!-- Has MathJax --> 就像一加一減，之所以在 <span>$n = p_1 p_2 \cdots p_k$</span><!-- Has MathJax --> 為 <span>$\mu(n) = (-1)^k$</span><!-- Has MathJax -->，也就是說當 <span>$n$</span><!-- Has MathJax --> 只全由質數相乘 (不允許冪次方大於 1，否則為 0)，相當於一般認知，奇數次要扣，偶數次要補回來的排容口訣。而特定自然不必多說，其中數學表達 <span>$[n = 1]$</span><!-- Has MathJax --> 相當於程式中的 <code>n == 1 ? 1 : 0</code>。</p>
-<p>簡單展示歐拉函數 <span>$\phi(n)$</span><!-- Has MathJax --></p>
-<ul>
-<li><span>$f(n) = \sum_{d|n} \phi(d) = n$</span><!-- Has MathJax -->，由歐拉函數特性 2 得知。<br>*<span>$\phi(n) = \sum_{d|n} \mu(d) f(\frac{n}{d}) = \sum_{d|n} \frac{\mu(d) n}{d}$</span><!-- Has MathJax -->，套用莫比烏斯公式後整理。</li>
-</ul>
-<p>關於公式<span>$\phi(n) = \sum_{d|n} \frac{\mu(d) n}{d}$</span><!-- Has MathJax --> 可以這麼理解。</p>
-<ul>
-<li>求出 <span>$gcd(n, k) = 1$</span><!-- Has MathJax --> 的個數，其餘要捨棄掉。</li>
-<li>計算 <span>$gcd(n, k) = d$</span><!-- Has MathJax --> 的個數，利用排容原理即莫比烏斯函數，顯而易見排容方案只當 <span>$d$</span><!-- Has MathJax --> 為 <span>$n$</span><!-- Has MathJax --> 個質因數組合而成。</li>
-</ul>
-<h3 id="應用此題"><a href="#應用此題" class="headerlink" title="應用此題"></a>應用此題</h3><p>利用莫比烏斯函數 特性 1：<span>$\sum_{d|n} \mu(d) = [n = 1]$</span><!-- Has MathJax --></p>
-<span>$$\begin{align*}
-&amp; \sum_{a = 1}^{N} \sum_{b = 1}^{M} [gcd(a, b) = 1] \\
-&amp; = \sum_{a = 1}^{N} \sum_{b = 1}^{M} \sum_{d|gcd(a, b)} \mu(d) \\
-&amp; = \sum \mu(d) \left ( \sum_{1 \le a \le N \text{ and } d | a} \left ( \sum_{1 \le b \le M \text{ and } d | b} 1 \right ) \right )\\
-&amp; = \sum \mu(d) \left \lfloor \frac{n}{d} \right \rfloor \left \lfloor \frac{m}{d} \right \rfloor
-\end{align*}$$</span><!-- Has MathJax -->
-<p>第二行就是抽換莫比烏斯，第三行則是交換順序，第四行則是可以快速找到 <span>$d|a$</span><!-- Has MathJax --> 的總數為 <span>$\lfloor n/d \rfloor$</span><!-- Has MathJax --> 所導致。</p>
-<p>若直接窮舉 <span>$d$</span><!-- Has MathJax --> 時間複雜度為 <span>$O(min(n, m))$</span><!-- Has MathJax -->，可以利用塊狀的概念優化到 <span>$O(\sqrt{n} + \sqrt{m})$</span><!-- Has MathJax -->。因為 <span>$\lfloor n/d \rfloor$</span><!-- Has MathJax --> 的值只有 <span>$2\lfloor \sqrt{n} \rfloor$</span><!-- Has MathJax --> 種可能，同理 <span>$\lfloor m/d \rfloor$</span><!-- Has MathJax --> 也是，那麼對於同一個 <span>$d$</span><!-- Has MathJax --> 的計數會是一個連續區間不斷地移動。</p>
-<p>以下是一個簡單的 <span>$\lfloor n/d \rfloor$</span><!-- Has MathJax --> 示意圖，用 <span>$\lfloor n/d \rfloor$</span><!-- Has MathJax --> 不同當作劃分。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">                 X  X        X     X X   X  X XX  X  X                        </div><div class="line">                 X  X        X     X X   X  X XX  X  X                        </div><div class="line">+----------------------------------------------------+                        </div><div class="line">|                |           |       |   |  |  |  |  | n                        </div><div class="line">+----------------------------------------------------+                        </div><div class="line">012345678901234567890123456789012345678901234567890123</div><div class="line">+---------------------------------------------------------------------------+ </div><div class="line">|                   |              |          |      |   |   |  |  |  |  |  | m</div><div class="line">+---------------------------------------------------------------------------+ </div><div class="line">                 X  X        X     X X   X  X XX  X  X                        </div><div class="line">                 X  X        X     X X   X  X XX  X  X</div></pre></td></tr></table></figure>
-<p>程式只要處理打 <code>X</code> 的位置即可，時間複雜度 <span>$O(\sqrt{n} + \sqrt{m})$</span><!-- Has MathJax -->，可以參照一般解。代碼短，但除法次數多。</p>
-<p>加速一般解由 liouzhou_101 提供。開一次根號 <code>sqrt()</code>，省下 <span>$O(\sqrt{n})$</span><!-- Has MathJax --> 次的除法，賺了 400 ms，代碼長了 800 B。加速 25% 的效能，可謂除法的可怕，根據研究差異後才發現到這一點。</p>
-<h3 id="一般解"><a href="#一般解" class="headerlink" title="一般解"></a>一般解</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> GET(x) (mark[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SET(x) (mark[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">10000005</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXL = (MAXN&gt;&gt;<span class="number">5</span>)+<span class="number">1</span>;</div><div class="line"><span class="keyword">int</span> mark[MAXL];</div><div class="line"><span class="keyword">int</span> P[<span class="number">700000</span>], Pt = <span class="number">0</span>;</div><div class="line"><span class="keyword">short</span> mu[MAXN], sum[MAXN];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">sieve_mobius</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">register</span> <span class="keyword">int</span> i, j, k;</div><div class="line">    SET(<span class="number">1</span>), mu[<span class="number">1</span>] = <span class="number">1</span>;</div><div class="line">    <span class="keyword">int</span> n = <span class="number">10000000</span>;</div><div class="line">    <span class="keyword">for</span> (i = <span class="number">2</span>; i &lt;= n; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (!GET(i))</div><div class="line">            P[Pt++] = i, mu[i] = <span class="number">-1</span>;</div><div class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; Pt &amp;&amp; (k = i*P[j]) &lt;= n; j++) &#123;</div><div class="line">            SET(k);</div><div class="line">            <span class="keyword">if</span> (i%P[j] == <span class="number">0</span>) &#123;</div><div class="line">                mu[k] = <span class="number">0</span>;</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125; </div><div class="line">            mu[k] = -mu[i];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">coprime_pair</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> m)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>;</div><div class="line">    <span class="keyword">if</span> (n &gt; m)	swap(n, m);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> d = <span class="number">1</span>, r; d &lt;= n; d = r+<span class="number">1</span>) &#123;</div><div class="line">        r = min(n / (n/d), m / (m/d));</div><div class="line">        ret += (<span class="keyword">long</span> <span class="keyword">long</span>)(sum[r] - sum[d<span class="number">-1</span>]) * (n/d) * (m/d);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    sieve_mobius();</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; MAXN; i++)</div><div class="line">        sum[i] = sum[i<span class="number">-1</span>] + mu[i];</div><div class="line">    <span class="keyword">int</span> testcase, N, M;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;N, &amp;M);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, coprime_pair(N, M));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="加速運算解"><a href="#加速運算解" class="headerlink" title="加速運算解"></a>加速運算解</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> GET(x) (mark[(x)&gt;&gt;5]&gt;&gt;((x)&amp;31)&amp;1)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SET(x) (mark[(x)&gt;&gt;5] |= 1&lt;&lt;((x)&amp;31))</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">10000005</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> SQRN = <span class="number">3200</span> * <span class="number">2</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXL = (MAXN&gt;&gt;<span class="number">5</span>)+<span class="number">1</span>;</div><div class="line"><span class="keyword">int</span> mark[MAXL];</div><div class="line"><span class="keyword">int</span> P[<span class="number">700000</span>], Pt = <span class="number">0</span>;</div><div class="line"><span class="keyword">short</span> mu[MAXN], sum[MAXN];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">sieve_mobius</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">register</span> <span class="keyword">int</span> i, j, k;</div><div class="line">    SET(<span class="number">1</span>), mu[<span class="number">1</span>] = <span class="number">1</span>;</div><div class="line">    <span class="keyword">int</span> n = <span class="number">10000000</span>;</div><div class="line">    <span class="keyword">for</span> (i = <span class="number">2</span>; i &lt;= n; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (!GET(i))</div><div class="line">            P[Pt++] = i, mu[i] = <span class="number">-1</span>;</div><div class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; Pt &amp;&amp; (k = i*P[j]) &lt;= n; j++) &#123;</div><div class="line">            SET(k);</div><div class="line">            <span class="keyword">if</span> (i%P[j] == <span class="number">0</span>) &#123;</div><div class="line">                mu[k] = <span class="number">0</span>;</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125; </div><div class="line">            mu[k] = -mu[i];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">coprime_pair</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> m)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> An[SQRN][<span class="number">2</span>], Bn[SQRN][<span class="number">2</span>];</div><div class="line">    <span class="keyword">if</span> (n &gt; m)	swap(n, m);</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>;</div><div class="line">    <span class="keyword">int</span> aidx = <span class="number">0</span>, bidx = <span class="number">0</span>, sq;</div><div class="line">    sq = <span class="built_in">sqrt</span>(n);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= sq; i++, aidx++)	An[aidx][<span class="number">1</span>] = n/(An[aidx][<span class="number">0</span>] = n / i);</div><div class="line">    <span class="keyword">if</span> (sq * sq == n)	aidx--;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = sq; i &gt;= <span class="number">1</span>; i--, aidx++)	An[aidx][<span class="number">1</span>] = n/(An[aidx][<span class="number">0</span>] = i);</div><div class="line">    sq = <span class="built_in">sqrt</span>(m);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= sq; i++, bidx++)	Bn[bidx][<span class="number">1</span>] = m/(Bn[bidx][<span class="number">0</span>] = m / i);</div><div class="line">    <span class="keyword">if</span> (sq * sq == m)	bidx--;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = sq; i &gt;= <span class="number">1</span>; i--, bidx++)	Bn[bidx][<span class="number">1</span>] = m/(Bn[bidx][<span class="number">0</span>] = i);</div><div class="line">    </div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">1</span>, r, *a = &amp;An[<span class="number">0</span>][<span class="number">1</span>], *b = &amp;Bn[<span class="number">0</span>][<span class="number">1</span>], *A = &amp;An[<span class="number">0</span>][<span class="number">0</span>], *B = &amp;Bn[<span class="number">0</span>][<span class="number">0</span>]; l &lt;= n; l = r+<span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">if</span> (*a &lt; *b)</div><div class="line">            r = *a, ret += (<span class="keyword">long</span> <span class="keyword">long</span>) (sum[r] - sum[l<span class="number">-1</span>]) * *A * *B, A+=<span class="number">2</span>, a+=<span class="number">2</span>;</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (*a &gt; *b)</div><div class="line">            r = *b, ret += (<span class="keyword">long</span> <span class="keyword">long</span>) (sum[r] - sum[l<span class="number">-1</span>]) * *A * *B, B+=<span class="number">2</span>, b+=<span class="number">2</span>;</div><div class="line">        <span class="keyword">else</span></div><div class="line">            r = *a, ret += (<span class="keyword">long</span> <span class="keyword">long</span>) (sum[r] - sum[l<span class="number">-1</span>]) * *A * *B, A+=<span class="number">2</span>, B+=<span class="number">2</span>, a+=<span class="number">2</span>, b+=<span class="number">2</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    sieve_mobius();</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; MAXN; i++)</div><div class="line">        sum[i] = sum[i<span class="number">-1</span>] + mu[i];</div><div class="line">    <span class="keyword">int</span> testcase, N, M;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;N, &amp;M);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, coprime_pair(N, M));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/18/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><a class="page-number" href="/page/18/">18</a><span class="page-number current">19</span><a class="page-number" href="/page/20/">20</a><a class="page-number" href="/page/21/">21</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/20/">Next &raquo;</a>
@@ -975,7 +944,7 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">30</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">9</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">31</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">9</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -985,6 +954,14 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/05/30/java/java-memory-optimization-2/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Java 優化內存使用 組合篇</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/05/30/java/java-memory-optimization-1/">
@@ -1011,19 +988,19 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
           </li>
         
           <li>
-            <a class="text" href="/2021/01/31/work/meme-globl-var/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Global Variable</a>
-          </li>
-        
-          <li>
             <a class="text" href="/2021/01/31/work/meme-handover/">
               
                 <i class="icon-file-o"></i> 
               
             Handover</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/01/31/work/meme-globl-var/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Global Variable</a>
           </li>
         
           <li>
@@ -1035,14 +1012,6 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
           </li>
         
           <li>
-            <a class="text" href="/2021/01/31/work/meme-lang/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Programming Language Impostors</a>
-          </li>
-        
-          <li>
             <a class="text" href="/2021/01/31/work/meme-job-build/">
               
                 <i class="icon-file-o"></i> 
@@ -1051,19 +1020,19 @@ F_{n-1}+F_{n-2}, &amp; n \geq 2
           </li>
         
           <li>
+            <a class="text" href="/2021/01/31/work/meme-lang/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Programming Language Impostors</a>
+          </li>
+        
+          <li>
             <a class="text" href="/2021/01/31/work/meme-machine-learning-newbie/">
               
                 <i class="icon-file-o"></i> 
               
             Machine Learning for Newbie</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-parallel-unstable/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Parallel &amp; Unstable</a>
           </li>
         
       </ul>

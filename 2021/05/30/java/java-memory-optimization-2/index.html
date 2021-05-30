@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>Java 優化內存使用 組合篇 | Morris&#39; Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="整數映射 (Integer Mapping)算法經常會使用整數映射到物件，而整數範圍就會影響到內存。為了技術性能 (capability)，直接宣告  12Map&amp;lt;Long, Object&amp;gt; a;TLongObjectMap&amp;lt;Object&amp;gt; b; 以應付未來變化。考慮到鍵值欄位，實作上建立 $\mathcal{O}(n)$ long[]。在初始狀態下，大多情境只使用 int">
+<meta name="keywords" content="優化,Java,內存,記憶體,memory,performance,效能">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 優化內存使用 組合篇">
+<meta property="og:url" content="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/index.html">
+<meta property="og:site_name" content="Morris&#39; Blog">
+<meta property="og:description" content="整數映射 (Integer Mapping)算法經常會使用整數映射到物件，而整數範圍就會影響到內存。為了技術性能 (capability)，直接宣告  12Map&amp;lt;Long, Object&amp;gt; a;TLongObjectMap&amp;lt;Object&amp;gt; b; 以應付未來變化。考慮到鍵值欄位，實作上建立 $\mathcal{O}(n)$ long[]。在初始狀態下，大多情境只使用 int">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2021-05-30T03:45:06.477Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java 優化內存使用 組合篇">
+<meta name="twitter:description" content="整數映射 (Integer Mapping)算法經常會使用整數映射到物件，而整數範圍就會影響到內存。為了技術性能 (capability)，直接宣告  12Map&amp;lt;Long, Object&amp;gt; a;TLongObjectMap&amp;lt;Object&amp;gt; b; 以應付未來變化。考慮到鍵值欄位，實作上建立 $\mathcal{O}(n)$ long[]。在初始狀態下，大多情境只使用 int">
+<link rel="publisher" href="108158678174364350000">
+  
+    <link rel="alternative" href="/atom.xml" title="Morris&#39; Blog" type="application/atom+xml">
+  
+  
+    <meta name="google-site-verification" content="5mRgj8NanEMpGZuNfHNJNmH90RgNlrnJXsFlTaKD6Gs" />
+  
+  
+    <link rel="shortcut icon" href="/img/f.ico">
+  
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <script src="/js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <link rel="stylesheet" href="http://cdn.oesmith.co.uk/morris-0.5.1.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="http://cdn.oesmith.co.uk/morris-0.5.1.min.js"></script>
+  <!-- <link rel="import" href="/bower_components/app-layout/app-layout.html"> --><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"><div id="banner-right"></div></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Morris&#39; Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          
+            <a class="main-nav-link" href="/"><i class=icon-home title='Home'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/about"><i class=icon-user title='About'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/archives"><i class=icon-archive title='Archives'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/tags"><i class=icon-tags title='Tags'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/picture"><i class=icon-camera title='Pictures'></i></a>
+          
+        
+          
+            <a class="main-nav-link" href="/works"><i class=icon-trophy title='Works'></i></a>
+          
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://morris821028.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        
+          
+          <section id="main" style="width: 95%"><article id="post-java/java-memory-optimization-2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/05/30/java/java-memory-optimization-2/" class="article-date">
+  <time datetime="2021-05-30T05:00:00.000Z" itemprop="datePublished">2021-05-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Java/">Java</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Java 優化內存使用 組合篇
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/" data-id="ckpal45u7026do0vnq6jzavwm" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/memory/">memory</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/performance/">performance</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/內存/">內存</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/效能/">效能</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/記憶體/">記憶體</a></li></ul>
+
+    </footer>
+    <div class="article-entry " itemprop="articleBody">
+      
+          
+              <div id="toc" class="toc-article">
+              <h2 class="toc-title"><span>contents</span></h2>
+              
+                  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#整數映射-Integer-Mapping"><span class="toc-number">1.</span> <span class="toc-text">整數映射 (Integer Mapping)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#陣列替代-Array-Substitute"><span class="toc-number">2.</span> <span class="toc-text">陣列替代 (Array Substitute)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#欄位轉移-Field-Translation"><span class="toc-number">3.</span> <span class="toc-text">欄位轉移 (Field Translation)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#卸載策略-Offloading-Strategy"><span class="toc-number">4.</span> <span class="toc-text">卸載策略 (Offloading Strategy)</span></a></li></ol>
+              
+              </div>
+          
+        
+          <h2 id="整數映射-Integer-Mapping"><a href="#整數映射-Integer-Mapping" class="headerlink" title="整數映射 (Integer Mapping)"></a>整數映射 (Integer Mapping)</h2><p>算法經常會使用整數映射到物件，而整數範圍就會影響到內存。為了技術性能 (capability)，直接宣告 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Map&lt;Long, Object&gt; a;</div><div class="line">TLongObjectMap&lt;Object&gt; b;</div></pre></td></tr></table></figure>
+<p>以應付未來變化。考慮到鍵值欄位，實作上建立 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> <code>long[]</code>。在初始狀態下，大多情境只使用 <code>int[]</code> 的情況。為此，我們考慮分流使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MMap</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">    TLongObjectMap&lt;T&gt; longMap;</div><div class="line">    TIntObjectMap&lt;T&gt; intMap;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>使用這樣子的概念，通用狀態可以降低 <span>$50\%$</span><!-- Has MathJax --> 內存，均勻分布情況則可以降低 <span>$25\%$</span><!-- Has MathJax -->。</p>
+<h2 id="陣列替代-Array-Substitute"><a href="#陣列替代-Array-Substitute" class="headerlink" title="陣列替代 (Array Substitute)"></a>陣列替代 (Array Substitute)</h2><p>前一篇，我們提到了將 <code>ArrayList</code> 換成最原生的 <code>T[]</code>。更進一步，以前寫 C 的時候，壓根不在意 <code>T[].length</code> 這一個需求，因為題目已經寫死在某個全區變數裡。可在 Java 裡頭，我們宣告不出純粹的陣列，只能硬生生多出 <span>$4 \; \text{bytes}$</span><!-- Has MathJax -->。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    K[] keys; <span class="comment">// as known, keys.length = 10</span></div><div class="line">    V[] vals; <span class="comment">// as known, vals.length = 10</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>換個方向思考，那朝著減少試試。進行陣列雙向合併</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    Object[] keyval; <span class="comment">// [key0, key1, ..., val1, val0]</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在 <code>Scheme</code> 物件中，我們減少了 <span>$8 \; \text{bytes}$</span><!-- Has MathJax --> 的額外資訊。但在使用時， casting 是個開銷。</p>
+<h2 id="欄位轉移-Field-Translation"><a href="#欄位轉移-Field-Translation" class="headerlink" title="欄位轉移 (Field Translation)"></a>欄位轉移 (Field Translation)</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">Map&lt;T, String&gt; map;</div><div class="line">map.put(a, <span class="string">"MARKED"</span>);</div><div class="line">map.put(b, <span class="string">"UNMARKED"</span>);</div></pre></td></tr></table></figure>
+<p>當我們還沒有仔細規劃結構時，直接用 <strong>has-A</strong> 的精神去寫第一步。回過頭來，就會造成不少零散的映射出現。如果映射使用雜湊實作，而不是樹的話，整體的記憶體效率會低個 <span>$33\%$</span><!-- Has MathJax -->，因為無法塞滿所有的 hash table 中的桶子。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">T</span> </span>&#123;</div><div class="line">    ...</div><div class="line">    Object userData;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>那為了提升記憶體效率，先檢查是不是所有的項目，幾乎都在這個映射裡面。如果是的話，將這個欄位轉移到目標類別上。看起來很不美觀，但進一步的資料佈局是很可觀的，甚至可以比雜湊 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 更快的存取。</p>
+<h2 id="卸載策略-Offloading-Strategy"><a href="#卸載策略-Offloading-Strategy" class="headerlink" title="卸載策略 (Offloading Strategy)"></a>卸載策略 (Offloading Strategy)</h2><p>在平行處理中，我們可以劃分成不同數量級的策略。在小規模下，嘗試先以 CPU 計算，若發現更大規模，將資料卸載給其他異質計算單元來完成。同樣的道理，對於資料結構也能更近一步地劃分。</p>
+<p>如集合實作：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MSet</span> </span>&#123;</div><div class="line">    Object mRaw; <span class="comment">// size &lt; 8: LinkedList; otherwise, HashSet</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>由於 Java 中的 <code>HashSet&lt;T&gt;</code> 並不是單一欄位的實作，實值為 <code>HashMap&lt;T, T&gt;</code>，相較於 C/C++ 的狀態，空間多了兩、三成。我們可以簡單使用 <code>LinkedList</code> 取代 <code>HashSet</code>，並且避免小規模數據中未能填滿 hash table 的狀態。在元素個數為一時，串列的記憶體效率 <span>$100 \%$</span><!-- Has MathJax -->，但雜湊集合只有 <span>$12.5 \%$</span><!-- Has MathJax -->。換句話說，有時候數據分布很極端，內存用量就差了十倍。</p>
+
+        
+      
+    </div>
+
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2021/05/30/java/java-memory-optimization-1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Java 優化內存使用 結構篇</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</section>
+          
+          
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">    
+    <div class="social-group">
+      
+      <a href="https://github.com/morris821028" target="_blank" title="github"><i class="icon-github"></i></a>
+      
+      
+      <a href="https://www.facebook.com/Morris1028" target="_blank" title="facebook"><i class="icon-facebook-sign"></i></a>
+      
+      
+      <a href="http://uhunt.felix-halim.net/id/46705" target="_blank" title="uhunt" ><span class="icon-uhunt">UVa<span></a>
+      
+    </div>
+    <div id="footer-info" class="inner">
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link"><i class=icon-home ></i>&nbsp&nbspHome</a>
+  
+    <a href="/about" class="mobile-nav-link"><i class=icon-user ></i>&nbsp&nbspAbout</a>
+  
+    <a href="/archives" class="mobile-nav-link"><i class=icon-archive ></i>&nbsp&nbspArchives</a>
+  
+    <a href="/tags" class="mobile-nav-link"><i class=icon-tags ></i>&nbsp&nbspTags</a>
+  
+    <a href="/picture" class="mobile-nav-link"><i class=icon-camera ></i>&nbsp&nbspPictures</a>
+  
+    <a href="/works" class="mobile-nav-link"><i class=icon-trophy ></i>&nbsp&nbspWorks</a>
+  
+</nav>
+    
+<script>
+  var disqus_shortname = 'morris1028';
+  
+  var disqus_url = 'http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//go.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/jquery.lazyload.js"></script>
+<script src="/js/jquery.als-1.6.js"></script>
+
+<script src="/js/script.js"></script>
+
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

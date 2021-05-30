@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-05-30T02:05:47.097Z</updated>
+  <updated>2021-05-30T03:45:06.477Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -17,11 +17,50 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>Java 優化內存使用 組合篇</title>
+    <link href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/"/>
+    <id>http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/</id>
+    <published>2021-05-30T05:00:00.000Z</published>
+    <updated>2021-05-30T03:45:06.477Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="整數映射-Integer-Mapping"><a href="#整數映射-Integer-Mapping" class="headerlink" title="整數映射 (Integer Mapping)"></a>整數映射 (Integer Mapping)</h2><p>算法經常會使用整數映射到物件，而整數範圍就會影響到內存。為了技術性能 (capability)，直接宣告 </p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Map&lt;Long, Object&gt; a;</div><div class="line">TLongObjectMap&lt;Object&gt; b;</div></pre></td></tr></table></figure><p>以應付未來變化。考慮到鍵值欄位，實作上建立 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> <code>long[]</code>。在初始狀態下，大多情境只使用 <code>int[]</code> 的情況。為此，我們考慮分流使用</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MMap</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">    TLongObjectMap&lt;T&gt; longMap;</div><div class="line">    TIntObjectMap&lt;T&gt; intMap;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>使用這樣子的概念，通用狀態可以降低 <span>$50\%$</span><!-- Has MathJax --> 內存，均勻分布情況則可以降低 <span>$25\%$</span><!-- Has MathJax -->。</p><h2 id="陣列替代-Array-Substitute"><a href="#陣列替代-Array-Substitute" class="headerlink" title="陣列替代 (Array Substitute)"></a>陣列替代 (Array Substitute)</h2><p>前一篇，我們提到了將 <code>ArrayList</code> 換成最原生的 <code>T[]</code>。更進一步，以前寫 C 的時候，壓根不在意 <code>T[].length</code> 這一個需求，因為題目已經寫死在某個全區變數裡。可在 Java 裡頭，我們宣告不出純粹的陣列，只能硬生生多出 <span>$4 \; \text{bytes}$</span><!-- Has MathJax -->。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    K[] keys; <span class="comment">// as known, keys.length = 10</span></div><div class="line">    V[] vals; <span class="comment">// as known, vals.length = 10</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>換個方向思考，那朝著減少試試。進行陣列雙向合併</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    Object[] keyval; <span class="comment">// [key0, key1, ..., val1, val0]</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>在 <code>Scheme</code> 物件中，我們減少了 <span>$8 \; \text{bytes}$</span><!-- Has MathJax --> 的額外資訊。但在使用時， casting 是個開銷。</p><h2 id="欄位轉移-Field-Translation"><a href="#欄位轉移-Field-Translation" class="headerlink" title="欄位轉移 (Field Translation)"></a>欄位轉移 (Field Translation)</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">Map&lt;T, String&gt; map;</div><div class="line">map.put(a, <span class="string">"MARKED"</span>);</div><div class="line">map.put(b, <span class="string">"UNMARKED"</span>);</div></pre></td></tr></table></figure><p>當我們還沒有仔細規劃結構時，直接用 <strong>has-A</strong> 的精神去寫第一步。回過頭來，就會造成不少零散的映射出現。如果映射使用雜湊實作，而不是樹的話，整體的記憶體效率會低個 <span>$33\%$</span><!-- Has MathJax -->，因為無法塞滿所有的 hash table 中的桶子。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">T</span> </span>&#123;</div><div class="line">    ...</div><div class="line">    Object userData;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>那為了提升記憶體效率，先檢查是不是所有的項目，幾乎都在這個映射裡面。如果是的話，將這個欄位轉移到目標類別上。看起來很不美觀，但進一步的資料佈局是很可觀的，甚至可以比雜湊 <span>$\mathcal{O}(1)$</span><!-- Has MathJax --> 更快的存取。</p><h2 id="卸載策略-Offloading-Strategy"><a href="#卸載策略-Offloading-Strategy" class="headerlink" title="卸載策略 (Offloading Strategy)"></a>卸載策略 (Offloading Strategy)</h2><p>在平行處理中，我們可以劃分成不同數量級的策略。在小規模下，嘗試先以 CPU 計算，若發現更大規模，將資料卸載給其他異質計算單元來完成。同樣的道理，對於資料結構也能更近一步地劃分。</p><p>如集合實作：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MSet</span> </span>&#123;</div><div class="line">    Object mRaw; <span class="comment">// size &lt; 8: LinkedList; otherwise, HashSet</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>由於 Java 中的 <code>HashSet&lt;T&gt;</code> 並不是單一欄位的實作，實值為 <code>HashMap&lt;T, T&gt;</code>，相較於 C/C++ 的狀態，空間多了兩、三成。我們可以簡單使用 <code>LinkedList</code> 取代 <code>HashSet</code>，並且避免小規模數據中未能填滿 hash table 的狀態。在元素個數為一時，串列的記憶體效率 <span>$100 \%$</span><!-- Has MathJax -->，但雜湊集合只有 <span>$12.5 \%$</span><!-- Has MathJax -->。換句話說，有時候數據分布很極端，內存用量就差了十倍。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;整數映射-Integer-Mapping&quot;&gt;&lt;a href=&quot;#整數映射-Integer-Mapping&quot; class=&quot;headerlink&quot; title=&quot;整數映射 (Integer Mapping)&quot;&gt;&lt;/a&gt;整數映射 (Integer Mapping)&lt;/
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
+    
+    
+      <category term="優化" scheme="http://morris821028.github.io/tags/%E5%84%AA%E5%8C%96/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
+    
+      <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
+    
+      <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
+    
+      <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Java 優化內存使用 結構篇</title>
     <link href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/"/>
     <id>http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/</id>
-    <published>2021-05-30T10:00:00.000Z</published>
-    <updated>2021-05-30T02:05:47.097Z</updated>
+    <published>2021-05-30T04:00:00.000Z</published>
+    <updated>2021-05-30T02:57:26.250Z</updated>
     
     <content type="html"><![CDATA[<h2 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h2><p>首先，針對 JVM 這一類的語言設計，所有事物皆為物件，那麼就表示每一個物件都必須額外紀錄 object header，也就是說一個物件在 64 位元的作業系統環境下，通常會額外帶有 12 bytes 資料 (mark word:4 bytes 和 klass word:8 bytes)，但 64 位元計算機架構需對齊 8 bytes 的規範，使得每一個物件都大上許多。</p><p>例如，一個 <code>struct Point</code> 在 C 語言裡面，</p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Point</span> &#123;</span></div><div class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></div><div class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>我們輕易地就明白單一物件大小為 16 bytes，而在 Java 撰寫時，卻會變成 <span>$32 \; \text{bytes} \;(\text{header:}12 + \text{x:}8 + \text{y:}8 + \text{padding:}4)$</span><!-- Has MathJax -->。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span> </span>&#123; <span class="comment">// object header 12 byte</span></div><div class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></div><div class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></div><div class="line">    <span class="comment">// padding 4 byte</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>這樣看起來並不妙。相同的演算法、配上相同的數據，Java 處理時的內容硬是比 C 還多出整整兩倍。物件導向有其優點，必然存在一些缺點，可以很彈性地開發、豐富的權限管理、方便追蹤剖析，卻容易在非常基礎的大量計算中暴露記憶體方面的問題。</p><h2 id="打包物件-packed-object"><a href="#打包物件-packed-object" class="headerlink" title="打包物件 (packed object)"></a>打包物件 (packed object)</h2><p>對於基礎物件，就只能倚靠撰寫 JNI 或者修改 JVM 的參數，來降低每一個單一物件的大小。對於底層不夠熟悉的開發者而言，還是可以透過一些實作方法來完成。但必須犧牲一點物件導向的方法論，喪失維護性，面對真實問題。</p><p>例如，我們儲存一個矩形，需要一個左上角和右下角的點。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</div><div class="line">    Point a; <span class="comment">// pointer: 8 bytes</span></div><div class="line">    Point b; <span class="comment">// pointer: 8 bytes</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>資深工程師總會很直覺地 <strong>重複使用</strong>，這個原則並沒有錯，但對於大量的基礎物件而言，宣告一個矩形實際上會占用 <span>$32 + 2 \times 32 = 96 \; \text{bytes}$</span><!-- Has MathJax -->。接著，老是有人跟我唱反調說「效能分析工具 (Profiler) 只給出 <span>$32 \; \text{bytes}$</span><!-- Has MathJax -->，你肯定算錯了！」別忘了，你寫的不是 C/C++，是一切皆為指標的 Java。</p><p>那我們要怎麼打包物件呢？或者說 <strong>攤平</strong>，目標要減少 <code>Point</code> 多出來的 object header。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> lx;</div><div class="line">    <span class="keyword">long</span> ly;</div><div class="line">    <span class="keyword">long</span> rx;</div><div class="line">    <span class="keyword">long</span> ry;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>返璞歸真，直接將欄位往上提取，破壞一點基礎建設，在一些 API 上犧牲一點效能。這樣就變成了 <span>$48 \; \text{bytes} = 12 + 8 \times 4 + 4 \; \text{bytes}$</span><!-- Has MathJax --> 的物件。如此一來，減少了一半的內存用量。</p><h2 id="原始型別-Primitive-Type"><a href="#原始型別-Primitive-Type" class="headerlink" title="原始型別 (Primitive Type)"></a>原始型別 (Primitive Type)</h2><p>在很多不經意的操作下，很容易將原始型別 (primitive type) 儲存成物件型別 (object type)，也就是物件導向最容易造成的問題，從整體用法來分析，並不影響程式正確性，但會造成記憶體用量飆高。如 <code>long</code> 原本為 8-byte 物件，轉換成 <code>Long</code> 會變成 24-byte 物件。</p><h3 id="繼承與泛型影響"><a href="#繼承與泛型影響" class="headerlink" title="繼承與泛型影響"></a>繼承與泛型影響</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> <span class="keyword">extends</span> <span class="title">Pair</span>&lt;<span class="title">Long</span>, <span class="title">Long</span>&gt; </span>&#123;&#125;</div></pre></td></tr></table></figure><p>當想重複使用類別，透過繼承的泛型很容易自動轉換成物件型別。這個問題在 C# 內並不存在，CIL 能允許宣告 <code>Pair&lt;long, long&gt;</code>，並且不透過型別抹除，分別建立相應的代碼，能解決此問題。在 Java 上要解決這個問題，只能更樸素一點。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> major;</div><div class="line">    <span class="keyword">long</span> minor;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>代碼多了一點，取而代之的是記憶體量減少，物件轉換次數的降低。</p><h3 id="多形使用"><a href="#多形使用" class="headerlink" title="多形使用"></a>多形使用</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">List&lt;Object&gt; list;</div><div class="line">list.add(<span class="number">1</span>);</div><div class="line">Map&lt;Object, Object&gt; map;</div><div class="line">map.put(<span class="number">2</span>, <span class="number">3</span>);</div></pre></td></tr></table></figure><p>多形操作下，將好幾種不同類別的物件一起使用，隱式轉換問題就會發生，一般要追到底層才知道最後發生什麼事情。由於 Java 官方的庫並沒有預設大量的原生型別的資料結構，我們只能透過像 trove4j、eclipse collections 等插件來補足，必要時自己刻一個。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">TLongObjectMap&lt;T&gt; a;</div><div class="line">TLongArrayList b;</div><div class="line">...</div></pre></td></tr></table></figure><h2 id="資料結構-Data-Structure"><a href="#資料結構-Data-Structure" class="headerlink" title="資料結構 (Data Structure)"></a>資料結構 (Data Structure)</h2><h3 id="雜湊表-Hash-Table"><a href="#雜湊表-Hash-Table" class="headerlink" title="雜湊表 (Hash Table)"></a>雜湊表 (Hash Table)</h3><p>在大多數的實作下，雜湊表佔據線性空間 <span>$\mathcal{O}(n)$</span><!-- Has MathJax -->，存取時間 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->，理論分析上也近乎完美。在處理碰撞的技巧上，影響常數級別的空間用量。通常分成以下兩種</p><h4 id="開放定址法-Open-Addressing"><a href="#開放定址法-Open-Addressing" class="headerlink" title="開放定址法 (Open Addressing)"></a>開放定址法 (Open Addressing)</h4><p>trove4j 和 eclipse collections 採用此方法。</p><ul><li>使用記憶體空間最小<br>  僅有兩個陣列 <code>key[]</code> 和 <code>value[]</code>，沒有多餘的 object header。</li><li>存取常數大，調整時間較長<br>  通常會有兩個以上的 probing 操作，中間穿插刪除操作時，容易造成退化。</li></ul><h4 id="串鏈法-Chaining"><a href="#串鏈法-Chaining" class="headerlink" title="串鏈法 (Chaining)"></a>串鏈法 (Chaining)</h4><p>jdk 預設採用此方法。</p><ul><li>使用記憶體空間最大<br>  <code>HashNode {val, next, prev}</code> 佔據了大部分的記憶體，且大量的 object header 出現。</li><li>存取常數較小</li></ul><p>從穩定性分析上，串鏈法在某種程度上可以複合許多結構，如 unrolled linked list (bucket) 或者是 binary tree 來降低最慘複雜度。而開放定址法，雖然有記憶體用量小，快取能力更高，但數據量一大，很容易在 rehash 的階段花太久的時間，而且不容易做到刪除操作。</p><h3 id="固定長度陣列-Fixed-length-Array"><a href="#固定長度陣列-Fixed-length-Array" class="headerlink" title="固定長度陣列 (Fixed-length Array)"></a>固定長度陣列 (Fixed-length Array)</h3><p>Java 開發久了，連宣告陣列都很吃技術。有時候，並沒仔細探討固定長度與不固定長度的差異。劈頭就寫一個</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    ArrayList&lt;Field&gt; fields;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>這樣的設計擴充性佳，具有彈性。在底層設計時，卻會發現 <code>ArrayList</code> 至少包含了 <code>size</code> 和 <code>val[]</code> 兩個欄位，而 <code>val[]</code> 包含了真正的 <code>array pointer</code> 和 <code>length</code> 兩個欄位。如果已知固定長度且不再變更，或者變更的使用量極低，且能保證 <code>size == val.length</code>，那不如直接宣告</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    Field[] fields;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>如此一來，一個 <code>Scheme</code> 物件便能減少 <span>$16 \; \text{bytes}$</span><!-- Has MathJax -->。更進一步，我們可以利用封裝 (Encapsulation) 和多型技術，再降低 <span>$8 \; \text{bytes}$</span><!-- Has MathJax -->。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme1</span> </span>&#123;</div><div class="line">    Field f1;</div><div class="line">&#125;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme2</span> </span>&#123;</div><div class="line">    Field f1;</div><div class="line">    Field f2;</div><div class="line">&#125;</div><div class="line">...</div></pre></td></tr></table></figure><h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>根據實際應用的數據分布，對最常用的物件進行優化。醜了點，但能解決問題。雖然並不是黑魔法，更能了解實作。</p>]]></content>
     
@@ -43,15 +82,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
-    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -108,6 +147,34 @@
   </entry>
   
   <entry>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:39:01.704Z</updated>
+    
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Global Variable</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
@@ -138,34 +205,6 @@
   </entry>
   
   <entry>
-    <title>Handover</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:39:01.704Z</updated>
-    
-    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
     <title>Interview &amp; Recursion</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
@@ -179,37 +218,6 @@
       
       
         &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Programming Language Impostors</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:04:37.709Z</updated>
-    
-    <content type="html"><![CDATA[<blockquote><p>“There are many Impostors among us”</p></blockquote><p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;blockquote&gt;
-&lt;p&gt;“There are many Impostors among us”&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
 
       
     
@@ -255,6 +263,37 @@
   </entry>
   
   <entry>
+    <title>Programming Language Impostors</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:04:37.709Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>“There are many Impostors among us”</p></blockquote><p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;“There are many Impostors among us”&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Machine Learning for Newbie</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/</id>
@@ -283,19 +322,19 @@
   </entry>
   
   <entry>
-    <title>Parallel &amp; Unstable</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
+    <title>Parallel &amp; Garbage Collection</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:21:10.607Z</updated>
+    <updated>2021-01-31T03:25:34.110Z</updated>
     
-    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
+    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
+        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
 
       
     
@@ -311,19 +350,19 @@
   </entry>
   
   <entry>
-    <title>Parallel &amp; Garbage Collection</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
+    <title>Parallel &amp; Unstable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:25:34.110Z</updated>
+    <updated>2021-01-31T03:21:10.607Z</updated>
     
-    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
+    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
+        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
 
       
     
@@ -566,33 +605,6 @@
     
       <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>Company Ghost Story 公司鬼故事 6</title>
-    <link href="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/"/>
-    <id>http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/</id>
-    <published>2020-10-24T10:00:00.000Z</published>
-    <updated>2020-10-24T09:29:26.402Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Observer-vs-Inheritor"><a href="#Observer-vs-Inheritor" class="headerlink" title="Observer vs. Inheritor"></a>Observer vs. Inheritor</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">Tool tool = <span class="keyword">new</span> Tool() &#123;</div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">fireSomething</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">        <span class="keyword">super</span>.fireSomething(t);</div><div class="line">        updateProcess(t);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">updateProcess</span><span class="params">(T t)</span> </span>&#123;...&#125;</div></pre></td></tr></table></figure><p>當觀察者模式 (observer pattern) 的介面應優先考量 attach/addListener，不應該以繼承的方式覆寫 update/fireListener/notify 等函數。</p><h3 id="WhatIf"><a href="#WhatIf" class="headerlink" title="WhatIf?"></a>WhatIf?</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> (isA()) &#123;</div><div class="line">    <span class="comment">// something</span></div><div class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (isA() &amp;&amp; isB()) &#123;</div><div class="line">    <span class="comment">// dead code</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>第二個 else-if 並不會執行到。</p><h3 id="Equals-vs"><a href="#Equals-vs" class="headerlink" title="Equals vs. =="></a>Equals vs. ==</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> (a == b &amp;&amp; a.equals(b)) &#123;...&#125;</div><div class="line"></div><div class="line"><span class="keyword">if</span> (a == b || a.equals(b)) &#123;...&#125;</div></pre></td></tr></table></figure><p>對 Java 而言，有 <code>Objects.equals</code> 可以替代呼叫，又或者在 <code>boolean equals(Object)</code> 中包含 <code>==</code> 才對。</p><h3 id="String-format"><a href="#String-format" class="headerlink" title="String.format"></a>String.format</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">String.format(<span class="string">"Move %s"</span>, fromObj, toObj);</div></pre></td></tr></table></figure><p>對上參數數量是很重要的。</p><h3 id="Mapper-Function"><a href="#Mapper-Function" class="headerlink" title="Mapper Function"></a>Mapper Function</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> T <span class="title">a2b</span><span class="params">(String key)</span> </span>&#123;</div><div class="line">    Map&lt;String, T&gt; mapper = <span class="keyword">new</span> HashMap&lt;&gt;();</div><div class="line">    mapper.put(<span class="string">"..."</span>, ...);</div><div class="line">    mapper.put(<span class="string">"..."</span>, ...);</div><div class="line">    mapper.put(<span class="string">"..."</span>, ...);</div><div class="line">    mapper.put(<span class="string">"..."</span>, ...);</div><div class="line">    <span class="keyword">return</span> mapper.get(key);</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>手動做 if-else 比較快的，建立 hash 可不是這麼簡單，記憶體宣告等因素需要考慮。而它也不屬於只宣告一次的靜態變數，因此並不適合這樣處理。</p><h3 id="Comparable"><a href="#Comparable" class="headerlink" title="Comparable"></a>Comparable</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">compareTo</span><span class="params">(T other)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span>[] c = &#123;fa.compareTo(other.fa), fb.compareTo(other.fb) ...&#125;;</div><div class="line">    <span class="keyword">return</span> firstNotZero(c);</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>if-else 不應該這樣被偷懶的，整個效能都爛了。</p><h3 id="Argument-vs-Method-Name"><a href="#Argument-vs-Method-Name" class="headerlink" title="Argument vs. Method Name"></a>Argument vs. Method Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">doExpand</span><span class="params">(<span class="keyword">boolean</span> isExpand)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (!isExpand)</div><div class="line">        doCollapse();</div><div class="line">    ...</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>好的命名決定品質。</p><h3 id="Switch"><a href="#Switch" class="headerlink" title="Switch"></a>Switch</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">enableAListener</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">removeAListener</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">addBListener</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">stopBListener</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setCListener</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">disableCListener</span><span class="params">()</span> </span>&#123;</div><div class="line">    sListeners.remove(sAListener);</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>有一種被玩弄的感覺 …</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Observer-vs-Inheritor&quot;&gt;&lt;a href=&quot;#Observer-vs-Inheritor&quot; c
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
-    
-    
-      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
     
   </entry>
   
