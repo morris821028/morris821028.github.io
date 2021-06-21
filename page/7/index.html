@@ -89,6 +89,139 @@
           
           <section id="main">
   
+    <article id="post-icg-final-project-radiosity-2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/24/icg-final-project-radiosity-2/" class="article-date">
+  <time datetime="2017-01-24T03:01:19.000Z" itemprop="datePublished">2017-01-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/01/24/icg-final-project-radiosity-2/">探討平行與優化技術於熱輻射法 (下)</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckq602cqj005gv4vn6xyrmkdb" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/平行/">平行</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計算機圖學/">計算機圖學</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <blockquote>
+<p>接續上一篇</p>
+</blockquote>
+<h2 id="平行設計-Parallel-Design"><a href="#平行設計-Parallel-Design" class="headerlink" title="平行設計 Parallel Design"></a>平行設計 Parallel Design</h2><p>回顧原始算法，為了加快收斂速度，每一次會挑選單位面積能量最多的三角形 <span>$f$</span><!-- Has MathJax --> ，之後便拿所有三角形 <span>$t$</span><!-- Has MathJax --> 進行傳導，直到傳導能量小於閥值，迭代將停止。算法如下所述：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converge) &#123;</div><div class="line">  f = PickMaxRadiosityTriangle()</div><div class="line">  foreach triangle t in model</div><div class="line">      shader(f, t);</div><div class="line">  clearRadiosity(f)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在嘗試傳遞的過程中，若三角形 <span>$f$</span><!-- Has MathJax --> 的三頂點的能量差異大，則選擇自適應切割三角形，直到三頂點能量差異小，這麼計算 Form-Factor 才會正確。在自適應部份，切割方法如下圖所示：</p>
+<p><img src="http://i.imgur.com/qd2QlKk.png" alt=""></p>
+<p>當偵測到綠色三角形 <span>$A$</span><!-- Has MathJax --> 頂點之間的 Form-Factor 差異過大時，使用最長邊的中點切割，這麼做是盡可能產生銳角三角形，為了圖形完整，必然也要對鄰居切割。為減少計算量，只算新增中心點 <span>$P$</span><!-- Has MathJax --> 的 Form-Factor。對於下方的三角形 <span>$B$</span><!-- Has MathJax --> 而言，分成兩種情況，已在這一輪完成計算，則重新計算 Form-Factor；相反地，不做任何事。</p>
+<h3 id="Single-Source-Parallel-Algorithm"><a href="#Single-Source-Parallel-Algorithm" class="headerlink" title="Single-Source Parallel Algorithm"></a>Single-Source Parallel Algorithm</h3><p>我們發現計算 Form-Factor 相當獨立的，但自適應處理需要遞迴切割，因此選用多核心平台，而非通用圖形處理器平台，因為目前的 GPU 實作遞迴所需的 stack 使用 global memory 作為存取位址，所以一般多核心平台效果會更好。在這一次報告中，我們選用 OpenMP 這套跨平台多執行緒 API 進行實驗。</p>
+<p>著手將多個三角形平行處理，意即每一個執行緒負責多個三角形的 Form-Factor 計算。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Single-Source Parallel Algorithm</span></div><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converage) &#123;</div><div class="line">  f = PickMaxRadiosityTriangle()</div><div class="line">  parallel foreach triangle t in model</div><div class="line">      shader(s, t);</div><div class="line">  clearRadiosity(f)</div></pre></td></tr></table></figure>
+<h3 id="Multi-Source-Parallel-Algorithm"><a href="#Multi-Source-Parallel-Algorithm" class="headerlink" title="Multi-Source Parallel Algorithm"></a>Multi-Source Parallel Algorithm</h3><p>從原始算法中，我們發現到每一次迭代將只有一個熱源輻射到場景中，當場景有多個高能量熱源時，場景必須經過好幾次迭代才能近似最終結果。藉由平行處理的效能，我們可以一次迭代多熱源，便可將低執行緒之間分配工作不均的情況，不僅僅前幾次迭代就能近似最終結果，同時也能加速運算。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Multi-Source Parallel Algorithm</span></div><div class="line"><span class="keyword">while</span> (<span class="keyword">not</span> converge) &#123;</div><div class="line">  <span class="built_in">set</span>&lt;Triangle&gt; f = RadiosityTriangleCandiateCandidate();</div><div class="line">  parallel foreach triangle t in model</div><div class="line">      <span class="keyword">if</span> (f.find(t))</div><div class="line">          <span class="keyword">continue</span>;</div><div class="line">      foreach s in f</div><div class="line">          shader(s, t);</div><div class="line">  clearRadiosity(f);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我們所用的平行方無法搭配上述自適應的切割方案，其原因在於分裂過程中，同時也要對鄰居三角形分裂，整個圖形產生的節點與邊的關係才會正確，無法保證鄰居在同一執行緒內處理，若沒有做好空間切割，我們便無法處理這部份。若模型格式會是數個獨立的物體，而非單純的三角形資訊，可分配每一個執行緒處理多個獨立物體，我們預期可以達到更好的效果。</p>
+<p>平行過程中每一個執行緒共享和衝突的區段越少越好，這意味著我們必須在運行輻射前就必須將模型切得相當細緻。特別注意到，切得細緻與否對於光線投射 (Ray Casting) 複雜度不變，因為邏輯上他們處理同一平面。</p>
+<p>一旦切得細緻，傳遞的效果就不是這麼好，在邊界的陰影更加顯著。根據理論和實作層面推測，其一原因是能傳遞的總能量隨著迭代減少，那麼從分裂過程中傳遞能量採用較多的加法完成，相較於多個 32-bit floating point 誤差就少了許多。</p>
+<p>我們也試著使用獨立的切割方案─重心切割，切割的結果不依賴鄰居，只需要在加入三角形清單部份使用 critical section 即可，效能影響並不大。</p>
+<p><img src="http://i.imgur.com/cI7z6Jx.png" alt=""></p>
+<p>根據重心切割，下述實驗中，從 156 個三角形，自動分裂到 30000 個三角形後進行輻射的結果如下圖所示：</p>
+<p>明顯地，根據重心的切割方法容易產生鈍角三角形，看起來就會像很多紡錘體。在眾多數學性質中，只使用重心也許不是好的解決方案，這是値得探討的一部份，由於製作上的時間限制，我們並沒有去探討各個不同切割方案，所對應的自適應的效果如何。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Longest Edge</th>
+<th style="text-align:center">Center</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/vQFsQ3K.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/ZyLbimO.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h2 id="展示結果-Demo"><a href="#展示結果-Demo" class="headerlink" title="展示結果 Demo"></a>展示結果 Demo</h2><p>只使用優化技術渲染結果</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">blocks</th>
+<th style="text-align:center">room</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/4I3U5zd.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/ATsDg8e.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">hall</th>
+<th style="text-align:center">church</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"><img src="http://i.imgur.com/j6KNvT0.png" alt=""></td>
+<td style="text-align:center"><img src="http://i.imgur.com/Squ2W0v.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h3 id="平行效能比較"><a href="#平行效能比較" class="headerlink" title="平行效能比較"></a>平行效能比較</h3><p>在 Intel Xeon E5-2620 v3 上，我們測試不同平行度帶來的影響，由於只有兩個實體 CPU，每一個 CPU 有 6 個核心，每個核心皆有 Hyper-threading 技術，故可產生 24 個執行緒。</p>
+<p><img src="http://i.imgur.com/qcJfMW7.png" alt="Single-Source Parallel Algorithm - Scalability"></p>
+<p>我們對模型 room.tri 以預先切割 14977 個三角形後，根據先前提到的平行算法 Single-Source Parallel Algorithm，即是迭代一次只取一個熱源，平行計算所有三角形到此熱源的 Form-Factor 値，針對不同的執行緒個數和運行時間記錄，結果如上圖。在由於過多的執行緒可能會帶來更多的 false sharing，造成資料在不同的 CPU 之間運行 data transmission，所以效果就逐漸不明顯。</p>
+<p><img src="http://i.imgur.com/GKBUCrB.png" alt="Multi-Source Parallel Algorithm - Scalability"></p>
+<p>接著，我們測試 Multi-Source Parallel Algorithm，以 room.tri 預先切割 50017 個三角形後，每次迭代皆取數個熱源，平行計算所有三角形到所有被選取熱源的 Form-Factor 的總和。同樣地，因為查找的資料重複存取的模式造成不好的影響，類似上述所提到的 false sharing 影響，故會呈現一種陡坡。</p>
+<h2 id="參考論文-Reference"><a href="#參考論文-Reference" class="headerlink" title="參考論文 Reference"></a>參考論文 Reference</h2><ul>
+<li>Fast conversion of floating-point values to string, Wojciech Muła:<br><a href="http://0x80.pl/notesen/2015-12-29-float-to-string.html" target="_blank" rel="external">http://0x80.pl/notesen/2015-12-29-float-to-string.html</a><br>我們使用這一篇討論中，在輸出 Triangle 格式部份加速浮點數轉文字加快 4 倍速。</li>
+</ul>
+<h2 id="後記-Note"><a href="#後記-Note" class="headerlink" title="後記 Note"></a>後記 Note</h2><p>當我們進行平行效能比較時，要特別小心編譯器行為的差異，意即平行處理 <span>$P$</span><!-- Has MathJax --> 控制時，當 <span>$P=1$</span><!-- Has MathJax --> 時，使用平行版本比較合適。因為有時候，平行部分的函數被編譯器偵測到，由於分享記憶體的關係，部分代碼無法優化，導致效能瞬間慢個四到五倍都是有可能的，再加上 false sharing 的關係，更有可能在發生密集計算時，效能更加低落。</p>
+<p>在不同平台上的情況也有所不同，例如在一般 server 上運行時，CPU 頻率通常都會比一般 PC 慢上許多，又因為很多個 CPU 導致總共的快取大小遠比一般 PC 多，所以平行效能將會受限於運行的應用行為，是否需要時常存取大量的資料。</p>
+<h2 id="致謝-Thanks"><a href="#致謝-Thanks" class="headerlink" title="致謝 Thanks"></a>致謝 Thanks</h2><p>一開始在挑選主題相當困惑，畢竟使用 Unity 可以做出更生動的作品，但作品的元素和創意相當重要，相當迷惘於要選哪一種類型才好。如果要兩人以上一起做，那麼主題又不能太過狹隘。百般思慮下，還是由我拉選了這個主題下來做。</p>
+<blockquote>
+<p>「我可能會扯你後腿，還是我們各別做？」組員擔心地說道</p>
+</blockquote>
+<p>不用擔心，我自己也沒信心將所有程序都看完且修改更好更快，每天都焦頭爛額地煩惱整份程序的運作，深怕來不及在時限內完成足夠的報告份量。</p>
+<blockquote>
+<p>「快來幫幫我啊，在身邊一起 trace 程序也好，咱的記憶體不足啊。」內心如此吶喊</p>
+</blockquote>
+<p>一起修課的博班學長給了我們一些意見與鼓勵，而學弟們只會在一旁扯後腿問「學姊今天會來嗎？」最後，我們完成了整份程序的理解與討論。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-icg-final-project-radiosity" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/01/22/icg-final-project-radiosity/" class="article-date">
@@ -114,7 +247,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckq5yoy1e005eo4vnsui5vnks" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckq602cqk005kv4vn3fhkv3g0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -284,7 +417,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/rxih6Pj.jpg" rel="gallery_ckq5yoy0o003eo4vnowaze6cx">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/rxih6Pj.jpg" rel="gallery_ckq602cpq003gv4vn6sd0u2xi">
         <img src="http://i.imgur.com/rxih6Pj.jpg" itemprop="image">
       </a>
     
@@ -303,7 +436,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/20/diary-201701-5/" data-id="ckq5yoy0o003eo4vnowaze6cx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/20/diary-201701-5/" data-id="ckq602cpq003gv4vn6sd0u2xi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/20/diary-201701-5/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -420,7 +553,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/18/jg-20007/" data-id="ckq5yoy2x009io4vnl1rcy4h5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/18/jg-20007/" data-id="ckq602cs2009nv4vnsf7fj19p" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/18/jg-20007/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -539,7 +672,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/dODwLPn.jpg" rel="gallery_ckq5yoy0n003bo4vnji6qmm4z">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/dODwLPn.jpg" rel="gallery_ckq602cpp003dv4vnhcsn99lj">
         <img src="http://i.imgur.com/dODwLPn.jpg" itemprop="image">
       </a>
     
@@ -558,7 +691,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-4/" data-id="ckq5yoy0n003bo4vnji6qmm4z" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-4/" data-id="ckq602cpp003dv4vnhcsn99lj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -657,7 +790,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/HgNRb8L.jpg" rel="gallery_ckq5yoy0m0038o4vnic2r5y41">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/HgNRb8L.jpg" rel="gallery_ckq602cpo003av4vntqe35s1b">
         <img src="http://i.imgur.com/HgNRb8L.jpg" itemprop="image">
       </a>
     
@@ -676,7 +809,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-3/" data-id="ckq5yoy0m0038o4vnic2r5y41" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-3/" data-id="ckq602cpo003av4vntqe35s1b" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -751,7 +884,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/Eyx2uSD.jpg" rel="gallery_ckq5yoy0l0035o4vn3q1xskn1">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/Eyx2uSD.jpg" rel="gallery_ckq602cpn0037v4vn3docl0uv">
         <img src="http://i.imgur.com/Eyx2uSD.jpg" itemprop="image">
       </a>
     
@@ -770,7 +903,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-2/" data-id="ckq5yoy0l0035o4vn3q1xskn1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-2/" data-id="ckq602cpn0037v4vn3docl0uv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -856,7 +989,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KnsUvCG.jpg" rel="gallery_ckq5yoy0p003go4vnfz0bmcdo">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KnsUvCG.jpg" rel="gallery_ckq602cpr003jv4vnnb43cgkc">
         <img src="http://i.imgur.com/KnsUvCG.jpg" itemprop="image">
       </a>
     
@@ -875,7 +1008,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/diary-20170116/" data-id="ckq5yoy0p003go4vnfz0bmcdo" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/diary-20170116/" data-id="ckq602cpr003jv4vnnb43cgkc" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/diary-20170116/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -947,7 +1080,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/" data-id="ckq5yoxzp000mo4vn6lt8aydf" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/" data-id="ckq602coq000pv4vnrkv2rlvj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1025,7 +1158,7 @@ dp[i][j] = \left\{\begin{matrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/" data-id="ckq5yoxzq000oo4vna9iuyguh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/" data-id="ckq602coo000lv4vn5887x29y" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1081,102 +1214,6 @@ dp[i][j] = \left\{\begin{matrix}
 
 
   
-    <article id="post-jg-20008" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/12/18/jg-20008/" class="article-date">
-  <time datetime="2016-12-18T03:14:07.000Z" itemprop="datePublished">2016-12-18</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/出題解題/">出題解題</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/12/18/jg-20008/">淺談多重背包問題 (Multiple Knapsack Problem) 優化那些事</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/12/18/jg-20008/" data-id="ckq5yoy2y009lo4vnhg8e58si" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/12/18/jg-20008/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DP/">DP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/monotone-queue/">monotone queue</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/單調堆/">單調堆</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/背包問題/">背包問題</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>收錄於 <a href="https://judgegirl.csie.org/problem/0/20008" target="_blank" rel="external">批改娘 20008. Fast Multiple Knapsack Problem</a></p>
-<p>之所以出了這一題，源自於實驗室另一名同學跑實驗太久，進而撰寫優化程序。聽說原本跑了十分鐘的實驗，改善後提升了到一分鐘跑完。</p>
-</blockquote>
-<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>每組測資第一行包含兩個正整數，分別代表背包大小 $M$ ($\leq 10^6$) 和物品個數 $N$ ($\leq 1000$)，下一行開始每行包含兩個正整數，分別代表物品價值 $P_i$ ($\leq 10^3$)、物品重量 $W_i$ ($ \leq 10^5$) 以及物品最多可以挑 $C_i$ 個 ($\le 100$)。</p>
-<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每組測資，請輸出最大收益。</p>
-<h2 id="範例輸入-1"><a href="#範例輸入-1" class="headerlink" title="範例輸入 1"></a>範例輸入 1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">50 7</div><div class="line">66 31 1</div><div class="line">232 10 4</div><div class="line">49 20 1</div><div class="line">54 19 1</div><div class="line">426 4 3</div><div class="line">589 3 10</div><div class="line">10 6 4</div></pre></td></tr></table></figure>
-<h2 id="範例輸出-1"><a href="#範例輸出-1" class="headerlink" title="範例輸出 1"></a>範例輸出 1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">7178</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><blockquote>
-<p>不管是 0/1 背包或者多重背包，兩者都屬於 bounded knapsack problem 問題。即便如此，優化上仍有些許的不同，請讓我緩緩道來。</p>
-</blockquote>
-<p>在此之前，您必須先理解上一篇《淺談背包問題 (0/1 Knapsack Problem) 優化那些事》的部分，不然會造成閱讀上的困難。</p>
-<p>多重背包有一個二進制優化，也就是當物品限制最多拿 <span>$C$</span><!-- Has MathJax --> 個時，我們可以利用二進制組合的方式，轉換到 0/1 背包問題，因此我們會得到新的 <span>$N \log C$</span><!-- Has MathJax --> 個物品跑一次 0/1 背包，因此複雜度落在 <span>$O(N \log C \; W)$</span><!-- Has MathJax --> </p>
-<p>然而，從公式定義上，在好幾年前的論文中，使用斜率優化降到 <span>$O(N \; W)$</span><!-- Has MathJax -->，推倒過程如下，</p>
-<span>$j = k \; w_i + r, \; 0 \le r \le w_i - 1$</span><!-- Has MathJax -->
-<span>$$\begin{align*}
-dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i \; w_i] + c_i \; p_i\right\} \\
-&Tab;&amp;= \max\left\{dp[i-1][k \; w_i + r], dp[i-1][(k-1) \; w_i + r] + p_i, \cdots
-&Tab;&Tab;, dp[i-1][(k-c_i) \; w_i + r] + c_i p_i\right\} \\
-&Tab;&amp;= \max\left\{dp[i-1][k \; w_i + r] - k \; p_i, dp[i-1][(k-1) \; w_i + r] + (k-1) \; p_i, \cdots
-&Tab;&Tab;, dp[i-1][(k-c_i) \; w_i + r] - (k-c_i) p_i\right\} + k \; p_i\\
-\end{align*}$$</span><!-- Has MathJax -->
-<p>隨著式子的轉移，我們發現每一個取值將不依賴相對位置，只跟自身的位置有關，那麼可以使用單調堆 (monotone queue) 運行 <span>$O(1)$</span><!-- Has MathJax --> 的 sliding windows 查找極值。最後，將相同餘數分堆處理，單調堆中最多存在 <span>$O(c)$</span><!-- Has MathJax --> 個元素。</p>
-<h3 id="優化初夜"><a href="#優化初夜" class="headerlink" title="優化初夜"></a>優化初夜</h3><blockquote>
-<p>如果只使用二進制優化，套上我們的 0/1 優化方案，將有大幅度地提升。</p>
-</blockquote>
-<p>加入 0/1 背包的優化策略，再套上最簡單的斜率優化算法，得到下面的程式。這裡很懶惰地，由於單調堆最多入隊 <span>$W$</span><!-- Has MathJax --> 次，不外乎地直接只用大小為 <span>$W$</span><!-- Has MathJax --> 的方式實作。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">namespace</span> &#123;</div><div class="line"></div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXW = <span class="number">1000005</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1005</span>;</div><div class="line"></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">BB</span> &#123;</span></div><div class="line">        <span class="keyword">int</span> w, v, c;</div><div class="line">        BB(<span class="keyword">int</span> w = <span class="number">0</span>, <span class="keyword">int</span> v = <span class="number">0</span>, <span class="keyword">int</span> c = <span class="number">0</span>):</div><div class="line">            w(w), v(v), c(c) &#123;&#125;</div><div class="line">        <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> BB &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> w * c  &lt; x.w * x.c;</div><div class="line">        &#125;</div><div class="line">    &#125;;</div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">run</span><span class="params">(BB A[], <span class="keyword">int</span> dp[], <span class="keyword">int</span> W, <span class="keyword">int</span> N)</span> </span>&#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int</span> MQ[MAXW][<span class="number">2</span>];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = A[i].w, v = A[i].v, c = A[i].c;</div><div class="line">            sum = min(sum + w*c, W);</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; w; j++) &#123;</div><div class="line">                <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">0</span>;</div><div class="line">                MQ[l][<span class="number">0</span>] = <span class="number">0</span>, MQ[l][<span class="number">1</span>] = dp[j];</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k*w+j &lt;= sum; k++) &#123;</div><div class="line">                    <span class="keyword">if</span> (k - MQ[l][<span class="number">0</span>] &gt; c)	</div><div class="line">                        l++;</div><div class="line">                    <span class="keyword">int</span> dpv = dp[k*w+j] - k*v;</div><div class="line">                    <span class="keyword">while</span> (l &lt;= r &amp;&amp; MQ[r][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                        r--;</div><div class="line">                    r++;</div><div class="line">                    MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                    dp[k*w+j] = max(dp[k*w+j], MQ[l][<span class="number">1</span>] + k*v);</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;	</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">knapsack</span><span class="params">(<span class="keyword">int</span> C[][<span class="number">3</span>], <span class="keyword">int</span> N, <span class="keyword">int</span> W)</span> </span>&#123;</div><div class="line">        <span class="built_in">vector</span>&lt;BB&gt; A;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = C[i][<span class="number">0</span>], v = C[i][<span class="number">1</span>], c = C[i][<span class="number">2</span>];</div><div class="line">            A.push_back(BB(w, v, c));</div><div class="line">        &#125;</div><div class="line">        assert(N &lt; MAXN);</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int</span> dp1[MAXW+<span class="number">1</span>], dp2[MAXW+<span class="number">1</span>];</div><div class="line">        BB Ar[<span class="number">2</span>][MAXN];</div><div class="line">        <span class="keyword">int</span> ArN[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="built_in">memset</span>(dp1, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp1[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        <span class="built_in">memset</span>(dp2, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp2[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        sort(A.begin(), A.end());</div><div class="line">        <span class="keyword">int</span> sum[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> ch = sum[<span class="number">1</span>] &lt; sum[<span class="number">0</span>];</div><div class="line">            Ar[ch][ArN[ch]] = A[i];</div><div class="line">            ArN[ch]++;</div><div class="line">            sum[ch] = min(sum[ch] + A[i].w*A[i].c, W);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        run(Ar[<span class="number">0</span>], dp1, W, ArN[<span class="number">0</span>]);</div><div class="line">        run(Ar[<span class="number">1</span>], dp2, W, ArN[<span class="number">1</span>]);</div><div class="line"></div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = W, mx = <span class="number">0</span>; i &lt;= W; i++, j--) &#123;</div><div class="line">            mx = max(mx, dp2[i]);</div><div class="line">            ret = max(ret, dp1[j] + mx);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> W, N;</div><div class="line">    assert(<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;W, &amp;N) == <span class="number">2</span>);</div><div class="line">    <span class="keyword">int</span> C[MAXN][<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">        assert(<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;C[i][<span class="number">1</span>], &amp;C[i][<span class="number">0</span>], &amp;C[i][<span class="number">2</span>]) == <span class="number">3</span>);</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, knapsack(C, N, W));</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>不幸地，相較於一般的斜率優化寫法，並沒有太大的改善。</p>
-<h3 id="優化二夜"><a href="#優化二夜" class="headerlink" title="優化二夜"></a>優化二夜</h3><p>運行 sliding windows 操作時，前 <span>$c$</span><!-- Has MathJax --> 次，是不會進行 <code>pop_front()</code> 操作的，因此把迴圈分兩堆處理，增加 branch predict。以及在乘數運算上，使用強度減少 (strength reduction) 的技術，將乘法換成加法。</p>
-<blockquote>
-<p>只能些許地改善 5% 的效能。</p>
-</blockquote>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">run</span><span class="params">(BB A[], <span class="keyword">int</span> dp[], <span class="keyword">int</span> W, <span class="keyword">int</span> N)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> MQ[MAXW][<span class="number">2</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">        <span class="keyword">int</span> w = A[i].w, v = A[i].v, c = A[i].c;</div><div class="line">        sum = min(sum + w*c, W);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; w; j++) &#123;</div><div class="line">            <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">0</span>;</div><div class="line">            MQ[l][<span class="number">0</span>] = <span class="number">0</span>, MQ[l][<span class="number">1</span>] = dp[j];</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>, tw = w+j, tv = v; tw &lt;= sum &amp;&amp; k &lt;= c; k++, tw += w, tv += v) &#123;</div><div class="line">                <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                <span class="keyword">while</span> (l &lt;= r &amp;&amp; MQ[r][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                    r--;</div><div class="line">                r++;</div><div class="line">                MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                dp[tw] = max(dp[tw], MQ[l][<span class="number">1</span>] + tv);</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = c+<span class="number">1</span>, tw = (c+<span class="number">1</span>)*w+j, tv = (c+<span class="number">1</span>)*v; tw &lt;= sum; k++, tw += w, tv += v) &#123;</div><div class="line">                <span class="keyword">if</span> (k - MQ[l][<span class="number">0</span>] &gt; c)   </div><div class="line">                    l++;</div><div class="line">                <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                <span class="keyword">while</span> (l &lt;= r &amp;&amp; MQ[r][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                    r--;</div><div class="line">                r++;</div><div class="line">                MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                dp[tw] = max(dp[tw], MQ[l][<span class="number">1</span>] + tv);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="優化三夜"><a href="#優化三夜" class="headerlink" title="優化三夜"></a>優化三夜</h3><p>後來發現，sliding windows 滑動時，我們常常看前看後，因此常常會發生 cache miss，因為他要跳躍一大段記憶體空間查找數值，所以可以考慮花點操作將極值放在 stack 上，視為一種 software cache 來加速，來減少 cache miss 的懲罰。</p>
-<p>接著，在迴圈邊界比較時，我們可以算得更精準些，回到一般的 <code>i++</code> 的 format pattern，讓編譯器幫我們做常見的迴圈優化。</p>
-<blockquote>
-<p>改善了 10% 效能</p>
-</blockquote>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"> <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">run</span><span class="params">(BB A[], <span class="keyword">int</span> dp[], <span class="keyword">int</span> W, <span class="keyword">int</span> N)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> MQ[MAXW][<span class="number">2</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">        <span class="keyword">int</span> w = A[i].w, v = A[i].v, c = A[i].c;</div><div class="line">        sum = min(sum + w*c, W);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; w; j++) &#123;</div><div class="line">            <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">0</span>;</div><div class="line">            MQ[l][<span class="number">0</span>] = <span class="number">0</span>, MQ[l][<span class="number">1</span>] = dp[j];</div><div class="line">            <span class="keyword">int</span> cache_max = MQ[l][<span class="number">1</span>], cache_idx = MQ[l][<span class="number">0</span>];</div><div class="line">            <span class="keyword">int</span> k_bound;</div><div class="line">            k_bound = min((sum-j)/w, c);</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>, tw = w+j, tv = v; k &lt;= k_bound; k++, tw += w, tv += v) &#123;</div><div class="line">                <span class="comment">// tw = k*w+j, tv = k*v;</span></div><div class="line">                <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                <span class="keyword">while</span> (l &lt;= r &amp;&amp; MQ[r][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                    r--;</div><div class="line">                r++;</div><div class="line">                MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                <span class="keyword">if</span> (r == l)    cache_max = dpv, cache_idx = k;</div><div class="line">                dp[tw] = max(dp[tw], cache_max + tv);</div><div class="line">            &#125;</div><div class="line">            k_bound = (sum-j)/w;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = c+<span class="number">1</span>, tw = (c+<span class="number">1</span>)*w+j, tv = (c+<span class="number">1</span>)*v; k &lt;= k_bound; k++, tw += w, tv += v) &#123;</div><div class="line">                <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                <span class="keyword">while</span> (l &lt;= r &amp;&amp; MQ[r][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                    r--;</div><div class="line">                r++;</div><div class="line">                MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                <span class="keyword">if</span> (r == l)   </div><div class="line">                    cache_max = dpv, cache_idx = k;</div><div class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (k - cache_idx &gt; c)   </div><div class="line">                    l++, cache_idx = MQ[l][<span class="number">0</span>], cache_max = MQ[l][<span class="number">1</span>];</div><div class="line">                dp[tw] = max(dp[tw], cache_max + tv);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125; </div></pre></td></tr></table></figure>
-<h3 id="優化四夜"><a href="#優化四夜" class="headerlink" title="優化四夜"></a>優化四夜</h3><p>儘管上面使用的 software cache 的方式減少 cache miss，但 DP table 仍與數據結構的記憶體位置相當遙遠，為了使他們貼近，應使用環狀隊列的實作，空間從 <span>$O(W)$</span><!-- Has MathJax --> 將到 <span>$O(N)$</span><!-- Has MathJax -->，實作時，將大小限制在 <span>$2^k$</span><!-- Has MathJax -->，方便運行時使用 AND 運算取代耗時的模數運算。</p>
-<p>由於限制個數分佈上，很容易造成貪心算法有解，因此先跑一次貪心，如果貪心沒辦法達到剛好大小，那麼再跑 DP 找解。DP 找解時，可以將物品嘗試進行二進制轉換，將等價物品合併，來觸發計算邊界的優化。完成的程序如下：</p>
-<blockquote>
-<p>最終加速，改善 10%，期待你我的分享增進。根據鴿籠原理，cp 直種類不多時，可以高達 10 倍以上的加速。</p>
-</blockquote>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">namespace</span> &#123;</div><div class="line"></div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXW = <span class="number">1000005</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1005</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXC = <span class="number">1</span>&lt;&lt;<span class="number">12</span>;</div><div class="line"></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">BB</span> &#123;</span></div><div class="line">        <span class="keyword">int</span> w, v, c;</div><div class="line">        BB(<span class="keyword">int</span> w = <span class="number">0</span>, <span class="keyword">int</span> v = <span class="number">0</span>, <span class="keyword">int</span> c = <span class="number">0</span>):</div><div class="line">            w(w), v(v), c(c) &#123;&#125;</div><div class="line">        <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> BB &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> w * c  &lt; x.w * x.c;</div><div class="line">        &#125;</div><div class="line">    &#125;;</div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">cmpByWeight</span><span class="params">(BB x, BB y)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> x.w &lt; y.w;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">run</span><span class="params">(BB A[], <span class="keyword">int</span> dp[], <span class="keyword">int</span> W, <span class="keyword">int</span> N)</span> </span>&#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int</span> MQ[MAXC][<span class="number">2</span>];</div><div class="line">        </div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = A[i].w, v = A[i].v, c = A[i].c;</div><div class="line">            assert(c &lt; MAXC);</div><div class="line">            sum = min(sum + w*c, W);</div><div class="line">            <span class="keyword">if</span> (c != <span class="number">1</span>) &#123;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; w; j++) &#123;</div><div class="line">                    <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">0</span>;</div><div class="line">                    MQ[r][<span class="number">0</span>] = <span class="number">0</span>, MQ[r][<span class="number">1</span>] = dp[j];</div><div class="line">                    <span class="keyword">int</span> cache_max = MQ[r][<span class="number">1</span>], cache_idx = MQ[r][<span class="number">0</span>];</div><div class="line">                    <span class="keyword">int</span> k_bound;</div><div class="line">                    r = (r+<span class="number">1</span>)&amp;(MAXC<span class="number">-1</span>);</div><div class="line">                    k_bound = min((sum-j)/w, c);</div><div class="line">                    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>, tw = w+j, tv = v; k &lt;= k_bound; k++, tw += w, tv += v) &#123;</div><div class="line">                        <span class="comment">// tw = k*w+j, tv = k*v;</span></div><div class="line">                        <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                        <span class="keyword">while</span> (l != r &amp;&amp; MQ[(r<span class="number">-1</span>+MAXC)&amp;(MAXC<span class="number">-1</span>)][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                            r = (r<span class="number">-1</span>+MAXC)&amp;(MAXC<span class="number">-1</span>);</div><div class="line">                        MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                        <span class="keyword">if</span> (l == r)	cache_max = dpv, cache_idx = k;</div><div class="line">                        r = (r+<span class="number">1</span>)&amp;(MAXC<span class="number">-1</span>);</div><div class="line">                        dp[tw] = max(dp[tw], cache_max + tv);</div><div class="line">                    &#125;</div><div class="line">                    k_bound = (sum-j)/w;</div><div class="line">                    <span class="keyword">for</span> (<span class="keyword">int</span> k = c+<span class="number">1</span>, tw = (c+<span class="number">1</span>)*w+j, tv = (c+<span class="number">1</span>)*v; k &lt;= k_bound; k++, tw += w, tv += v) &#123;</div><div class="line">                        <span class="keyword">int</span> dpv = dp[tw] - tv;</div><div class="line">                        <span class="keyword">while</span> (l != r &amp;&amp; MQ[(r<span class="number">-1</span>+MAXC)&amp;(MAXC<span class="number">-1</span>)][<span class="number">1</span>] &lt;= dpv)</div><div class="line">                            r--;</div><div class="line">                        MQ[r][<span class="number">0</span>] = k, MQ[r][<span class="number">1</span>] = dpv;</div><div class="line">                        <span class="keyword">if</span> (l == r)	cache_max = dpv, cache_idx = k;</div><div class="line">                        <span class="keyword">else</span> <span class="keyword">if</span> (k - cache_idx &gt; c)	</div><div class="line">                            l = (l+<span class="number">1</span>)&amp;(MAXC<span class="number">-1</span>), cache_idx = MQ[l][<span class="number">0</span>], cache_max = MQ[l][<span class="number">1</span>];</div><div class="line">                        r = (r+<span class="number">1</span>)&amp;(MAXC<span class="number">-1</span>);</div><div class="line">                        dp[tw] = max(dp[tw], cache_max + tv);</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (c == <span class="number">1</span>) &#123;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> j = sum; j &gt;= w; j--)</div><div class="line">                    dp[j] = max(dp[j], dp[j-w]+v);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;	</div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">greedy</span><span class="params">(<span class="keyword">int</span> C[][<span class="number">3</span>], <span class="keyword">int</span> N, <span class="keyword">int</span> W)</span> </span>&#123;</div><div class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">GB</span> &#123;</span></div><div class="line">            <span class="keyword">int</span> w, v, c;</div><div class="line">            GB(<span class="keyword">int</span> w = <span class="number">0</span>, <span class="keyword">int</span> v = <span class="number">0</span>, <span class="keyword">int</span> c = <span class="number">0</span>):</div><div class="line">                w(w), v(v), c(c) &#123;&#125;</div><div class="line">            <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> GB &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">                <span class="keyword">if</span> (v * x.w != x.v * w)</div><div class="line">                    <span class="keyword">return</span> v * x.w &gt; x.v * w;</div><div class="line">                <span class="keyword">return</span> c &gt; x.c;</div><div class="line">            &#125;</div><div class="line">        &#125;;</div><div class="line">        <span class="built_in">vector</span>&lt;GB&gt; A;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = C[i][<span class="number">0</span>], v = C[i][<span class="number">1</span>], c = C[i][<span class="number">2</span>];</div><div class="line">            A.push_back(GB(w, v, c));</div><div class="line">        &#125;</div><div class="line">        sort(A.begin(), A.end());</div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> t = min(A[i].c, W/A[i].w);</div><div class="line">            <span class="keyword">if</span> (t == <span class="number">0</span>)</div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">            W -= t*A[i].w;</div><div class="line">            ret += t*A[i].v;</div><div class="line">            <span class="keyword">if</span> (W == <span class="number">0</span>)</div><div class="line">                <span class="keyword">return</span> ret;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">knapsack</span><span class="params">(<span class="keyword">int</span> C[][<span class="number">3</span>], <span class="keyword">int</span> N, <span class="keyword">int</span> W)</span> </span>&#123;</div><div class="line">        <span class="comment">// filter</span></div><div class="line">        &#123;</div><div class="line">            <span class="keyword">int</span> filter = greedy(C, N, W);</div><div class="line">            <span class="keyword">if</span> (filter != <span class="number">-1</span>)</div><div class="line">                <span class="keyword">return</span> filter;</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">vector</span>&lt;BB&gt; A;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = C[i][<span class="number">0</span>], v = C[i][<span class="number">1</span>], c = C[i][<span class="number">2</span>];</div><div class="line">            A.push_back(BB(w, v, c));</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// reduce</span></div><div class="line">        &#123;</div><div class="line">            sort(A.begin(), A.end(), cmpByWeight);</div><div class="line">            <span class="built_in">map</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;, <span class="keyword">int</span>&gt; R;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">                R[make_pair(A[i].w, A[i].v)] = i;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">                <span class="keyword">int</span> c = A[i].c;</div><div class="line">                <span class="built_in">map</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;, <span class="keyword">int</span>&gt;::iterator it;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= c; k &lt;&lt;= <span class="number">1</span>) &#123;</div><div class="line">                    <span class="keyword">int</span> w = A[i].w * k, v = A[i].v * k;</div><div class="line">                    it = R.find(make_pair(w, v));</div><div class="line">                    <span class="keyword">if</span> (it != R.end() &amp;&amp; i != it-&gt;second) &#123;</div><div class="line">                        <span class="keyword">int</span> j = it-&gt;second;</div><div class="line">                        A[j].c ++;</div><div class="line">                        A[i].c -= k;</div><div class="line">                    &#125;</div><div class="line">                    c -= k;</div><div class="line">                &#125;</div><div class="line">                <span class="keyword">if</span> (c &gt; <span class="number">0</span>) &#123;</div><div class="line">                    <span class="keyword">int</span> w = A[i].w * c, v = A[i].v * c;</div><div class="line">                    it = R.find(make_pair(w, v));</div><div class="line">                    <span class="keyword">if</span> (it != R.end() &amp;&amp; i != it-&gt;second) &#123;</div><div class="line">                        <span class="keyword">int</span> j = it-&gt;second;</div><div class="line">                        A[j].c ++;</div><div class="line">                        A[i].c -= c;</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int</span> dp1[MAXW+<span class="number">1</span>], dp2[MAXW+<span class="number">1</span>];</div><div class="line">        BB Ar[<span class="number">2</span>][MAXN];</div><div class="line">        <span class="keyword">int</span> ArN[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="built_in">memset</span>(dp1, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp1[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        <span class="built_in">memset</span>(dp2, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp2[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        sort(A.begin(), A.end());</div><div class="line">        <span class="keyword">int</span> sum[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> ch = sum[<span class="number">1</span>] &lt; sum[<span class="number">0</span>];</div><div class="line">            Ar[ch][ArN[ch]] = A[i];</div><div class="line">            ArN[ch]++;</div><div class="line">            sum[ch] = min(sum[ch] + A[i].w*A[i].c, W);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        run(Ar[<span class="number">0</span>], dp1, W, ArN[<span class="number">0</span>]);</div><div class="line">        run(Ar[<span class="number">1</span>], dp2, W, ArN[<span class="number">1</span>]);</div><div class="line"></div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = W, mx = <span class="number">0</span>; i &lt;= W; i++, j--) &#123;</div><div class="line">            mx = max(mx, dp2[i]);</div><div class="line">            ret = max(ret, dp1[j] + mx);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> W, N;</div><div class="line">    assert(<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;W, &amp;N) == <span class="number">2</span>);</div><div class="line">    <span class="keyword">int</span> C[MAXN][<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">        assert(<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;C[i][<span class="number">1</span>], &amp;C[i][<span class="number">0</span>], &amp;C[i][<span class="number">2</span>]) == <span class="number">3</span>);</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, knapsack(C, N, W));</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/6/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/8/">Next &raquo;</a>
@@ -1192,7 +1229,7 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">32</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">10</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">32</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">10</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1202,6 +1239,14 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/06/21/diary-202106/">
+              
+                <i class="icon-file-o"></i> 
+              
+            疫情下的工作變化</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/06/21/work/company-ghost-story-10/">
@@ -1273,14 +1318,6 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
                 <i class="icon-file-o"></i> 
               
             Interview &amp; Recursion</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-job-build/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Job Build</a>
           </li>
         
       </ul>

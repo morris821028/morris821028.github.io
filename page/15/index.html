@@ -89,6 +89,63 @@
           
           <section id="main">
   
+    <article id="post-zj-b685" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/24/zj-b685/" class="article-date">
+  <time datetime="2016-01-24T02:06:24.000Z" itemprop="datePublished">2016-01-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/01/24/zj-b685/">b685. 高中組第五題-課堂抽籤</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/01/24/zj-b685/" data-id="ckq602d5w015ov4vns1z95u9c" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/01/24/zj-b685/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dp/">dp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數學/">數學</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><span>$N$</span><!-- Has MathJax --> 個人抽籤決定跟誰同一組，請問在某些籤已經決定好的情況下，求恰好分成 <span>$M$</span><!-- Has MathJax --> 組的抽籤方法數。<br><br>轉換成 <span>$N$</span><!-- Has MathJax --> 個節點，恰好形成 <span>$M$</span><!-- Has MathJax --> 個環的方法數。<br><br>## Sample Input ##<br><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line">5 1</div><div class="line">2 3 1 5 4</div><div class="line">5 2</div><div class="line">2 3 1 5 4</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">0</div><div class="line">1</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>在此特別感謝 lwc (Wei Chen Liao) 提供思路。</p>
+<p>手動暴力打表後，上網蒐到 <a href="https://oeis.org/A125714" target="_blank" rel="external">A125714 Alfred Moessner’s factorial triangle.</a> 恰好是這個數列的答案。</p>
+<p>由於每一個人的籤不重複，若把他抽到的籤當作指向出去的邊，那麼保證這一個點恰好一個出邊和一個入邊。當所有籤抽滿後，圖看起來是好幾個環。</p>
+<p>遞迴定義 <code>dp[i][j]</code> 表示有 <span>$i$</span><!-- Has MathJax --> 個節點和 <span>$j$</span><!-- Has MathJax --> 個環。考慮新加入得點要抽到哪一個籤，加入到 <span>$j$</span><!-- Has MathJax --> 個環的情況，則是把某一個環的某一個位置打開加入，或者自身形成一個環，最後得到 <code>dp[i][j] = dp[i-1][j-1] + (i-1)*dp[i-1][j]</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1024</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> MOD = <span class="number">1000007</span>;</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> dp[MAXN][MAXN];</div><div class="line"><span class="keyword">int</span> A[MAXN], used[MAXN];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    dp[<span class="number">0</span>][<span class="number">0</span>] = dp[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt; MAXN; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= i; j++)</div><div class="line">            dp[i][j] = (dp[i<span class="number">-1</span>][j<span class="number">-1</span>] + dp[i<span class="number">-1</span>][j] * (i<span class="number">-1</span>))%MOD;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">int</span> testcase, n, m;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;n, &amp;m);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;A[i]);</div><div class="line">        <span class="keyword">int</span> a = n, b = <span class="number">0</span>;</div><div class="line">        <span class="built_in">memset</span>(used, <span class="number">0</span>, <span class="keyword">sizeof</span>(used));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (used[i])</div><div class="line">                <span class="keyword">continue</span>;</div><div class="line">            <span class="keyword">int</span> x = i, cnt = <span class="number">0</span>;</div><div class="line">            <span class="keyword">while</span> (x &amp;&amp; used[x] == <span class="number">0</span>)</div><div class="line">                used[x] = <span class="number">1</span>, x = A[x], cnt++;</div><div class="line">            a -= cnt<span class="number">-1</span>;</div><div class="line">            <span class="keyword">if</span> (x == i)	m--;</div><div class="line">            <span class="keyword">if</span> (x == <span class="number">0</span>)	b++;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (m &lt; <span class="number">0</span>)</div><div class="line">            <span class="built_in">puts</span>(<span class="string">"0"</span>);</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, dp[b][m]);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-uva-12415" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/01/24/uva-12415/" class="article-date">
@@ -114,7 +171,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/24/uva-12415/" data-id="ckq5yoy8a00nxo4vnewfrfocq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/24/uva-12415/" data-id="ckq602cxt00o3v4vncg6yx48o" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/24/uva-12415/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -179,7 +236,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/" data-id="ckq5yoy4000ceo4vn8ryulbcj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/" data-id="ckq602ctd00cjv4vnzi1wnvhk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -239,7 +296,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/plPcy1p.jpg" rel="gallery_ckq5yoy3e00aso4vnhtjv49u8">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/plPcy1p.jpg" rel="gallery_ckq602csk00avv4vnj6a64s9e">
         <img src="http://i.imgur.com/plPcy1p.jpg" itemprop="image">
       </a>
     
@@ -258,7 +315,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/" data-id="ckq5yoy3e00aso4vnhtjv49u8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/" data-id="ckq602csk00avv4vnj6a64s9e" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -335,7 +392,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="ckq5yoy4k00dyo4vnteytzhup" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="ckq602ctx00e3v4vn30nn51xa" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -511,7 +568,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="ckq5yoy4l00e1o4vn9ilmo5ex" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="ckq602cty00e6v4vn1411lbap" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-environment-lights/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -644,7 +701,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="ckq5yoy4n00e8o4vnu8jtb8ls" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="ckq602cu100eev4vn8r7sserg" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -915,7 +972,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckq5yoy4m00e3o4vn3gwo9eb3" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckq602cu000ebv4vnf9mi8z2s" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1010,7 +1067,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_ckq5yoy4h00dpo4vnhbvsw6e1">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_ckq602cts00dqv4vnuhmlhpof">
         <img src="http://i.imgur.com/3eq7W2z.jpg" itemprop="image">
       </a>
     
@@ -1029,7 +1086,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="ckq5yoy4h00dpo4vnhbvsw6e1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="ckq602cts00dqv4vnuhmlhpof" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1112,7 +1169,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_ckq5yoy4i00dso4vn6dch8c1y">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_ckq602ctu00dwv4vnfe2tsy1d">
         <img src="http://i.imgur.com/2sHgITS.jpg" itemprop="image">
       </a>
     
@@ -1131,7 +1188,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="ckq5yoy4i00dso4vn6dch8c1y" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="ckq602ctu00dwv4vnfe2tsy1d" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-qemu/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1198,102 +1255,6 @@ N_y = \begin{bmatrix}
 
 
   
-    <article id="post-realtime-system-using-scheduler" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/01/21/realtime-system-using-scheduler/" class="article-date">
-  <time datetime="2016-01-21T06:41:29.000Z" itemprop="datePublished">2016-01-21</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/即時系統/">即時系統</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_ckq5yoy4j00dvo4vnfi5rqj1i">
-        <img src="http://i.imgur.com/2L6Zmwa.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/01/21/realtime-system-using-scheduler/">即時系統 使用排程器</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="ckq5yoy4j00dvo4vnfi5rqj1i" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h3 id="目標"><a href="#目標" class="headerlink" title="目標"></a>目標</h3><p>安裝 linux kernel 2.6.32.68、練習 pthread 設定 scheduler 相關函數以利後續修改 kernel source code。</p>
-<h3 id="設定-scheduler-問題"><a href="#設定-scheduler-問題" class="headerlink" title="設定 scheduler 問題"></a>設定 scheduler 問題</h3><ul>
-<li>設定 thread 可以在哪些 core 運行，由於要測試執行順序,強制讓 pthread 都在 CPU 0 運行。<br>編譯時，增加 <code>#define _GNU_SOURCE</code> 在 <code>#include &lt;pthread&gt;</code> 之前，確定 <code>cpu_set_t</code> 型別存在。</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">cpu_set_t</span> mask;</div><div class="line">CPU_ZERO(&amp;mask);</div><div class="line">CPU_SET(<span class="number">0</span>, &amp;mask);</div><div class="line">sched_setaffinity(<span class="number">0</span>, <span class="keyword">sizeof</span>(mask), &amp;mask);</div></pre></td></tr></table></figure>
-<ul>
-<li>使用 <code>sched_setscheduler()</code> 時，需查閱 <code>int policy</code> 相關規定去設定 <code>struct sched_param</code> 的 priority 數值。例如 <code>SCHED_FIFO</code> 的 priority 介於 1 到 99 之間,若 priority 錯誤，<code>sched_setscheduler()</code> 會發生錯誤，錯誤訊息可以藉由 <code>printf(&quot;Message␣%s\n&quot;, mid, strerror(errno));</code> 查閱。</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">sched_setaffinity(<span class="number">0</span>, <span class="keyword">sizeof</span>(mask), &amp;mask);</div><div class="line">              <span class="function"><span class="keyword">int</span> <span class="title">sched_setscheduler</span><span class="params">(<span class="keyword">pid_t</span> pid, <span class="keyword">int</span> policy,</span></span></div><div class="line"><span class="function"><span class="params"><span class="keyword">const</span> struct sched_param *param)</span></span>;</div></pre></td></tr></table></figure>
-<ul>
-<li>如果 pid = 0，相當於 caller 的 thread 會被設置對應的 policy 和 <code>sched_param</code>。在 policy 設定 規範中，有兩種 real time scheduler <code>SCHED_FIFO</code> 和 <code>SCHED_RR</code>。當 thread 設置 real time scheduler 時，需要用 root 權限來執行程式，否則會設置失敗。相反地，若使用 non-real time scheduler 則不需要 root 權限，如 <code>SCHED_BATCH</code>。</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sched_param</span> <span class="title">param</span>;</span></div><div class="line"><span class="built_in">printf</span>(<span class="string">"Thread %d sched_setscheduler()\n"</span>, mid);</div><div class="line">param.sched_priority = sched_get_priority_max(SCHED_FIFO);</div><div class="line">s = sched_setscheduler(<span class="number">0</span>, SCHED_FIFO, &amp;param);</div><div class="line"><span class="built_in">printf</span>(<span class="string">"Thread %d sched after %s\n"</span>, mid, strerror(errno));</div></pre></td></tr></table></figure>
-<h3 id="三種方法設定-pthread"><a href="#三種方法設定-pthread" class="headerlink" title="三種方法設定 pthread"></a>三種方法設定 pthread</h3><h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><p>各自的 <code>pthread_create()</code> 後，再呼叫 <code>sched_setscheduler()</code> 進行設定。這種寫法在本次實驗有順序問題，在 create 之後，無法保證執行 <code>sched_setscheduler()</code> 的順序，無法依靠 main thread 中執行 <code>pthread_create()</code> 的順序決定。幸運地，仍可以使用 </p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">pthread_barrier_t</span> barrier; </div><div class="line">pthread_barrier_wait(&amp;barrier);</div><div class="line">pthread_barrier_init(&amp;barrier, <span class="literal">NULL</span>, MAX_THREAD);</div></pre></td></tr></table></figure>
-<p>確保每一個 thread 都設置好各自的 <code>sched_setscheduler()</code> 後統一運行，運行順序取決 priority。</p>
-<h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><p>在 main thread 中，呼叫 <code>pthread_attr_setinheritsched(attr, PTHREAD_INHERIT_SCHED);</code> 接下來 create 出來的 pthread 都將繼承 main thread 的 scheduler 設定。這種寫法很方便，如果需要各自設置 priority 會不方便，倒不如直接用第三種寫法。</p>
-<h4 id="方法三"><a href="#方法三" class="headerlink" title="方法三"></a>方法三</h4><p>在 main thread 中，手動設置每一個 pthread 的 scheduler。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">pthread_attr_t</span> *attr = <span class="keyword">new</span> <span class="keyword">pthread_attr_t</span>;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sched_param</span> *<span class="title">param</span> = <span class="title">new</span> <span class="title">struct</span> <span class="title">sched_param</span>;</span></div><div class="line"><span class="comment">// increasing order</span></div><div class="line">param-&gt;sched_priority = sched_get_priority_max(SCHED_FIFO) - i;</div><div class="line"><span class="comment">// set scheduler</span></div><div class="line">pthread_attr_setinheritsched(attr, PTHREAD_EXPLICIT_SCHED);</div><div class="line">pthread_attr_setschedpolicy(attr, SCHED_FIFO);</div><div class="line">pthread_attr_setschedparam(attr, param);</div><div class="line"><span class="comment">// create thread</span></div><div class="line">pthread_create(&amp;tid[i], attr, running_print, create_arg(i+<span class="number">1</span>, scheduler))</div></pre></td></tr></table></figure>
-<h3 id="計時設置"><a href="#計時設置" class="headerlink" title="計時設置"></a>計時設置</h3><p>為確定每一個 thread 按照設定的 scheduler 運行，方式採用 <code>print()</code> 進行，但有可能輸出之間間隔距離過短，導致順序容易在輸出上發生無法預期的問題，適時地加入一秒間隔完成。</p>
-<p>如何準確地停止一秒？不能呼叫 <code>sleep()</code> 因為這類的 system call 會產生 interrupt，此時 thread 將會降低 priority 或者進入隊列尾端。佔據 CPU time 有以下三種</p>
-<h4 id="busy-work"><a href="#busy-work" class="headerlink" title="busy work"></a>busy work</h4><p>只要停留的夠久即可，下面是一種簡單的方法 </p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// busy 1 second</span></div><div class="line"><span class="keyword">double</span> a = <span class="number">0</span>;</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000000</span>; i++)	a += <span class="number">0.1f</span>;</div></pre></td></tr></table></figure>
-<h4 id="系統時間"><a href="#系統時間" class="headerlink" title="系統時間"></a>系統時間</h4><p>利用 critical section 抓系統時間 <code>int gettimeofday (struct timeval * tv, struct timezone * tz);</code>，這寫法會共用同一份時間，因此需要使用 mutex 完成。仍使用一個迴圈來判定時間是否超過，實際運行時間會超過一秒。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">double</span> <span class="title">my_clock</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">t</span>;</span></div><div class="line">    gettimeofday(&amp;t, <span class="literal">NULL</span>);</div><div class="line">    <span class="keyword">return</span> <span class="number">1e-6</span> * t.tv_usec + t.tv_sec;</div><div class="line">&#125;</div><div class="line">pthread_mutex_lock(&amp;outputlock);</div><div class="line">&#123;</div><div class="line">    <span class="keyword">double</span> sttime = my_clock();</div><div class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">if</span> (my_clock() - sttime &gt; <span class="number">1</span>)</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">pthread_mutex_unlock(&amp;outputlock);</div></pre></td></tr></table></figure>
-<h4 id="執行緒運行時間"><a href="#執行緒運行時間" class="headerlink" title="執行緒運行時間"></a>執行緒運行時間</h4><p>事實上 Linux 有提供每一個 thread 各自的 clock，用來計算 thread 的執行時間。使用 <code>clock_gettime(CLOCK_THREAD_CPUTIME_ID, &amp;t)</code>，在舊版本需在編譯參數中加入 <code>-lrt</code> 才能使用。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">double</span> <span class="title">my_clock</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timespec</span> <span class="title">t</span>;</span></div><div class="line">    assert(clock_gettime(CLOCK_THREAD_CPUTIME_ID, &amp;t) == <span class="number">0</span>);</div><div class="line">    <span class="keyword">return</span> <span class="number">1e-9</span> * t.tv_nsec + t.tv_sec;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="輸出-console-問題"><a href="#輸出-console-問題" class="headerlink" title="輸出 console 問題"></a>輸出 console 問題</h3><p>在 <code>SCHED_FIFO</code> 這類的 real time scheduler 情況下，thread 輸出無法即時顯示在 terminal 上。</p>
-<p>從 <a href="http://man7.org/linux/man-pages/man7/sched.7.html" target="_blank" rel="external">http://man7.org/linux/man-pages/man7/sched.7.html</a> 可以見到 real-time scheduler 安排工作的比例，由於 <code>print()</code> 之後的顯示處理並不是 real-time process，當 real-time process 完全用盡 95\% 的 CPU time 時，顯示處理可能沒辦法在一秒內完成，可能要用好幾秒中的 5% 來完成。這也就是造成一開始會停頓一陣子，隨後才一次輸出數行結果。(註：並不是每一種裝置都會造成這問題，跟 CPU 時脈有關。)</p>
-<blockquote>
-<p>The value in this file specifies how much of the period time  can be used by all real-time and deadline scheduled processes on the system.  The value in this file can range from <code>-1</code> to <code>INT_MAX-1</code>.  Specifying <code>-1</code> makes the runtime the same as the period; that is, no CPU time is set aside for non-real-time processes (which was the Linux behavior before kernel 2.6.25). The default value in this file is 950,000 (0.95 seconds), meaning that 5% of the CPU time is reserved for processes that don’t run under a real-time or deadline scheduling policy.</p>
-</blockquote>
-<p>解決這類的問題，可以從 kernel 設定著手，降低 real-time 最大佔有量，讓 <code>print()</code> 處理能即刻印出。這不是好的解決辦法，但可用於實驗。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">// default</div><div class="line">$ sudo /sbin/sysctl -w kernel.sched_rt_runtime_us=950000</div><div class="line">// modify</div><div class="line">$ sudo /sbin/sysctl -w kernel.sched_rt_runtime_us=500000</div></pre></td></tr></table></figure>
-<p>又或者採用拉大間隔，讓每一個 thread 都停止數十秒以上。</p>
-<h3 id="特別感謝"><a href="#特別感謝" class="headerlink" title="特別感謝"></a>特別感謝</h3><p>蕭光宏學長</p>
-<h3 id="Github"><a href="#Github" class="headerlink" title="Github"></a>Github</h3><p><a href="https://github.com/morris821028/hw-realtime-system" target="_blank" rel="external">https://github.com/morris821028/hw-realtime-system</a></p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/14/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/16/">Next &raquo;</a>
@@ -1309,7 +1270,7 @@ N_y = \begin{bmatrix}
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">32</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">10</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">32</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">10</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1319,6 +1280,14 @@ N_y = \begin{bmatrix}
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/06/21/diary-202106/">
+              
+                <i class="icon-file-o"></i> 
+              
+            疫情下的工作變化</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/06/21/work/company-ghost-story-10/">
@@ -1390,14 +1359,6 @@ N_y = \begin{bmatrix}
                 <i class="icon-file-o"></i> 
               
             Interview &amp; Recursion</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-job-build/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Job Build</a>
           </li>
         
       </ul>
