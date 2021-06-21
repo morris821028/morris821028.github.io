@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-05-30T23:58:00.409Z</updated>
+  <updated>2021-06-21T02:14:36.630Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -15,6 +15,33 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 10</title>
+    <link href="http://morris821028.github.io/2021/06/21/work/company-ghost-story-10/"/>
+    <id>http://morris821028.github.io/2021/06/21/work/company-ghost-story-10/</id>
+    <published>2021-06-21T02:00:00.000Z</published>
+    <updated>2021-06-21T02:14:36.630Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Compare-Function"><a href="#Compare-Function" class="headerlink" title="Compare Function"></a>Compare Function</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">Collections.sort(arr, (x, y) -&gt; (<span class="keyword">int</span>) (x.cost - y.cost));</div><div class="line">Collections.sort(arr, (x, y) -&gt; Long.valueOf(x).compareTo(y));</div><div class="line">Collections.sort(arr, (x, y) -&gt; (<span class="keyword">int</span>) Math.round(x.cost - y.cost));</div><div class="line"></div><div class="line"><span class="comment">// why not use official methods?</span></div><div class="line">Collections.sort(arr, (x, y) -&gt; Double.compare(x.cost, y.cost));</div><div class="line">Collections.sort(arr, (x, y) -&gt; Long.compare(x, y));</div></pre></td></tr></table></figure><p>別鬧了，會 overflow/underflow，數量一大，每一個排序都在丟例外給我啊。</p><h3 id="Partition-Function"><a href="#Partition-Function" class="headerlink" title="Partition Function"></a>Partition Function</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Optimizer</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">avgX</span><span class="params">(ArrayList&lt;Point&gt; pts)</span> </span>&#123;</div><div class="line">        ArrayList&lt;Long&gt; x = <span class="keyword">new</span> ArrayList&lt;&gt;(pts.size());</div><div class="line">        <span class="keyword">for</span> (Point p : pts)</div><div class="line">            x.add(p.x);</div><div class="line">        <span class="keyword">return</span> avg(x);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">avg</span><span class="params">(ArrayList&lt;Long&gt; xs)</span> </span>&#123;</div><div class="line">        <span class="keyword">long</span> sum = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (Long x : xs)</div><div class="line">            sum += x;</div><div class="line">        <span class="keyword">return</span> sum / xs.size();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">// ... why not merge avg() into avgX()?</span></div></pre></td></tr></table></figure><p>每次都要額外建一個陣列，而且這個函數只有被內部的單一函數呼叫，函數切這麼細，但是效能卻爛掉。</p><h3 id="Try-Catch-vs-If-Else"><a href="#Try-Catch-vs-If-Else" class="headerlink" title="Try-Catch vs. If-Else"></a>Try-Catch vs. If-Else</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Parser</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">addChar</span><span class="params">(<span class="keyword">char</span> c)</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            que[index] = c;</div><div class="line">        &#125; <span class="keyword">catch</span> (ArrayIndexOutOfBoundsException e) &#123;</div><div class="line">            doubleArray();</div><div class="line">            que[index] = c;</div><div class="line">        &#125;</div><div class="line">        index++;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">// why not just write if-else statements, it's really hard to maintenance your code.</span></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Parser</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">addChar</span><span class="params">(<span class="keyword">char</span> c)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (index &gt;= que.length)</div><div class="line">            doubleArray(index);</div><div class="line">        que[index] = c;</div><div class="line">        index++;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>如果在修改這幾段代碼的時候，還得經常考慮例外處理是怎麼做的，這寫法真的太奇葩。要是開剖析器去檢查，會經常看到例外出現，那到底是好事還壞事？</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Compare-Function&quot;&gt;&lt;a href=&quot;#Compare-Function&quot; class=&quot;head
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>前思後想 新居落成</title>
@@ -67,15 +94,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
-    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -106,15 +133,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
-    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -138,36 +165,6 @@
     
       <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>Global Variable</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:07:03.197Z</updated>
-    
-    <content type="html"><![CDATA[<blockquote><p>Global variable is convenient for me.</p></blockquote><p>當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無法成立</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;blockquote&gt;
-&lt;p&gt;Global variable is convenient for me.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
     
   </entry>
   
@@ -201,22 +198,22 @@
   </entry>
   
   <entry>
-    <title>Job Build</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-job-build/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-job-build/</id>
+    <title>Global Variable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:17:20.930Z</updated>
+    <updated>2021-01-31T03:07:03.197Z</updated>
     
-    <content type="html"><![CDATA[<blockquote><p>Disconnected to server. Not enough quota is available.</p></blockquote><p>通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。而不幸地，有人設計 CI 的專案，每執行一次就會永久耗掉 GB 級的硬碟空間。明明設置保留近期數量，和不把整個中間產物丟到保留項目就完善了。</p><p>而我們卻常常看到手動刪除的蠢事，事情卻一而三、再而三地發生。</p>]]></content>
+    <content type="html"><![CDATA[<blockquote><p>Global variable is convenient for me.</p></blockquote><p>當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無法成立</p>]]></content>
     
     <summary type="html">
     
       
       
         &lt;blockquote&gt;
-&lt;p&gt;Disconnected to server. Not enough quota is available.&lt;/p&gt;
+&lt;p&gt;Global variable is convenient for me.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。
+&lt;p&gt;當調用或請求資源的時候，發現資源無法被載入記憶體中。原來是同事都寫全域變數來存放臨時資料，導致在沒釋放資源的操作後，後續的修改都無
       
     
     </summary>
@@ -273,6 +270,36 @@
       
         &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
 
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Job Build</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-job-build/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-job-build/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:17:20.930Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote><p>Disconnected to server. Not enough quota is available.</p></blockquote><p>通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。而不幸地，有人設計 CI 的專案，每執行一次就會永久耗掉 GB 級的硬碟空間。明明設置保留近期數量，和不把整個中間產物丟到保留項目就完善了。</p><p>而我們卻常常看到手動刪除的蠢事，事情卻一而三、再而三地發生。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;blockquote&gt;
+&lt;p&gt;Disconnected to server. Not enough quota is available.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。
       
     
     </summary>
@@ -374,20 +401,19 @@
   </entry>
   
   <entry>
-    <title>Work from Home &amp; Overwork Survey</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/</id>
+    <title>Parallel &amp; Unstable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:36:28.205Z</updated>
+    <updated>2021-01-31T03:21:10.607Z</updated>
     
-    <content type="html"><![CDATA[<p>當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。</p><p>✓ 覺得「我快要撐不下去了。」<br>✓ 覺得心力交瘁<br>✓ 覺得有挫折<br>✓ 一想到上班，你就覺得沒力<br>✓ 上班的每一刻都很煎熬<br>☓ 不工作的時候，你有足夠的精力陪朋友或家人</p><p>等等，要是一直沒來的話 …</p>]]></content>
+    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。&lt;/p&gt;
-&lt;p&gt;✓ 覺得「我快要撐不下去了。」&lt;br&gt;✓ 覺得心力交瘁&lt;br&gt;✓ 覺得有挫折&lt;br&gt;✓ 一想到上班，你就覺得沒力&lt;br&gt;✓ 上班的每一刻都很煎熬&lt;br&gt;☓ 不工作的時候，你有足夠的精力陪朋友或家人&lt;/p&gt;
+        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
 
       
     
@@ -403,19 +429,20 @@
   </entry>
   
   <entry>
-    <title>Parallel &amp; Unstable</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
+    <title>Work from Home &amp; Overwork Survey</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:21:10.607Z</updated>
+    <updated>2021-01-31T03:36:28.205Z</updated>
     
-    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
+    <content type="html"><![CDATA[<p>當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。</p><p>✓ 覺得「我快要撐不下去了。」<br>✓ 覺得心力交瘁<br>✓ 覺得有挫折<br>✓ 一想到上班，你就覺得沒力<br>✓ 上班的每一刻都很煎熬<br>☓ 不工作的時候，你有足夠的精力陪朋友或家人</p><p>等等，要是一直沒來的話 …</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
+        &lt;p&gt;當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。&lt;/p&gt;
+&lt;p&gt;✓ 覺得「我快要撐不下去了。」&lt;br&gt;✓ 覺得心力交瘁&lt;br&gt;✓ 覺得有挫折&lt;br&gt;✓ 一想到上班，你就覺得沒力&lt;br&gt;✓ 上班的每一刻都很煎熬&lt;br&gt;☓ 不工作的時候，你有足夠的精力陪朋友或家人&lt;/p&gt;
 
       
     
@@ -572,40 +599,6 @@
       <category term="分治" scheme="http://morris821028.github.io/tags/%E5%88%86%E6%B2%BB/"/>
     
       <category term="排容" scheme="http://morris821028.github.io/tags/%E6%8E%92%E5%AE%B9/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>ADA 2020 Fall P2. Bomb Game</title>
-    <link href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/"/>
-    <id>http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/</id>
-    <published>2020-10-31T08:00:00.000Z</published>
-    <updated>2021-05-30T02:04:42.518Z</updated>
-    
-    <content type="html"><![CDATA[<blockquote><p>Algorithm Design and Analysis (NTU CSIE, Fall 2020)</p></blockquote><h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>有數名玩家依序抵達遊戲，並且落在位置 <span>$c_i$</span><!-- Has MathJax -->，並且具有防禦力 <span>$d_i$</span><!-- Has MathJax -->，過程中會有炸彈發生於 <span>$[l_i, r_i]$</span><!-- Has MathJax -->，對防禦力小於等於 <span>$p_i$</span><!-- Has MathJax --> 造成 <span>$k_i$</span><!-- Has MathJax --> 點傷害。</p><p>回報遊戲最後每一名玩家所受的傷害總額。</p><h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">10 10</div><div class="line">P 3 5</div><div class="line">A 2 8 15 5</div><div class="line">P 7 10</div><div class="line">A 4 10 5 3</div><div class="line">A 1 9 10 7</div><div class="line">P 6 20</div><div class="line">P 5 1</div><div class="line">A 4 9 17 2</div><div class="line">A 1 2 20 4</div><div class="line">P 9 5</div></pre></td></tr></table></figure><h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">12</div><div class="line">9</div><div class="line">0</div><div class="line">2</div><div class="line">0</div></pre></td></tr></table></figure><h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><blockquote><p>由於沒辦法參與課程，就測測自己產的測試資料，正確性有待確認。</p></blockquote><p>如果這一題目強制在線對答，則需要一個樹套樹在 <span>$\mathcal{O}(\log^2 n)$</span><!-- Has MathJax --> 內回答每一個結果，需要一個動態開區間的實作方法。</p><p>如果採用離線處理，則可以透過逆序處理來回答，可以透過二維空間的 BIT 結構來完成，這時候空間上會是另一個問題，即使使用懶惰標記，預期可能會達到 <span>$\mathcal{O}(C \; D)$</span><!-- Has MathJax -->，通常是不允許的。</p><p>從分治算法切入，預想防禦能力高影響不受到攻擊力低的炸彈影響，無論時間與否都不受到影響。接下來，對防禦能力和攻擊力統稱力量。在分治的時候，對力量低的累計出答案，在合併階段受時間順序的影響才能回答。最後：</p><ol><li>對力量從小到大排序</li><li>分治算法<ol><li>對左區間和右區間按照時間由大到小排序</li><li>對於每一個左區間的詢問，插入所有滿足的右區間</li></ol></li></ol><p>時間複雜度 <span>$\mathcal{O}(n \log^2 n)$</span><!-- Has MathJax -->、空間複雜度 <span>$\mathcal{O}(n)$</span><!-- Has MathJax --> </p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="comment">// Algorithm Design and Analysis (NTU CSIE, Fall 2020)</span></div><div class="line"><span class="comment">// Problem 2. Bomb Game</span></div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">200005</span>;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">BIT</span> &#123;</span></div><div class="line">    <span class="keyword">int64_t</span> a[MAXN];</div><div class="line">    <span class="keyword">int</span> l[MAXN];</div><div class="line">    <span class="keyword">int</span> cases = <span class="number">0</span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> val, <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line">        <span class="keyword">while</span> (x &lt;= n) &#123;</div><div class="line">            <span class="keyword">if</span> (l[x] != cases)</div><div class="line">                l[x] = cases, a[x] = <span class="number">0</span>;</div><div class="line">            a[x] += val, x += x&amp;(-x);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">int64_t</span> sum(<span class="keyword">int</span> x) &#123;</div><div class="line">        <span class="keyword">int64_t</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">while</span> (x) &#123;</div><div class="line">            <span class="keyword">if</span> (l[x] != cases)</div><div class="line">                l[x] = cases, a[x] = <span class="number">0</span>;</div><div class="line">            ret += a[x], x -= x&amp;(-x);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">reset</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line">        cases++;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> k, <span class="keyword">int</span> n)</span> </span>&#123;</div><div class="line">        add(l, k, n);</div><div class="line">        add(r+<span class="number">1</span>, -k, n);</div><div class="line">    &#125;</div><div class="line">&#125; bit;</div><div class="line"></div><div class="line"><span class="keyword">int</span> n;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">PEvent</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> c, d, i;</div><div class="line">&#125;;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">AEvent</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> l, r, p, k;</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Event</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> type; <span class="comment">// 'P' 0 or 'A' 1</span></div><div class="line">    <span class="keyword">int</span> time; <span class="comment">// input order</span></div><div class="line">    <span class="keyword">union</span> &#123;</div><div class="line">        PEvent p;</div><div class="line">        AEvent a;</div><div class="line">    &#125; data;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">power</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (type == <span class="number">0</span>)</div><div class="line">            <span class="keyword">return</span> data.p.d;</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="keyword">return</span> data.a.p;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">println</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (type == <span class="number">0</span>)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"P %d %d\n"</span>, data.p.c, data.p.d);</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="built_in">printf</span>(<span class="string">"A %d %d %d %d\n"</span>, data.a.l, data.a.r, data.a.p, data.a.k);</div><div class="line">    &#125;</div><div class="line">&#125; events[MAXN];</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">cmp_p</span><span class="params">(Event &amp;a, Event &amp;b)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> pa = a.power();</div><div class="line">    <span class="keyword">int</span> pb = b.power();</div><div class="line">    <span class="keyword">if</span> (pa != pb)</div><div class="line">        <span class="keyword">return</span> pa &lt; pb;</div><div class="line">    <span class="keyword">return</span> a.time &lt; b.time;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">cmp_t</span><span class="params">(Event &amp;a, Event &amp;b)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> a.time &gt; b.time;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">int</span> ret[MAXN];</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">resolve</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> m, <span class="keyword">int</span> r)</span> </span>&#123;</div><div class="line">    sort(events+l, events+m+<span class="number">1</span>, <span class="keyword">cmp_t</span>);</div><div class="line">    sort(events+m+<span class="number">1</span>, events+r+<span class="number">1</span>, <span class="keyword">cmp_t</span>);</div><div class="line"></div><div class="line">    <span class="comment">//printf("resolve %d %d =========\n", l, r);</span></div><div class="line">    <span class="comment">//for (int i = l; i &lt;= m; i++)</span></div><div class="line">    <span class="comment">//events[i].println();</span></div><div class="line">    <span class="comment">//puts("---");</span></div><div class="line">    <span class="comment">//for (int i = m+1; i &lt;= r; i++)</span></div><div class="line">    <span class="comment">//events[i].println();</span></div><div class="line">    bit.reset(n);</div><div class="line">    <span class="keyword">int</span> j = m+<span class="number">1</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = l; i &lt;= m; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (events[i].type)</div><div class="line">            <span class="keyword">continue</span>;</div><div class="line">        <span class="keyword">int</span> qtime = events[i].time;</div><div class="line">        <span class="keyword">while</span> (j &lt;= r &amp;&amp; events[j].time &gt; qtime) &#123;</div><div class="line">            <span class="keyword">if</span> (events[j].type) &#123;</div><div class="line">                bit.add(events[j].data.a.l,</div><div class="line">                        events[j].data.a.r,</div><div class="line">                        events[j].data.a.k,</div><div class="line">                        n);</div><div class="line">                <span class="comment">//printf("add %d %d %d %d\n", events[j].data.a.l,</span></div><div class="line">                <span class="comment">//events[j].data.a.r,</span></div><div class="line">                <span class="comment">//events[j].data.a.p,</span></div><div class="line">                <span class="comment">//events[j].data.a.k);</span></div><div class="line">            &#125;</div><div class="line">            j++;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="comment">//printf("%d --- %d\n", events[i].data.p.i, bit.sum(events[i].data.p.c));</span></div><div class="line">        ret[events[i].data.p.i] += bit.sum(events[i].data.p.c);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">divide</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (l &gt;= r)</div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    <span class="keyword">int</span> m = (l+r)/<span class="number">2</span>;</div><div class="line">    divide(l, m);</div><div class="line">    divide(m+<span class="number">1</span>, r);</div><div class="line"></div><div class="line">    resolve(l, m, r);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> m;</div><div class="line">    <span class="keyword">char</span> s[<span class="number">2</span>];</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;n, &amp;m);</div><div class="line"></div><div class="line">    <span class="keyword">int</span> id = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">        events[i].time = i;</div><div class="line">        <span class="keyword">if</span> (s[<span class="number">0</span>] == <span class="string">'P'</span>) &#123;</div><div class="line">            events[i].type = <span class="number">0</span>;</div><div class="line">            events[i].data.p.i = id++;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>,</div><div class="line">                    &amp;events[i].data.p.c,</div><div class="line">                    &amp;events[i].data.p.d);</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            events[i].type = <span class="number">1</span>;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d %d"</span>,</div><div class="line">                    &amp;events[i].data.a.l, </div><div class="line">                    &amp;events[i].data.a.r,</div><div class="line">                    &amp;events[i].data.a.p,</div><div class="line">                    &amp;events[i].data.a.k);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    sort(events, events+m, cmp_p);</div><div class="line">    divide(<span class="number">0</span>, m<span class="number">-1</span>);</div><div class="line"></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; id; i++)</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ret[i]);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;blockquote&gt;
-&lt;p&gt;Algorithm Design and Analysis (NTU CSIE, Fall 2020)&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;Problem&quot;&gt;&lt;a href=&quot;#Problem&quot; class=&quot;headerlink&quot;
-      
-    
-    </summary>
-    
-      <category term="解題區" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/"/>
-    
-      <category term="解題區 - 其他題目" scheme="http://morris821028.github.io/categories/%E8%A7%A3%E9%A1%8C%E5%8D%80/%E8%A7%A3%E9%A1%8C%E5%8D%80-%E5%85%B6%E4%BB%96%E9%A1%8C%E7%9B%AE/"/>
-    
-    
-      <category term="BIT" scheme="http://morris821028.github.io/tags/BIT/"/>
-    
-      <category term="分治" scheme="http://morris821028.github.io/tags/%E5%88%86%E6%B2%BB/"/>
-    
-      <category term="整體二分" scheme="http://morris821028.github.io/tags/%E6%95%B4%E9%AB%94%E4%BA%8C%E5%88%86/"/>
     
   </entry>
   
