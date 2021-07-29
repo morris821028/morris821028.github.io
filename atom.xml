@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-07-29T02:38:29.048Z</updated>
+  <updated>2021-07-29T03:20:15.916Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -15,6 +15,38 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Java JNI GC Thread Error (EINVAL)</title>
+    <link href="http://morris821028.github.io/2021/07/29/java/java-jni-tls-error-2/"/>
+    <id>http://morris821028.github.io/2021/07/29/java/java-jni-tls-error-2/</id>
+    <published>2021-07-29T04:00:00.000Z</published>
+    <updated>2021-07-29T03:20:15.916Z</updated>
+    
+    <content type="html"><![CDATA[<p>Keywords: JNI, Java, GC Thread, add_workers, static library, Thread Error</p><p>Solution: <code>-XX:+AdjustStackSizeForTLS</code> from JDK 14</p><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>We cannot launch GC thread of JVM from JNI. And, it shows</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[os,thread] Failed to start thread - pthread_create failed (EINVAL) <span class="keyword">for</span> attributes: stacksize: 1024k, guardsize: 0k, detached.</div></pre></td></tr></table></figure><p>The main reason is the glibc bugs for native C code issues. For example, we allocate thread-local variables by static library linking.</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">__thread <span class="keyword">int</span> buf[<span class="number">1048576</span>];</div><div class="line"><span class="keyword">thread_local</span> <span class="keyword">int</span> buf[<span class="number">1048576</span>];</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp threadprive(buf);</span></div></pre></td></tr></table></figure><p>And then, glibc 2.12 will move them on stack, and require minimum stack size at least 1024k bytes. But, the default configuration JVM of JDK11 will minimum stacksize to be 1024k bytes as default in Linux OS. Therefore, the <code>pthread_create</code> throws the error <code>EINVAL</code> for specific stacksize setting.</p><h2 id="Options"><a href="#Options" class="headerlink" title="Options"></a>Options</h2><p><a href="https://www.oracle.com/java/technologies/javase/14all-relnotes.html" target="_blank" rel="external">https://www.oracle.com/java/technologies/javase/14all-relnotes.html</a></p><p>The glibc library allocates some thread-local storage (TLS) in the stack of a newly created thread, leaving less stack than requested for the thread to do its work. This is particularly a problem for threads with small stack sizes. It is an inherited issue from a well-known glibc problem, ‘Program with large TLS segments fail’ [0] and has been observed in Java applications. In one of the reported JVM failure instances, the issue manifests as a StackOverflowError on the process reaper thread, which has a small stack size. The java.lang.Thread constructor enables users to specify the stack size for a new thread. The created thread may encounter the TLS problem when the specified size is too small to accommodate the on-stack TLS blocks.</p><p>In JDK 8, a system property, <code>jdk.lang.processReaperUseDefaultStackSize</code>, was introduced to address the TLS issue only for reaper threads. Setting the property gives a bigger stack size to the reaper threads.</p><p>To address the issue for all threads, a general purpose workaround was implemented in Java which adjusts thread stack size for TLS. It can be enabled by using the <code>AdjustStackSizeForTLS</code> command-line option:</p><p>When creating a new thread, if <code>AdjustStackSizeForTLS</code> is true, the static TLS area size is added to the user requested stack size. <code>AdjustStackSizeForTLS</code> is disabled by default.</p><h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>整合進大型程式時，要多觀察靜態編譯的部分，如果有一些 TLS 的宣告，則會增加其他預設執行緒的最小使用堆疊大小。而 JVM 又傾向使用最少資源去完成，則很容易在計算最小資源時發生問題。</p><p>如果去查閱 JDK15 的 <a href="https://github.com/openjdk/jdk15/blob/master/src/hotspot/os/linux/os_linux.cpp" target="_blank" rel="external">代碼  os_linux.cpp</a>  時，有一段到動態鏈結函數庫 glibc 的詢問最低需求來解決此問題。這一段牽涉到 hack 技巧，偷偷利用 symbol 爬出私有函數，不算正常操作行為。</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// On Linux, glibc places static TLS blocks (for __thread variables) on</span></div><div class="line"><span class="comment">// the thread stack. This decreases the stack size actually available</span></div><div class="line"><span class="comment">// to threads.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// For large static TLS sizes, this may cause threads to malfunction due</span></div><div class="line"><span class="comment">// to insufficient stack space. This is a well-known issue in glibc:</span></div><div class="line"><span class="comment">// http://sourceware.org/bugzilla/show_bug.cgi?id=11787.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// As a workaround, we call a private but assumed-stable glibc function,</span></div><div class="line"><span class="comment">// __pthread_get_minstack() to obtain the minstack size and derive the</span></div><div class="line"><span class="comment">// static TLS size from it. We then increase the user requested stack</span></div><div class="line"><span class="comment">// size by this TLS size.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// Due to compatibility concerns, this size adjustment is opt-in and</span></div><div class="line"><span class="comment">// controlled via AdjustStackSizeForTLS.</span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">size_t</span> <span class="params">(*GetMinStack)</span><span class="params">(<span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> *attr)</span></span>;</div><div class="line"></div><div class="line">GetMinStack _get_minstack_func = <span class="literal">NULL</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">get_minstack_init</span><span class="params">()</span> </span>&#123;</div><div class="line">  _get_minstack_func =</div><div class="line">        (GetMinStack)dlsym(RTLD_DEFAULT, <span class="string">"__pthread_get_minstack"</span>);</div><div class="line">  log_info(os, thread)(<span class="string">"Lookup of __pthread_get_minstack %s"</span>,</div><div class="line">                       _get_minstack_func == <span class="literal">NULL</span> ? <span class="string">"failed"</span> : <span class="string">"succeeded"</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// Returns the size of the static TLS area glibc puts on thread stacks.</span></div><div class="line"><span class="comment">// The value is cached on first use, which occurs when the first thread</span></div><div class="line"><span class="comment">// is created during VM initialization.</span></div><div class="line"><span class="function"><span class="keyword">static</span> size_t <span class="title">get_static_tls_area_size</span><span class="params">(<span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> *attr)</span> </span>&#123;</div><div class="line">  <span class="keyword">size_t</span> tls_size = <span class="number">0</span>;</div><div class="line">  <span class="keyword">if</span> (_get_minstack_func != <span class="literal">NULL</span>) &#123;</div><div class="line">    <span class="comment">// Obtain the pthread minstack size by calling __pthread_get_minstack.</span></div><div class="line">    <span class="keyword">size_t</span> minstack_size = _get_minstack_func(attr);</div><div class="line"></div><div class="line">    <span class="comment">// Remove non-TLS area size included in minstack size returned</span></div><div class="line">    <span class="comment">// by __pthread_get_minstack() to get the static TLS size.</span></div><div class="line">    <span class="comment">// In glibc before 2.27, minstack size includes guard_size.</span></div><div class="line">    <span class="comment">// In glibc 2.27 and later, guard_size is automatically added</span></div><div class="line">    <span class="comment">// to the stack size by pthread_create and is no longer included</span></div><div class="line">    <span class="comment">// in minstack size. In both cases, the guard_size is taken into</span></div><div class="line">    <span class="comment">// account, so there is no need to adjust the result for that.</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// Although __pthread_get_minstack() is a private glibc function,</span></div><div class="line">    <span class="comment">// it is expected to have a stable behavior across future glibc</span></div><div class="line">    <span class="comment">// versions while glibc still allocates the static TLS blocks off</span></div><div class="line">    <span class="comment">// the stack. Following is glibc 2.28 __pthread_get_minstack():</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// size_t</span></div><div class="line">    <span class="comment">// __pthread_get_minstack (const pthread_attr_t *attr)</span></div><div class="line">    <span class="comment">// &#123;</span></div><div class="line">    <span class="comment">//   return GLRO(dl_pagesize) + __static_tls_size + PTHREAD_STACK_MIN;</span></div><div class="line">    <span class="comment">// &#125;</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// The following 'minstack_size &gt; os::vm_page_size() + PTHREAD_STACK_MIN'</span></div><div class="line">    <span class="comment">// if check is done for precaution.</span></div><div class="line">    <span class="keyword">if</span> (minstack_size &gt; (<span class="keyword">size_t</span>)os::vm_page_size() + PTHREAD_STACK_MIN) &#123;</div><div class="line">      tls_size = minstack_size - os::vm_page_size() - PTHREAD_STACK_MIN;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  log_info(os, thread)(<span class="string">"Stack size adjustment for TLS is "</span> SIZE_FORMAT,</div><div class="line">                       tls_size);</div><div class="line">  <span class="keyword">return</span> tls_size;</div><div class="line">&#125;</div></pre></td></tr></table></figure>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Keywords: JNI, Java, GC Thread, add_workers, static library, Thread Error&lt;/p&gt;
+&lt;p&gt;Solution: &lt;code&gt;-XX:+AdjustStackSizeForTLS&lt;/code&gt; from J
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
+    
+    
+      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
+    
+      <category term="JNI" scheme="http://morris821028.github.io/tags/JNI/"/>
+    
+      <category term="TLS" scheme="http://morris821028.github.io/tags/TLS/"/>
+    
+  </entry>
   
   <entry>
     <title>Company Ghost Story 公司鬼故事 11</title>
@@ -219,6 +251,35 @@
   </entry>
   
   <entry>
+    <title>File Extension</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:11:29.235Z</updated>
+    
+    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
+&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Global Variable</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
@@ -249,20 +310,47 @@
   </entry>
   
   <entry>
-    <title>File Extension</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:11:29.235Z</updated>
+    <updated>2021-01-31T03:39:01.704Z</updated>
     
-    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
-&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Interview &amp; Recursion</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:29:12.465Z</updated>
+    
+    <content type="html"><![CDATA[<p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
 
       
     
@@ -308,62 +396,6 @@
   </entry>
   
   <entry>
-    <title>Handover</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:39:01.704Z</updated>
-    
-    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Parallel &amp; Garbage Collection</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:25:34.110Z</updated>
-    
-    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
     <title>Programming Language Impostors</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
@@ -380,34 +412,6 @@
 &lt;p&gt;“There are many Impostors among us”&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Parallel &amp; Unstable</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:21:10.607Z</updated>
-    
-    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
 
       
     
@@ -451,20 +455,19 @@
   </entry>
   
   <entry>
-    <title>Work from Home &amp; Overwork Survey</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/</id>
+    <title>Parallel &amp; Garbage Collection</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:36:28.205Z</updated>
+    <updated>2021-01-31T03:25:34.110Z</updated>
     
-    <content type="html"><![CDATA[<p>當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。</p><p>✓ 覺得「我快要撐不下去了。」<br>✓ 覺得心力交瘁<br>✓ 覺得有挫折<br>✓ 一想到上班，你就覺得沒力<br>✓ 上班的每一刻都很煎熬<br>☓ 不工作的時候，你有足夠的精力陪朋友或家人</p><p>等等，要是一直沒來的話 …</p>]]></content>
+    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。&lt;/p&gt;
-&lt;p&gt;✓ 覺得「我快要撐不下去了。」&lt;br&gt;✓ 覺得心力交瘁&lt;br&gt;✓ 覺得有挫折&lt;br&gt;✓ 一想到上班，你就覺得沒力&lt;br&gt;✓ 上班的每一刻都很煎熬&lt;br&gt;☓ 不工作的時候，你有足夠的精力陪朋友或家人&lt;/p&gt;
+        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
 
       
     
@@ -480,19 +483,48 @@
   </entry>
   
   <entry>
-    <title>Interview &amp; Recursion</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
+    <title>Parallel &amp; Unstable</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:29:12.465Z</updated>
+    <updated>2021-01-31T03:21:10.607Z</updated>
     
-    <content type="html"><![CDATA[<p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>]]></content>
+    <content type="html"><![CDATA[<p>很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
+        &lt;p&gt;很灑脫地使用平行計算解決了所有問題，卻造成 CI 的錯誤不穩定。每次都要重新單獨跑那幾個失敗的案例，這也許可以習以為常，但是不穩定的結果，對我來說就是無法信賴的產品。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Work from Home &amp; Overwork Survey</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-wfh-overwork/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:36:28.205Z</updated>
+    
+    <content type="html"><![CDATA[<p>當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。</p><p>✓ 覺得「我快要撐不下去了。」<br>✓ 覺得心力交瘁<br>✓ 覺得有挫折<br>✓ 一想到上班，你就覺得沒力<br>✓ 上班的每一刻都很煎熬<br>☓ 不工作的時候，你有足夠的精力陪朋友或家人</p><p>等等，要是一直沒來的話 …</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;當在家工作好一陣子，去公司才發現桌上擺了過勞評量表。&lt;/p&gt;
+&lt;p&gt;✓ 覺得「我快要撐不下去了。」&lt;br&gt;✓ 覺得心力交瘁&lt;br&gt;✓ 覺得有挫折&lt;br&gt;✓ 一想到上班，你就覺得沒力&lt;br&gt;✓ 上班的每一刻都很煎熬&lt;br&gt;☓ 不工作的時候，你有足夠的精力陪朋友或家人&lt;/p&gt;
 
       
     
@@ -563,33 +595,6 @@
       <category term="JNI" scheme="http://morris821028.github.io/tags/JNI/"/>
     
       <category term="TLS" scheme="http://morris821028.github.io/tags/TLS/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Company Ghost Story 公司鬼故事 8</title>
-    <link href="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/"/>
-    <id>http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/</id>
-    <published>2020-11-08T10:00:00.000Z</published>
-    <updated>2020-11-08T07:24:32.340Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Format-String"><a href="#Format-String" class="headerlink" title="Format String"></a>Format String</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">String.format(<span class="string">"ABC%s"</span>, <span class="string">"D"</span>); <span class="comment">// const string should be written directly</span></div><div class="line">String.format(<span class="string">"%s.%s"</span>, A.class.getName(), <span class="string">"C"</span>);</div></pre></td></tr></table></figure><p>對於可以直接計算得到的，應該直接展開。</p><h3 id="Math"><a href="#Math" class="headerlink" title="Math"></a>Math</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">double</span> theta = dx != <span class="number">0</span> ? Math.atan(dy/dx) : (dy &lt; <span class="number">0</span> ? ... : ...);</div><div class="line"></div><div class="line"><span class="comment">// or</span></div><div class="line"></div><div class="line"><span class="keyword">if</span> (dx &lt; <span class="number">0</span>) &#123;</div><div class="line">    <span class="keyword">if</span> (dy &lt; <span class="number">0</span>)</div><div class="line">        ...</div><div class="line">&#125; <span class="keyword">else</span> (dx == <span class="number">0</span>) &#123;</div><div class="line">    <span class="keyword">if</span> (dy &lt; <span class="number">0</span>)</div><div class="line">        ...</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// why not be simple?</span></div><div class="line"><span class="keyword">double</span> theta = Math.atan2(dy, dx);</div></pre></td></tr></table></figure><p>數學很重要，可以減少很多分支判斷。</p><h3 id="Variable-Name"><a href="#Variable-Name" class="headerlink" title="Variable Name"></a>Variable Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">List&lt;T&gt; set = <span class="keyword">new</span> LinkedList&lt;&gt;(); <span class="comment">// what does `set` means?</span></div><div class="line"><span class="comment">// perhaps, I need to ask what does `list` means for you.</span></div></pre></td></tr></table></figure><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">TextField okBtn; <span class="comment">// why name button for text field?</span></div><div class="line">enableCancelButton(okBtn); <span class="comment">// are you sure about it?</span></div></pre></td></tr></table></figure><p>命名盡量貼切型態，不然有時候真的會有很奇怪。</p><h3 id="Initialize-Member"><a href="#Initialize-Member" class="headerlink" title="Initialize Member"></a>Initialize Member</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MPanel</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> JButton mButton;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MPanel</span><span class="params">()</span> </span>&#123; <span class="comment">// consturctor</span></div><div class="line">        ...</div><div class="line">        mButton = <span class="keyword">new</span> JButton(<span class="string">"A"</span>); <span class="comment">// what?</span></div><div class="line">        panel.add(mButton);</div><div class="line">        mButton = <span class="keyword">new</span> JButton(<span class="string">"B"</span>); <span class="comment">// what?</span></div><div class="line">        panel.add(mButton);</div><div class="line">        <span class="comment">// finally, which result you want to express mButton?</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>在建構子中，每一個成員變數盡量只存放一次，採用 <code>final</code> 對每個成員變數檢查只初始化一次。</p><h3 id="Lambda-with-Final"><a href="#Lambda-with-Final" class="headerlink" title="Lambda with Final"></a>Lambda with Final</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(...)</span> </span>&#123;</div><div class="line">    String s = <span class="string">"default"</span>;</div><div class="line">    <span class="keyword">if</span> (isA())</div><div class="line">        s = <span class="string">"A"</span>;</div><div class="line">    <span class="keyword">final</span> String _s = s;<span class="comment">// shut up, don't explain</span></div><div class="line">    blackhole(() -&gt; map(_s));</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>Lambda 函數抓取的時候都要抓取可推斷出 <code>final</code> 的變數。為了 lambda 而額外宣告一個變數作為 final 的話，應該要額外宣告一個 getter 函數去抓取，不然觀感上會覺得代碼有點多餘。</p><h3 id="Method-Name"><a href="#Method-Name" class="headerlink" title="Method Name"></a>Method Name</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">increment</span><span class="params">()</span> </span>&#123; <span class="comment">// why is noun?</span></div><div class="line">    i++;</div><div class="line">    i++;  <span class="comment">// why call it twice?</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>函數盡量使用動詞開頭，名詞有點奇怪。</p><h3 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">enableA</span><span class="params">()</span> </span>&#123;</div><div class="line">    a = <span class="keyword">true</span>;</div><div class="line">    b = <span class="keyword">true</span>;  <span class="comment">// why is b here?</span></div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">disableA</span><span class="params">()</span> </span>&#123;</div><div class="line">    a = <span class="keyword">false</span>; <span class="comment">// wait ... where is B?</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>當名稱對應到成員變數時，就應該一件事情對應一個操作。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Format-String&quot;&gt;&lt;a href=&quot;#Format-String&quot; class=&quot;headerlink
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
-    
-    
-      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
     
   </entry>
   
