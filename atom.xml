@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-07-29T03:20:15.916Z</updated>
+  <updated>2021-08-14T02:58:44.014Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -15,6 +15,33 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 12</title>
+    <link href="http://morris821028.github.io/2021/08/14/work/company-ghost-story-12/"/>
+    <id>http://morris821028.github.io/2021/08/14/work/company-ghost-story-12/</id>
+    <published>2021-08-14T02:00:00.000Z</published>
+    <updated>2021-08-14T02:58:44.014Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Fancy-OOP"><a href="#Fancy-OOP" class="headerlink" title="Fancy OOP"></a>Fancy OOP</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">MSTAlgorithmEngine</span> </span>&#123;</div><div class="line">    JButton mApplyButton; <span class="comment">// why, ???</span></div><div class="line">    JPanel mUI;           <span class="comment">// why, ???</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">DiffRecord</span> </span>&#123;</div><div class="line">    Action mMergeAction; <span class="comment">// why, ???</span></div><div class="line">    Action mShowAction;  <span class="comment">// why, ???</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">normalize</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">new</span> NormalizeAction().actionPerformed(<span class="keyword">new</span> ActionEvent(ActionEvent.PERFORMED));</div><div class="line">    &#125; <span class="comment">// I cannot deal with this shit anymore.</span></div><div class="line"></div><div class="line">    <span class="class"><span class="keyword">class</span> <span class="title">NormalizeAction</span> <span class="keyword">extends</span> <span class="title">AbstractAction</span> </span>&#123;</div><div class="line">        <span class="comment">// real implementation for model class</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>資料歸資料，算法歸算法，別把 UI 牽扯進來。</p><h3 id="Shit-Cache"><a href="#Shit-Cache" class="headerlink" title="Shit Cache"></a>Shit Cache</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Engine</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> CacheStructure sCache;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">exec</span><span class="params">()</span> </span>&#123;</div><div class="line">        resetCache();</div><div class="line">        <span class="comment">// fill cache;</span></div><div class="line">    &#125; <span class="comment">// but, when will you clear sCache, sCache = null?</span></div><div class="line">&#125;</div></pre></td></tr></table></figure><p>快取的污染啊，那些殘存的資料依舊卡在記憶體內，是無法被 GC 回收的。反而，造成下一個運行的更容易出現記憶體不足。</p><h3 id="Shit-Cache-in-Class"><a href="#Shit-Cache-in-Class" class="headerlink" title="Shit Cache in Class"></a>Shit Cache in Class</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Dbo</span> <span class="keyword">extends</span> <span class="title">DbObject</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> CacheStructure mCache; <span class="comment">// for internal recursion, why this thing is here?</span></div><div class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">getSomething</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="comment">// init cache</span></div><div class="line">        <span class="keyword">return</span> internalGetSomething(parameters);</div><div class="line">    &#125; <span class="comment">// but, when will you clear cache, cache = null?</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> Object <span class="title">internalGetSomething</span><span class="params">(parameters)</span> </span>&#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>別亂放你的資料結構，這關資料庫物件什麼事？</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Fancy-OOP&quot;&gt;&lt;a href=&quot;#Fancy-OOP&quot; class=&quot;headerlink&quot; title=
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>Java JNI GC Thread Error (EINVAL)</title>
@@ -251,35 +278,6 @@
   </entry>
   
   <entry>
-    <title>File Extension</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:11:29.235Z</updated>
-    
-    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
-&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
     <title>Global Variable</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-globl-var/</id>
@@ -310,19 +308,20 @@
   </entry>
   
   <entry>
-    <title>Handover</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
+    <title>File Extension</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:39:01.704Z</updated>
+    <updated>2021-01-31T03:11:29.235Z</updated>
     
-    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
+    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
+&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
 
       
     
@@ -338,19 +337,19 @@
   </entry>
   
   <entry>
-    <title>Interview &amp; Recursion</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:29:12.465Z</updated>
+    <updated>2021-01-31T03:39:01.704Z</updated>
     
-    <content type="html"><![CDATA[<p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>]]></content>
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
 
       
     
@@ -396,6 +395,34 @@
   </entry>
   
   <entry>
+    <title>Machine Learning for Newbie</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:33:45.182Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。</p><p>然後，得知這一年的台灣大學資訊工程學系，大一課程不學 C，直接 python，越來越接近西方的美式教育。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。&lt;/p&gt;
+&lt;p&gt;然後，得知這一年的台灣大學資訊工
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Programming Language Impostors</title>
     <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
     <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
@@ -413,34 +440,6 @@
 &lt;/blockquote&gt;
 &lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
 
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Machine Learning for Newbie</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:33:45.182Z</updated>
-    
-    <content type="html"><![CDATA[<p>最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。</p><p>然後，得知這一年的台灣大學資訊工程學系，大一課程不學 C，直接 python，越來越接近西方的美式教育。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。&lt;/p&gt;
-&lt;p&gt;然後，得知這一年的台灣大學資訊工
       
     
     </summary>
@@ -540,6 +539,34 @@
   </entry>
   
   <entry>
+    <title>Interview &amp; Recursion</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:29:12.465Z</updated>
+    
+    <content type="html"><![CDATA[<p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Company Ghost Story 公司鬼故事 9</title>
     <link href="http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/"/>
     <id>http://morris821028.github.io/2021/01/30/work/company-ghost-story-9/</id>
@@ -563,38 +590,6 @@
     
     
       <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Java JNI Thread Error (EINVAL)</title>
-    <link href="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/"/>
-    <id>http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/</id>
-    <published>2020-12-12T10:00:00.000Z</published>
-    <updated>2020-12-12T14:08:41.489Z</updated>
-    
-    <content type="html"><![CDATA[<p>Keywords: JNI, Java, ProcessBuilder, Thread Error</p><p>Error message: <code>[os,thread] Failed to start thread - pthread_create failed (EINVAL) for attributes: stacksize: 136k, guardsize: 0k, detached.</code></p><p>Solution: <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code></p><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>From JNI process, it is fine to execute Java internal multi-threading, but can not use Runetime.exec or <code>ProcessBuilder</code> to do anything. Even through adjust java stack-related option</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setenv _JAVA_OPTIONS &quot;-ea -Xlog -XX:ThreadStackSize=31744 -XX:VMThreadStackSize=1024 -XX:CompilerThreadStackSize=1024&quot;</div></pre></td></tr></table></figure><p>cgroup (Linux control group) limition, and set_rlimit. Same error message will be displayed.</p><p>When you link large C/C++ program with large thread local storage (TLS), default minimum stacksize computation is not enough to create pthread in OS-level. Only to set <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> to apply default pthread arguments.  Then, it will be working for you.</p><h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>無法透過 JNI 啟動的 JVM 運行外部程序，如 <code>Runtime.exec</code> 或者是 <code>Process</code> 都無法使用，卻可以使用內部執行緒，甚至達到了數百個執行緒。</p><p>首先，JVM 內部拆分了好幾種不同的執行緒使用策略，也有不同的資源需求判斷，去挖原始碼的時候會追到底層的 C 部分，就可以看出這些問題。但是錯誤訊息仍然不足，到了 JDK15 後，才能透過 <code>-Xlog</code> dump 更多的配置訊息，但有些配置訊息的翻譯仍然有錯，還是得看原始碼去得知實際情況。</p><p>追了好幾天，調適了許多不同的 stack 配置都沒有起色。自己寫的小短碼 JNI 都沒有事情，架在產品上就突然運行失敗。因此，只能去找有沒有現有的產品開發或使用上發生類似的問題，不該去找任何的教學文件。最後挖到幾篇安裝不同版本的產品失敗，據說更改 JDK 版本就能解決，然後有人分析說因為 TLS 的大小變動才導致新版本突然無法工作，才明白果然是 JNI 上的問題。</p><p>實作 JNI 介面的時候，若連接的 C++ 程式中存在大量的 <code>thread_local</code> 變數時，那麼在每一個執行緒中都必須給予相對應的大小進行初始化。而對於 JVM 內部會透過一些預設 stack 配置進行最小化，透過 JNI 連接的時候，便會受到影響。</p><p>透過 <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> 取消最小化 stack 配置，直接使用預設的構造行為，這樣就能暫時解決 JNI 啟動的 JVM 無法運行外部程序的問題。很明顯地，每一條執行緒都會開相當大的 stack size，大部分的情況下預設最多為 4 MB，而實際工作的產品中預設就要 20 MB，這個得從其關聯函數庫去分析為什麼需要這麼大的堆疊，可能是寫錯，也或者是連結太多沒有必要的庫進來。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;Keywords: JNI, Java, ProcessBuilder, Thread Error&lt;/p&gt;
-&lt;p&gt;Error message: &lt;code&gt;[os,thread] Failed to start thread - pthread_create failed 
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Java" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Java/"/>
-    
-    
-      <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
-    
-      <category term="JNI" scheme="http://morris821028.github.io/tags/JNI/"/>
-    
-      <category term="TLS" scheme="http://morris821028.github.io/tags/TLS/"/>
     
   </entry>
   

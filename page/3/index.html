@@ -89,6 +89,69 @@
           
           <section id="main">
   
+    <article id="post-java/java-jni-tls-error" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/12/12/java/java-jni-tls-error/" class="article-date">
+  <time datetime="2020-12-12T10:00:00.000Z" itemprop="datePublished">2020-12-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Java/">Java</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/12/12/java/java-jni-tls-error/">Java JNI Thread Error (EINVAL)</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/" data-id="cksb6ga2s02b2d8vnodktsjuq" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2020/12/12/java/java-jni-tls-error/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JNI/">JNI</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TLS/">TLS</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <p>Keywords: JNI, Java, ProcessBuilder, Thread Error</p>
+<p>Error message: <code>[os,thread] Failed to start thread - pthread_create failed (EINVAL) for attributes: stacksize: 136k, guardsize: 0k, detached.</code></p>
+<p>Solution: <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code></p>
+<h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>From JNI process, it is fine to execute Java internal multi-threading, but can not use Runetime.exec or <code>ProcessBuilder</code> to do anything. Even through adjust java stack-related option</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setenv _JAVA_OPTIONS &quot;-ea -Xlog -XX:ThreadStackSize=31744 -XX:VMThreadStackSize=1024 -XX:CompilerThreadStackSize=1024&quot;</div></pre></td></tr></table></figure>
+<p>cgroup (Linux control group) limition, and set_rlimit. Same error message will be displayed.</p>
+<p>When you link large C/C++ program with large thread local storage (TLS), default minimum stacksize computation is not enough to create pthread in OS-level. Only to set <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> to apply default pthread arguments.  Then, it will be working for you.</p>
+<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>無法透過 JNI 啟動的 JVM 運行外部程序，如 <code>Runtime.exec</code> 或者是 <code>Process</code> 都無法使用，卻可以使用內部執行緒，甚至達到了數百個執行緒。</p>
+<p>首先，JVM 內部拆分了好幾種不同的執行緒使用策略，也有不同的資源需求判斷，去挖原始碼的時候會追到底層的 C 部分，就可以看出這些問題。但是錯誤訊息仍然不足，到了 JDK15 後，才能透過 <code>-Xlog</code> dump 更多的配置訊息，但有些配置訊息的翻譯仍然有錯，還是得看原始碼去得知實際情況。</p>
+<p>追了好幾天，調適了許多不同的 stack 配置都沒有起色。自己寫的小短碼 JNI 都沒有事情，架在產品上就突然運行失敗。因此，只能去找有沒有現有的產品開發或使用上發生類似的問題，不該去找任何的教學文件。最後挖到幾篇安裝不同版本的產品失敗，據說更改 JDK 版本就能解決，然後有人分析說因為 TLS 的大小變動才導致新版本突然無法工作，才明白果然是 JNI 上的問題。</p>
+<p>實作 JNI 介面的時候，若連接的 C++ 程式中存在大量的 <code>thread_local</code> 變數時，那麼在每一個執行緒中都必須給予相對應的大小進行初始化。而對於 JVM 內部會透過一些預設 stack 配置進行最小化，透過 JNI 連接的時候，便會受到影響。</p>
+<p>透過 <code>-Djdk.lang.processReaperUseDefaultStackSize=true</code> 取消最小化 stack 配置，直接使用預設的構造行為，這樣就能暫時解決 JNI 啟動的 JVM 無法運行外部程序的問題。很明顯地，每一條執行緒都會開相當大的 stack size，大部分的情況下預設最多為 4 MB，而實際工作的產品中預設就要 20 MB，這個得從其關聯函數庫去分析為什麼需要這麼大的堆疊，可能是寫錯，也或者是連結太多沒有必要的庫進來。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-work/company-ghost-story-8" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/11/08/work/company-ghost-story-8/" class="article-date">
@@ -114,7 +177,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/" data-id="ckrobwjnn02ir1cvn01bs7chc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/" data-id="cksb6ga9r02k8d8vnttu52gyj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/11/08/work/company-ghost-story-8/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -180,7 +243,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/" data-id="ckrobwjnl02io1cvnkf88vyd6" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/" data-id="cksb6ga7v02hrd8vnzjwh1wsv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/11/01/work/company-ghost-story-7/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -237,7 +300,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/" data-id="ckrobwji702be1cvnwa4u2min" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/" data-id="cksb6ga3a02bkd8vng7wbdr5z" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -307,7 +370,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/" data-id="ckrobwjig02br1cvnb2bae3zu" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/" data-id="cksb6ga7d02h1d8vngtgcptiv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/31/lesson/ada-2020-hw1-p2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -371,7 +434,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g0lZncf.jpg" rel="gallery_ckrobwioc004h1cvn57i8xt76">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g0lZncf.jpg" rel="gallery_cksb6g9bz004hd8vn4q9qnupd">
         <img src="https://i.imgur.com/g0lZncf.jpg" itemprop="image">
       </a>
     
@@ -390,7 +453,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/25/diary-202010/" data-id="ckrobwioc004h1cvn57i8xt76" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/25/diary-202010/" data-id="cksb6g9bz004hd8vn4q9qnupd" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/25/diary-202010/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -549,7 +612,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/" data-id="ckrobwjni02ik1cvnltdlzi0f" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/" data-id="cksb6ga8502i3d8vn1enrp10r" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/10/24/work/company-ghost-story-6/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -616,7 +679,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/" data-id="ckrobwjnf02ig1cvnf31s8wuz" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/" data-id="cksb6ga9d02jod8vn88o0uubv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/09/30/work/company-ghost-story-5/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -681,7 +744,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/" data-id="ckrobwjnc02ic1cvnisteaubr" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/" data-id="cksb6ga8q02iwd8vnz62zpvsf" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/09/26/work/company-ghost-story-4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -743,7 +806,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/20/java/java-stream/" data-id="ckrobwjhq02av1cvnflsm739j" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2020/09/20/java/java-stream/" data-id="cksb6ga3202bcd8vnsnzikyrn" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2020/09/20/java/java-stream/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -801,85 +864,6 @@
 
 
   
-    <article id="post-work/company-ghost-story-3" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2020/09/20/work/company-ghost-story-3/" class="article-date">
-  <time datetime="2020-09-20T06:00:00.000Z" itemprop="datePublished">2020-09-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/鬼故事/">鬼故事</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/09/20/work/company-ghost-story-3/">Company Ghost Story 公司鬼故事 3</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2020/09/20/work/company-ghost-story-3/" data-id="ckrobwjn902i81cvnx28502ir" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2020/09/20/work/company-ghost-story-3/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/鬼故事/">鬼故事</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Setter-Getter"><a href="#Setter-Getter" class="headerlink" title="Setter/Getter"></a>Setter/Getter</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Parser</span> </span>&#123;</div><div class="line">    <span class="function">X <span class="title">getX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">x</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">readX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">parseX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">X</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<blockquote>
-<p>Java 特性預設都是透過 setter/getter 的概念來完成成員變數的存取。為了擴充使用不建議直接存取變數。</p>
-</blockquote>
-<p>這毫無設計的函數是發生甚麼事情？名字這麼像是想害死誰啊，而且還都是不同邏輯。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Parser</span> </span>&#123;</div><div class="line">    <span class="function">X <span class="title">eX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">aX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">sX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">pX</span><span class="params">()</span> </span>&#123;&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>不是這樣子說完，就用奇怪的前綴解決。把整個動詞完整描述出來會讓你打字很痛苦嗎？</p>
-<h3 id="Inner-Anonymous-Class"><a href="#Inner-Anonymous-Class" class="headerlink" title="Inner/Anonymous Class"></a>Inner/Anonymous Class</h3><p>現在我們用一個指令去搜尋建立的 class files。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ find ./bin -name <span class="string">"*\$[0-9]*.class"</span></div><div class="line">xxxx<span class="variable">$1</span><span class="variable">$1</span>.class</div><div class="line">xxxx<span class="variable">$64</span><span class="variable">$1</span>.class</div><div class="line">...</div><div class="line">xxxx<span class="variable">$64</span><span class="variable">$64</span>.class</div></pre></td></tr></table></figure>
-<p>居然發現了非常非常多的匿名類別，而且還是爆炸性的嵌套。這意味者當改變一個 class 檔案時，編譯會一次可能產生上百個檔案。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">getToken</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Token &#123;</div><div class="line">        <span class="meta">@Override</span></div><div class="line">        <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> <span class="string">"here we are"</span>; &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>這也是常常在調適函數時，不知道為什麼會有 IDE 崩潰的情況發生。其實都是上述的寫法氾濫，連帶的內存洩漏問題也很嚴重。事實上，大部分的匿名類別都可以額外地用功能去描述類別，請重新宣告並且命名好。</p>
-<h3 id="Long-Name-Method"><a href="#Long-Name-Method" class="headerlink" title="Long Name Method"></a>Long Name Method</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">addXXXsToAdjacentYYYsSetSoItWillNotAAABBBWhereMMM</span><span class="params">()</span></span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">setXInDatabaseAAABBBField</span><span class="params">()</span></span>;</div></pre></td></tr></table></figure>
-<p>這種命名函數比惡名昭彰的匈牙利還兇殘，直接把文件描述寫在函數上，這時候又願意打字了。</p>
-<p>請找個稍微中立一點描述方法，等到哪天換了連帶功能，所有相關函數都要重新做過。</p>
-<h3 id="Create-Context"><a href="#Create-Context" class="headerlink" title="Create Context"></a>Create Context</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        readPartA();</div><div class="line">        externalCall();</div><div class="line">    &#125; <span class="keyword">finally</span> &#123;</div><div class="line">        setCacheEnabled(<span class="keyword">true</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">readPartA</span><span class="params">()</span> </span>&#123;</div><div class="line">    setCacheEnabled(<span class="keyword">false</span>); <span class="comment">// why not place it in read()?</span></div><div class="line">    ...</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// in external.xxx</span></div><div class="line">java::setCacheEnabled(<span class="keyword">false</span>); <span class="comment">// what are you doing?</span></div><div class="line">...</div><div class="line"><span class="keyword">return</span> <span class="keyword">true</span>;</div></pre></td></tr></table></figure>
-<p>建立 context 的習慣是要寫在同一個檔案中，而且盡可能寫在同一個函數內。</p>
-<p>跳來跳去，有時候只有下文，有時候只有上文，不覺得很可怕嗎？萬一中間執行失敗，直接萬劫不復。</p>
-<h3 id="Create-Context-II"><a href="#Create-Context-II" class="headerlink" title="Create Context II"></a>Create Context II</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">    db.setDbCheckEnabled(<span class="keyword">false</span>);</div><div class="line">    ...</div><div class="line">    <span class="comment">// where's your setDbCheckEnabled(true);, can I trust you more?</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>直接把所有重要檢查通通關閉，卻忘了開起來，直接出逃啦。</p>
-<h3 id="Create-Context-III"><a href="#Create-Context-III" class="headerlink" title="Create Context III"></a>Create Context III</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        db.setDbCheckAEnabled(<span class="keyword">false</span>);</div><div class="line">        db.setDbCheckBEnabled(<span class="keyword">false</span>);</div><div class="line">        ...</div><div class="line">    &#125; <span class="keyword">finally</span> &#123;</div><div class="line">        db.setDbCheckAEnabled(<span class="keyword">true</span>); <span class="comment">// setDbCheckBEnabled() first, please</span></div><div class="line">        db.setDbCheckBEnabled(<span class="keyword">true</span>); <span class="comment">// setDbCheckAEnabled() last, please</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>大部分都不會錯，但建議採用堆疊的順序撰寫。因為有些保護機制會造成重複工作。</p>
-<h3 id="Create-Context-IV"><a href="#Create-Context-IV" class="headerlink" title="Create Context IV"></a>Create Context IV</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">boolean</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        db.setDbCheckAEnabled(<span class="keyword">false</span>);</div><div class="line">        db.setDbCheckBEnabled(<span class="keyword">false</span>);</div><div class="line">        ...</div><div class="line">        db.setDbCheckBEnabled(<span class="keyword">true</span>); <span class="comment">// I don't know.jpg</span></div><div class="line">        ...</div><div class="line">    &#125; <span class="keyword">finally</span> &#123;</div><div class="line">        db.setDbCheckBEnabled(<span class="keyword">true</span>);</div><div class="line">        db.setDbCheckAEnabled(<span class="keyword">true</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>我不知道.jpg。</p>
-<h2 id="Regression-Test"><a href="#Regression-Test" class="headerlink" title="Regression Test"></a>Regression Test</h2><h3 id="Create-Test-Folder"><a href="#Create-Test-Folder" class="headerlink" title="Create Test Folder"></a>Create Test Folder</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">$ tree Regression/FunctionA</div><div class="line">├─testBBBB</div><div class="line">│  └─testCCCC</div><div class="line">│    └─testDDDD</div><div class="line">│      └─test.sh</div><div class="line">...</div></pre></td></tr></table></figure>
-<p>為什麼需要前綴 test？請給我一個理由。</p>
-<h3 id="Create-Test-Folder-II"><a href="#Create-Test-Folder-II" class="headerlink" title="Create Test Folder II"></a>Create Test Folder II</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ tree Regression/FunctionA</div><div class="line">├─DoNotThrowNoSuchElementException</div><div class="line">│  └─test.sh</div><div class="line">...</div></pre></td></tr></table></figure>
-<p>如果是預期丟出錯誤的測試就算了，但錯誤的實例也是會變動的，這樣的資料夾名字不具有太深遠的意義。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/2/">&laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/4/">Next &raquo;</a>
@@ -895,7 +879,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">34</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">11</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">35</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">12</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -905,6 +889,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/08/14/work/company-ghost-story-12/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Company Ghost Story 公司鬼故事 12</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/07/29/java/java-jni-tls-error-2/">
@@ -968,14 +960,6 @@
                 <i class="icon-file-o"></i> 
               
             二八進展</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-file-extension/">
-              
-                <i class="icon-file-o"></i> 
-              
-            File Extension</a>
           </li>
         
           <li>
