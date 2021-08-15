@@ -89,6 +89,277 @@
           
           <section id="main">
   
+    <article id="post-rendering-realistic-camera" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/21/rendering-realistic-camera/" class="article-date">
+  <time datetime="2016-01-21T08:35:46.000Z" itemprop="datePublished">2016-01-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/01/21/rendering-realistic-camera/">pbrt-v2 加速結構 Realistic Camera 改寫</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="cksbltjhe00krpovnlc5z8rts" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h3 id="Ray-Sphere-Intersection"><a href="#Ray-Sphere-Intersection" class="headerlink" title="Ray Sphere Intersection"></a>Ray Sphere Intersection</h3><p>計算射線和球體的交點，可以參照 <code>/pbrt-v2/shapes/sphere.cpp</code> 中 <code>bool Shpere::Intersect()</code> 的算法。</p>
+<p>假設球體圓心座標 <span>$O$</span><!-- Has MathJax -->，射線單位向量 <span>$I$</span><!-- Has MathJax --> 的起點座標 <span>$C$</span><!-- Has MathJax -->，且最近目標交點座標 <span>$P$</span><!-- Has MathJax -->，原半徑 <span>$\mathrm{radius}$</span><!-- Has MathJax -->。射線走單位時間 <span>$t$</span><!-- Has MathJax --> 會到達球面上。</p>
+<ul>
+<li><span>$\overrightarrow{OC} + \overrightarrow{I} \times t = \overrightarrow{OP}$</span><!-- Has MathJax --></li>
+<li><span>$|\overrightarrow{OP}| = \text{radius}$</span><!-- Has MathJax --></li>
+<li><span>$|\overrightarrow{OC} + \overrightarrow{I} \times t| = |\overrightarrow{OP}|$</span><!-- Has MathJax --></li>
+<li><span>$|\overrightarrow{I}|^2 t^2 + 2 \; (\overrightarrow{OC} \cdot \overrightarrow{I}) \; t + |\overrightarrow{OC}|^2 - \text{radius}^2 = 0$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>解一元二次方程式之後可以得到 <span>$t$</span><!-- Has MathJax --> 得值，並得到交點座標 <span>$P$</span><!-- Has MathJax -->。</p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/hw2_circle_intersect.png" alt=""></p>
+<h3 id="Snell’s-Law"><a href="#Snell’s-Law" class="headerlink" title="Snell’s Law"></a>Snell’s Law</h3><p>根據物理法則斯乃爾定律計算折射的方向向量，課程中提供三種做法。</p>
+<p>變數解釋：入射介面材質 <span>$\eta_1$</span><!-- Has MathJax -->，折射介面材質 <span>$\eta_2$</span><!-- Has MathJax -->，入射單位向量 <span>$\overrightarrow{I}$</span><!-- Has MathJax -->，交點面法向量 <span>$\overrightarrow{N}$</span><!-- Has MathJax -->，折射方向向量 <span>$\overrightarrow{T}$</span><!-- Has MathJax --></p>
+<p>特別小心 <code>ray-&gt;d = Normalize(ray-&gt;d)</code> 的處理，Heckbert’s Method 計算維持在單位圓上，故不用做最後的正規化計算。</p>
+<h4 id="Whitted’s-Method"><a href="#Whitted’s-Method" class="headerlink" title="Whitted’s Method"></a>Whitted’s Method</h4><table>
+<thead>
+<tr>
+<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
+<th><span>$/$</span><!-- Has MathJax --></th>
+<th><span>$\times$</span><!-- Has MathJax --></th>
+<th><span>$+$</span><!-- Has MathJax --></th>
+<th>compute</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td></td>
+<td></td>
+<td><span>$n = \eta_1 / \eta_2$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>3</td>
+<td>2</td>
+<td><span>$I&apos; = I / (-I \cdot N)$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td>3</td>
+<td><span>$J = I&apos; + N$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>8</td>
+<td>5</td>
+<td><span>$\alpha = 1 / \sqrt{n^2(I&apos; \cdot I&apos;) - (J \cdot J)}$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>3</td>
+<td>3</td>
+<td><span>$T&apos; = \alpha J - N$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td>3</td>
+<td>3</td>
+<td>2</td>
+<td><span>$T&apos; = T&apos; / \| T&apos; \|$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>2</td>
+<td>8</td>
+<td>17</td>
+<td>15</td>
+<td>TOTAL</td>
+</tr>
+</tbody>
+</table>
+<h4 id="Heckbert’s-Method"><a href="#Heckbert’s-Method" class="headerlink" title="Heckbert’s Method"></a>Heckbert’s Method</h4><table>
+<thead>
+<tr>
+<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
+<th><span>$/$</span><!-- Has MathJax --></th>
+<th><span>$\times$</span><!-- Has MathJax --></th>
+<th><span>$+$</span><!-- Has MathJax --></th>
+<th>compute</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td></td>
+<td></td>
+<td><span>$\eta = \eta_1 / \eta_2$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>3</td>
+<td>2</td>
+<td><span>$c_1 = - I \cdot N$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td></td>
+<td>3</td>
+<td>2</td>
+<td><span>$c_2 = \sqrt{1 - \eta^2(1 - c_1^2)}$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>7</td>
+<td>4</td>
+<td><span>$T = \eta I + (\eta c_1 - c_2) N$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>13</td>
+<td>8</td>
+<td>TOTAL</td>
+</tr>
+</tbody>
+</table>
+<h4 id="Other-Method"><a href="#Other-Method" class="headerlink" title="Other Method"></a>Other Method</h4><table>
+<thead>
+<tr>
+<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
+<th><span>$/$</span><!-- Has MathJax --></th>
+<th><span>$\times$</span><!-- Has MathJax --></th>
+<th><span>$+$</span><!-- Has MathJax --></th>
+<th>compute</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td></td>
+<td></td>
+<td><span>$n = \eta_2 / \eta_1$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>3</td>
+<td>2</td>
+<td><span>$c_1 = - I \cdot N$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td></td>
+<td>2</td>
+<td>3</td>
+<td><span>$\beta = c_1 \sqrt{n^2 - 1 + c_1^2}$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+<td><span>$T = (I + \beta N ) / n$</span><!-- Has MathJax --></td>
+</tr>
+<tr>
+<td>1</td>
+<td>4</td>
+<td>8</td>
+<td>8</td>
+<td>TOTAL</td>
+</tr>
+</tbody>
+</table>
+<p>其中以 Heckbert’s Method 消耗最少計算數。如果除法速度快於乘法，則使用 Other Method，原則上很少有機器運算除法比乘法快。</p>
+<h3 id="RasterToCamera"><a href="#RasterToCamera" class="headerlink" title="RasterToCamera"></a>RasterToCamera</h3><p>這部分處理後得到 <code>Transform RasterToCamera</code>。若計算錯誤，會造成一片黑或者圖片顯示的大小問題。座標轉換處理細節可以參考實際的例子，如下圖所示：</p>
+<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/cambasic1A.png" alt="http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays"></p>
+<ul>
+<li>Raster-To-NDC 轉換矩陣 <span>$A=\text{Scale}(scale, scale, 1)$</span><!-- Has MathJax -->，進行縮放。</li>
+<li>NDC-To-Camera 轉換矩陣 <span>$B=\text{Translate}(Vector(0, 0, filedistance)) \times \text{Translate}(Vector(X, -Y, 0))$</span><!-- Has MathJax -->，進行位移。</li>
+<li>最後得到 RasterToCamera 轉換矩陣 <span>$C= B \times A \times \text{Scale}(-1, 1, 1)$</span><!-- Has MathJax -->，最後將 x 軸顛倒以符合成像問題。</li>
+</ul>
+<h3 id="Ray-Weight"><a href="#Ray-Weight" class="headerlink" title="Ray Weight"></a>Ray Weight</h3><p>作業要求經過 <code>float GenerateRay()</code> 回傳 <span>$\mathrm{weight} = \frac{\cos^4 \theta&apos;}{Z^2}$</span><!-- Has MathJax -->，這麼設置會過暗，根據論文 A Realistic Camera Model for Computer Graphics 中寫道</p>
+<blockquote>
+<p>If the exit pupil subtends a small solid angle from <span>$x&apos;$</span><!-- Has MathJax -->, <span>$\theta&apos;$</span><!-- Has MathJax --> can be assumed to be constant and equal the angle between <span>$x&apos;$</span><!-- Has MathJax --> and the center of the disk. This allows us to simplify<br><span>$E(x&apos;) = \int_{x&apos;&apos; \in D} L(x&apos;&apos;, x&apos;) \frac{\cos \theta&apos; \cos \theta&apos;&apos;}{\| x&apos;&apos; - x&apos;\|} dA&apos;&apos;$&lt;span&gt;$to:$&lt;/span&gt;&lt;!-- Has MathJax --&gt;$E(x&rsquo;) = L \frac{A}{Z^2} \cos^4 \theta&rsquo;$</span><!-- Has MathJax --><br>where <span>$Z$</span><!-- Has MathJax --> is the axial distance from the film plane to the dist and <span>$A$</span><!-- Has MathJax --> is the area of the disk. </p>
+</blockquote>
+<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/paperfigure6.jpg" alt="A Realistic Camera Model for Computer Graphics: Figure 6"></p>
+<p>因此需要額外乘上常數 <span>$A$</span><!-- Has MathJax -->，其中 <span>$A$</span><!-- Has MathJax --> 是最裡層的透鏡面積，因為我們是根據最裡層的透鏡面做均勻取樣，得到 <span>$A = \mathit{backLens.radius}^2 \pi$</span><!-- Has MathJax -->。</p>
+<h3 id="Sampling"><a href="#Sampling" class="headerlink" title="Sampling"></a>Sampling</h3><p>單位圓均勻取樣方法有以下兩種，而非均勻取樣的寫法可參照 Sample 3 (錯誤的做法參照) 出來的效果看出。</p>
+<h4 id="Sampling-1"><a href="#Sampling-1" class="headerlink" title="Sampling 1"></a>Sampling 1</h4><p>採用內建函數 <code>CencentricSampleDisk()</code>，採用 A Low Distortion Map Between Disk and Square 論文中提到的方案，將一個正方形壓縮到一個圓形中。參照作法如下圖所示  <img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/pbrt_low_distortion.gif" alt=""></p>
+<p>其中給定 <span>$a, b$</span><!-- Has MathJax --> 均勻分布 <span>$[0, 1]$</span><!-- Has MathJax -->，則得到 <span>$r = a, \; \phi = \frac{\pi}{4} \frac{b}{a}$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。</p>
+<h4 id="Sampling-2"><a href="#Sampling-2" class="headerlink" title="Sampling 2"></a>Sampling 2</h4><p>採用教科書上提供，其中給定 <span>$a, b$</span><!-- Has MathJax --> 均勻分布 <span>$[0, 1]$</span><!-- Has MathJax -->，令 <span>$r = \sqrt{a}, \; \phi = 2 \pi b$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。</p>
+<h4 id="Sampling-3"><a href="#Sampling-3" class="headerlink" title="Sampling 3"></a>Sampling 3</h4><p>分布 <span>$[0, 1]$</span><!-- Has MathJax -->，令 <span>$r = a, \; \phi = 2 \pi b$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。這種寫法在相同半徑下，角度均勻分布，不同半徑下的周長與 <span>$r$</span><!-- Has MathJax --> 成正比，導致不同半徑的取樣點不均勻，越靠近中心點取樣越密集，意即容易造成中心點看起來較亮。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="http://blog.csdn.net/codeboycjy/article/details/6225886" target="_blank" rel="external">PBRT学习笔记：在单位圆内部均匀采样 -<br>codeboycjy的专栏</a></li>
+</ul>
+<h2>Final Images Rendered Compare 4 samples</h2>
+
+<p></p><h4>Gauss Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+<p></p><h4>Fisheye Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+<p></p><h4>Telephoto Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+
+<p></p><h4>Wide-Angle Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+<h2>Final Images Rendered Compare 512 samples</h2>
+
+<p></p><h4>Gauss Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.dgauss_512ref.jpg"><br>         <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.dgauss_512.jpg"><br>        <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.dgauss_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.dgauss_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+<p></p><h4>Fisheye Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.fisheye_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+<p></p><h4>Telephoto Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.telephoto_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+
+
+<p></p><h4>Wide-Angle Lens</h4><p></p>
+<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.wide_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-rendering-height-field" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/01/21/rendering-height-field/" class="article-date">
@@ -114,7 +385,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="cksb6g9fp00f0d8vn46ekptna" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="cksbltjha00kgpovngyalzhh0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -209,7 +480,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_cksb6g9ff00e4d8vnvxkbi9mq">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_cksbltjh400jvpovn4zz2qefk">
         <img src="http://i.imgur.com/3eq7W2z.jpg" itemprop="image">
       </a>
     
@@ -228,7 +499,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="cksb6g9ff00e4d8vnvxkbi9mq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="cksbltjh400jvpovn4zz2qefk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -311,7 +582,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_cksb6g9fd00dzd8vnuwxcoom6">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_cksbltjh600k3povnt1b9knz2">
         <img src="http://i.imgur.com/2sHgITS.jpg" itemprop="image">
       </a>
     
@@ -330,7 +601,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="cksb6g9fd00dzd8vnuwxcoom6" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="cksbltjh600k3povnt1b9knz2" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-qemu/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -413,7 +684,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_cksb6g9fc00dvd8vn0uq2jxw1">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_cksbltjh800k8povn2vb4pl0x">
         <img src="http://i.imgur.com/2L6Zmwa.jpg" itemprop="image">
       </a>
     
@@ -432,7 +703,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="cksb6g9fc00dvd8vn0uq2jxw1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="cksbltjh800k8povn2vb4pl0x" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -518,7 +789,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="cksb6g9ap000pd8vnnlnes5ia" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="cksbltj7w000dpovnmuyj0wer" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -589,7 +860,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="cksb6g9aj000ed8vny3n6q8ye" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="cksbltj7u0009povnvxlae3h9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -645,7 +916,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/pjV0MV0.jpg" rel="gallery_cksb6g9bf002td8vn3os2locr">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/pjV0MV0.jpg" rel="gallery_cksbltj8y002tpovnr37pfbkm">
         <img src="http://i.imgur.com/pjV0MV0.jpg" itemprop="image">
       </a>
     
@@ -664,7 +935,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/10/30/diary-20151030/" data-id="cksb6g9bf002td8vn3os2locr" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/10/30/diary-20151030/" data-id="cksbltj8y002tpovnr37pfbkm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/10/30/diary-20151030/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -718,7 +989,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/1P4kaQL.jpg" rel="gallery_cksb6g9be002pd8vndo901ykk">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/1P4kaQL.jpg" rel="gallery_cksbltj8x002rpovnbbe0ctu0">
         <img src="http://i.imgur.com/1P4kaQL.jpg" itemprop="image">
       </a>
     
@@ -737,7 +1008,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/08/27/diary-20150827/" data-id="cksb6g9be002pd8vndo901ykk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/08/27/diary-20150827/" data-id="cksbltj8x002rpovnbbe0ctu0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/08/27/diary-20150827/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -795,7 +1066,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/08/24/zj-b500/" data-id="cksb6g9qs0162d8vnmrn7dssg" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/08/24/zj-b500/" data-id="cksbltjt001bcpovn4toisoh1" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/08/24/zj-b500/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -842,77 +1113,6 @@ N_y = \begin{bmatrix}
 
 
   
-    <article id="post-zj-b498" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/08/24/zj-b498/" class="article-date">
-  <time datetime="2015-08-24T08:26:51.000Z" itemprop="datePublished">2015-08-24</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/08/24/zj-b498/">b498. 史蒂芙的單詞統計</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/08/24/zj-b498/" data-id="cksb6g9qk015md8vngv6tujgk" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/08/24/zj-b498/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AC-自動機/">AC 自動機</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DA-trie/">DA trie</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/double-array-trie/">double-array trie</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/trie/">trie</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>史蒂芙手上有本小字典，這字典專門針對某種類型的需求而收集，字典中有非常多特定單詞，為了要辨識語言是否屬於哪一類，判斷方法就是統計一句話中出現多少次字典的單詞，再按照比例數量去偵測。</p>
-<h3 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h3><p>給予 <span>$N$</span><!-- Has MathJax --> 個單詞的字典，每個單詞只由大小寫字母和數字構成，接著有 <span>$Q$</span><!-- Has MathJax --> 個詢問，每個詢問為一個字串，字串只由大小寫字母和數字構成。對於每個詢問加總每一種單詞出現在字串的個數。</p>
-<p>例如經典遊戲《魂斗羅》的秘笈 UUDDLRLRBA，若字典中只有兩個單詞 LR 和 BA，由於 LR 出現 2 次，BA 出現 1 次，統計結果為 1+2 = 3。同理，BANANANA，若字典中只有 ANA 和 BA，則 ANA 出現 3 次，BA 出現一次，統計結果為 3+1 = 4。</p>
-<p>這個工作需要極致的效率，就麻煩各位。由於史蒂芙經費有限，只能給予 128MB 的空間。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line">01</div><div class="line">01</div><div class="line">1</div><div class="line">01001</div><div class="line"></div><div class="line">3</div><div class="line">LR</div><div class="line">BA</div><div class="line">ANA</div><div class="line">2</div><div class="line">UUDDLRLRBA</div><div class="line">BANANANA</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Case #1:</div><div class="line">2</div><div class="line">Case #2:</div><div class="line">3</div><div class="line">4</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>史蒂芙系列迎來第七題，這次考驗的是 Trie 和 Aho-Corasick automation 的空間優化，明顯地在 Trie 中每一個節點會帶有 |alpha set| 個 pointer，因此空間使用量非常浪費，尤其後綴的機率極低重疊。</p>
-<p>因此，雖然只有大小寫英文和數字的字串，<span>$O(64)$</span><!-- Has MathJax --> 空間仍然很大，那麼開平衡樹是個解決方法，但千萬不能使用內建的 <code>std::map</code>，因為實作的 RB tree 帶有的 CONTAINER OVERHEAD 直接佔有大量空間。</p>
-<ul>
-<li>解法一： Double-Array Trie + Aho-Corasick automation，DA Trie 原則上在弄 perfect hash，一旦衝突就要捨棄，接著一代子節點跟著搬家，因此宣告一個諾大的內存池，利用雙向鏈表維護，讓他們盡可能找到安居之地。</li>
-<li>解法二：原生作法，但使用 <code>vector&lt;Node*&gt; link</code> 來維護，保證 link 的首尾都有實體子節點，中間若發生留空就隨他去，目標省下後綴空間，那後綴運氣好都是在 size = 1 的情況紀錄。</li>
-<li>解法三：安妥妥地寫平衡樹。</li>
-</ul>
-<p>看到解法二就知道解法一白做工，雖然標榜 DA Trie 在插入能力很低效，修改一下找 perfect hash 的方法，不支持高效率壓縮，多一點垃圾也沒關係，那麼弄成作業系統那樣的檔案配置，看要用 C-LOOK 還是 SCAN 亂幹。總之，每次從頭開始刷會刷到天昏地暗。</p>
-<ul>
-<li>解法一：AC (2.5s, 76.8MB)</li>
-<li>解法二：AC (2.5s, 53.3MB)</li>
-<li>解法三：釣魚中</li>
-</ul>
-<h3 id="DA-trie"><a href="#DA-trie" class="headerlink" title="DA trie"></a>DA trie</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">DATrie</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">5000000</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXC = <span class="number">63</span>;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Node</span> &#123;</span></div><div class="line">        <span class="keyword">int</span> check, base, fail, val;</div><div class="line">    &#125; A[MAXN + MAXC];</div><div class="line">    <span class="keyword">int</span> node_size, mem_size, emp_size;</div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="keyword">int</span> son_pos[MAXC], find_pos;</div><div class="line">    <span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">toIndex</span><span class="params">(<span class="keyword">char</span> c)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">isdigit</span>(c))	<span class="keyword">return</span> c - <span class="string">'0'</span> + <span class="number">1</span>;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">isupper</span>(c)) <span class="keyword">return</span> c - <span class="string">'A'</span> + <span class="number">10</span> + <span class="number">1</span>;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">islower</span>(c))	<span class="keyword">return</span> c - <span class="string">'a'</span> + <span class="number">26</span> + <span class="number">10</span> + <span class="number">1</span>;</div><div class="line">        assert(<span class="literal">false</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">isEMPTY</span><span class="params">(<span class="keyword">int</span> u)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> u &lt; MAXN &amp;&amp; A[u].check &lt; <span class="number">0</span> &amp;&amp; A[u].base &lt; <span class="number">0</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; MAXN; i++)</div><div class="line">            A[i].check = -(i+<span class="number">1</span>), A[i].base = -(i<span class="number">-1</span>);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = MAXN; i &lt; MAXN + MAXC; i++)</div><div class="line">            A[i].check = INT_MAX;</div><div class="line">        A[MAXN<span class="number">-1</span>].check = <span class="number">-1</span>, A[<span class="number">1</span>].base = -(MAXN<span class="number">-1</span>);</div><div class="line">        A[<span class="number">0</span>].check = <span class="number">-1</span>, A[<span class="number">0</span>].base = <span class="number">0</span>;</div><div class="line">        node_size = mem_size = emp_size = <span class="number">0</span>, find_pos = <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">rm_node</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (find_pos == x)	find_pos = <span class="built_in">abs</span>(A[x].check);</div><div class="line">        A[-A[x].base].check = A[x].check;</div><div class="line">        A[-A[x].check].base = A[x].base;</div><div class="line">        node_size++;</div><div class="line">        mem_size = max(mem_size, x);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">ad_node</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</div><div class="line">        A[x].check = MAXN, A[x].base = MAXN;</div><div class="line">        emp_size++;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">insert</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *s)</span> </span>&#123;</div><div class="line">        <span class="keyword">int</span> st = <span class="number">0</span>, to, c;</div><div class="line">        <span class="keyword">int</span> flag = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; s[i]; i++) &#123;</div><div class="line">            c = toIndex(s[i]);</div><div class="line">            to = <span class="built_in">abs</span>(A[st].base) + c;	</div><div class="line">            <span class="keyword">if</span> (st == <span class="built_in">abs</span>(A[to].check)) &#123;</div><div class="line">                st = to;</div><div class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isEMPTY(to)) &#123;</div><div class="line">                rm_node(to); </div><div class="line">                A[to].check = st, A[to].base = to;</div><div class="line">                st = to;</div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                <span class="keyword">int</span> son_sz = <span class="number">0</span>;</div><div class="line">                <span class="keyword">int</span> pos = find_empty(st, c, son_sz);</div><div class="line">                relocate(st, pos, son_sz<span class="number">-1</span>);</div><div class="line">                i--; </div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"><span class="comment">//		if (A[st].base &gt; 0)	words++;</span></div><div class="line">        A[st].base = -<span class="built_in">abs</span>(A[st].base);</div><div class="line">        <span class="keyword">return</span> <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">find</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *s)</span> </span>&#123;</div><div class="line">        <span class="keyword">int</span> st = <span class="number">0</span>, to, c;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; s[i]; i++) &#123;</div><div class="line">            c = toIndex(s[i]);</div><div class="line">            to = <span class="built_in">abs</span>(A[st].base) + c;</div><div class="line">            <span class="keyword">if</span> (st == <span class="built_in">abs</span>(A[to].check))</div><div class="line">                st = to;</div><div class="line">            <span class="keyword">else</span></div><div class="line">                <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> A[st].base &lt; <span class="number">0</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">find_empty</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">int</span> c, <span class="keyword">int</span> &amp;sz)</span> </span>&#123;</div><div class="line">        sz = <span class="number">0</span>;</div><div class="line">        <span class="keyword">int</span> bs = <span class="built_in">abs</span>(A[st].base);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>, j = bs+<span class="number">1</span>; i &lt; MAXC; i++, j++) &#123;</div><div class="line">            <span class="keyword">if</span> (<span class="built_in">abs</span>(A[j].check) == st)</div><div class="line">                son_pos[sz++] = i;</div><div class="line">        &#125;</div><div class="line">        son_pos[sz++] = c;</div><div class="line">        <span class="keyword">int</span> mn_pos = min(son_pos[<span class="number">0</span>], c) - <span class="number">1</span>;</div><div class="line">        <span class="keyword">for</span> (; find_pos &amp;&amp; (find_pos &lt; bs || find_pos &lt; mn_pos); find_pos = <span class="built_in">abs</span>(A[find_pos].check));</div><div class="line">        <span class="keyword">for</span> (; find_pos; find_pos = <span class="built_in">abs</span>(A[find_pos].check)) &#123;</div><div class="line">            <span class="keyword">int</span> ok = <span class="number">1</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; sz &amp;&amp; ok; i++)</div><div class="line">                ok &amp;= isEMPTY(find_pos + son_pos[i] - mn_pos);</div><div class="line">            <span class="keyword">if</span> (ok)</div><div class="line">                <span class="keyword">return</span> find_pos - mn_pos;</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Memory Leak -- %d\n"</span>, find_pos);</div><div class="line">        <span class="built_in">exit</span>(<span class="number">0</span>);</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">relocate</span><span class="params">(<span class="keyword">int</span> st, <span class="keyword">int</span> to, <span class="keyword">int</span> sz)</span> </span>&#123;	<span class="comment">// move ::st -&gt; ::to</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = sz<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</div><div class="line">            <span class="keyword">int</span> a = <span class="built_in">abs</span>(A[st].base) + son_pos[i];	<span class="comment">// old</span></div><div class="line">            <span class="keyword">int</span> b = to + son_pos[i];			<span class="comment">// new</span></div><div class="line">            rm_node(b);</div><div class="line">            A[b].check = st, A[b].base = A[a].base;</div><div class="line">            <span class="keyword">int</span> vs = <span class="built_in">abs</span>(A[a].base);</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>, k = vs+<span class="number">1</span>; j &lt; MAXC; j++, k++) &#123;</div><div class="line">                <span class="keyword">if</span> (<span class="built_in">abs</span>(A[k].check) == a)</div><div class="line">                    A[k].check = b;</div><div class="line">            &#125;</div><div class="line">            ad_node(a);</div><div class="line">        &#125;</div><div class="line">        A[st].base = (A[st].base &lt; <span class="number">0</span> ? <span class="number">-1</span> : <span class="number">1</span>) * to;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span> </span>&#123; <span class="comment">// AC automation</span></div><div class="line">        <span class="built_in">queue</span>&lt;<span class="keyword">int</span>&gt; Q;</div><div class="line">        <span class="keyword">int</span> u, p, to, pto;</div><div class="line">        Q.push(<span class="number">0</span>), A[<span class="number">0</span>].fail = <span class="number">-1</span>;</div><div class="line">        <span class="keyword">while</span> (!Q.empty()) &#123;</div><div class="line">            u = Q.front(), Q.pop();</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; MAXC; i++) &#123;</div><div class="line">                to = <span class="built_in">abs</span>(A[u].base) + i;</div><div class="line">                <span class="keyword">if</span> (u != <span class="built_in">abs</span>(A[to].check))	</div><div class="line">                    <span class="keyword">continue</span>;</div><div class="line">                Q.push(to);</div><div class="line">                p = A[u].fail;</div><div class="line">                <span class="keyword">while</span> (p != <span class="number">-1</span>) &#123;</div><div class="line">                    pto = <span class="built_in">abs</span>(A[p].base) + i;</div><div class="line">                    <span class="keyword">if</span> (p != <span class="built_in">abs</span>(A[pto].check))</div><div class="line">                        p = A[p].fail;</div><div class="line">                    <span class="keyword">else</span></div><div class="line">                        <span class="keyword">break</span>;</div><div class="line">                &#125;</div><div class="line">                <span class="keyword">if</span> (p == <span class="number">-1</span>)</div><div class="line">                    A[to].fail = <span class="number">0</span>;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    A[to].fail = <span class="built_in">abs</span>(A[p].base) + i;</div><div class="line">                A[to].val = A[A[to].fail].val + (A[to].base &lt; <span class="number">0</span>);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">query</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *s)</span> </span>&#123;</div><div class="line">        <span class="keyword">int</span> st = <span class="number">0</span>, c, to;</div><div class="line">        <span class="keyword">int</span> matched = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; s[i]; i++) &#123;</div><div class="line">            c = toIndex(s[i]);</div><div class="line">            <span class="keyword">do</span> &#123;</div><div class="line">                to = <span class="built_in">abs</span>(A[st].base) + c;</div><div class="line">                <span class="keyword">if</span> (st != <span class="built_in">abs</span>(A[to].check) &amp;&amp; st != <span class="number">0</span>)</div><div class="line">                    st = A[st].fail;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    <span class="keyword">break</span>;</div><div class="line">            &#125; <span class="keyword">while</span> (<span class="literal">true</span>);</div><div class="line">            to = <span class="built_in">abs</span>(A[st].base) + c;</div><div class="line">            <span class="keyword">if</span> (st != <span class="built_in">abs</span>(A[to].check))</div><div class="line">                st = <span class="number">0</span>;</div><div class="line">            <span class="keyword">else</span></div><div class="line">                st = to;</div><div class="line">            matched += A[st].val;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> matched;</div><div class="line">    &#125;</div><div class="line">&#125; tree;</div><div class="line"><span class="keyword">char</span> s[<span class="number">1048576</span>];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> n, m, cases = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n) == <span class="number">1</span>) &#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Case #%d:\n"</span>, ++cases);</div><div class="line">        tree.init();</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">            tree.insert(s);</div><div class="line">        &#125;</div><div class="line">        tree.build();</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;m);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">            <span class="keyword">int</span> t = tree.query(s);</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, t);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="vector-base"><a href="#vector-base" class="headerlink" title="vector + base"></a>vector + base</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXCHAR 62</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXS (3000005)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXNODE 1200000</span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ACmachine</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Node</span> &#123;</span></div><div class="line">    	<span class="built_in">vector</span>&lt;Node*&gt; link;</div><div class="line">        Node *fail;</div><div class="line">        <span class="keyword">int</span> cnt, val, base;</div><div class="line">        Node() &#123;</div><div class="line">            fail = <span class="literal">NULL</span>;</div><div class="line">            cnt = val = <span class="number">0</span>;</div><div class="line">            base = <span class="number">128</span>, link = <span class="built_in">vector</span>&lt;Node*&gt;(<span class="number">0</span>, <span class="literal">NULL</span>);</div><div class="line">        &#125;</div><div class="line">        <span class="function">Node* <span class="title">next</span><span class="params">(<span class="keyword">int</span> c)</span> </span>&#123;</div><div class="line">        	<span class="keyword">if</span> (c - base &lt; <span class="number">0</span>)				<span class="keyword">return</span> <span class="literal">NULL</span>;</div><div class="line">        	<span class="keyword">if</span> (c - base &gt;= link.size())	<span class="keyword">return</span> <span class="literal">NULL</span>;</div><div class="line">        	<span class="keyword">return</span> link[c - base];</div><div class="line">        &#125;</div><div class="line">        <span class="function"><span class="keyword">void</span> <span class="title">change</span><span class="params">(<span class="keyword">int</span> c, Node *p)</span> </span>&#123;</div><div class="line">        	<span class="keyword">if</span> (c &gt;= base &amp;&amp; c - base &lt; link.size()) &#123;</div><div class="line">        		link[c-base] = p;</div><div class="line">        	&#125; <span class="keyword">else</span> &#123;</div><div class="line">        		<span class="keyword">int</span> nb = min(base, c), mx = max(base+(<span class="keyword">int</span>)link.size()<span class="number">-1</span>, c);</div><div class="line">        		<span class="keyword">if</span> (base == <span class="number">128</span>)	mx = c;</div><div class="line">        		<span class="built_in">vector</span>&lt;Node*&gt; co(mx-nb+<span class="number">1</span>, <span class="literal">NULL</span>);</div><div class="line">        		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; link.size(); i++)</div><div class="line">        			co[i+base-nb] = link[i];</div><div class="line">        		link = co, base = nb;</div><div class="line">        		link[c-base] = p;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125; nodes[MAXNODE];</div><div class="line">    Node *root;</div><div class="line">    <span class="keyword">int</span> size;</div><div class="line">    <span class="function">Node* <span class="title">getNode</span><span class="params">()</span> </span>&#123;</div><div class="line">    	assert(size &lt; MAXNODE);</div><div class="line">        Node *p = &amp;nodes[size++];</div><div class="line">        *p = Node();</div><div class="line">        <span class="keyword">return</span> p;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</div><div class="line">        size = <span class="number">0</span>;</div><div class="line">        root = getNode();</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">toIndex</span><span class="params">(<span class="keyword">char</span> c)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">isdigit</span>(c))	<span class="keyword">return</span> c - <span class="string">'0'</span>;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">isupper</span>(c)) <span class="keyword">return</span> c - <span class="string">'A'</span> + <span class="number">10</span>;</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">islower</span>(c))	<span class="keyword">return</span> c - <span class="string">'a'</span> + <span class="number">26</span> + <span class="number">10</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">insert</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> str[])</span> </span>&#123;</div><div class="line">        Node *p = root;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, idx; str[i]; i++) &#123;</div><div class="line">            idx = toIndex(str[i]);</div><div class="line">            <span class="keyword">if</span> (p-&gt;next(idx) == <span class="literal">NULL</span>)</div><div class="line">                p-&gt;change(idx, getNode());</div><div class="line">            p = p-&gt;next(idx);</div><div class="line">        &#125;</div><div class="line">        p-&gt;cnt = <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span> </span>&#123; <span class="comment">// AC automation</span></div><div class="line">        <span class="built_in">queue</span>&lt;Node*&gt; Q;</div><div class="line">        Node *u, *p;</div><div class="line">        Q.push(root), root-&gt;fail = <span class="literal">NULL</span>;</div><div class="line">        <span class="keyword">while</span> (!Q.empty()) &#123;</div><div class="line">            u = Q.front(), Q.pop();</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; MAXCHAR; i++) &#123;</div><div class="line">                <span class="keyword">if</span> (u-&gt;next(i) == <span class="literal">NULL</span>)</div><div class="line">                    <span class="keyword">continue</span>;</div><div class="line">                Q.push(u-&gt;next(i));</div><div class="line">                p = u-&gt;fail;</div><div class="line">                <span class="keyword">while</span> (p != <span class="literal">NULL</span> &amp;&amp; p-&gt;next(i) == <span class="literal">NULL</span>)</div><div class="line">                    p = p-&gt;fail;</div><div class="line">                <span class="keyword">if</span> (p == <span class="literal">NULL</span>)</div><div class="line">                    u-&gt;next(i)-&gt;fail = root;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    u-&gt;next(i)-&gt;fail = p-&gt;next(i);</div><div class="line">                u-&gt;next(i)-&gt;val = u-&gt;next(i)-&gt;fail-&gt;val + u-&gt;next(i)-&gt;cnt;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">query</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> str[])</span> </span>&#123;</div><div class="line">        Node *u = root, *p;</div><div class="line">        <span class="keyword">int</span> matched = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, idx; str[i]; i++) &#123;</div><div class="line">            idx = toIndex(str[i]);</div><div class="line">            <span class="keyword">while</span> (u-&gt;next(idx) == <span class="literal">NULL</span> &amp;&amp; u != root)</div><div class="line">                u = u-&gt;fail;</div><div class="line">            u = u-&gt;next(idx);</div><div class="line">            u = (u == <span class="literal">NULL</span>) ? root : u;</div><div class="line">            p = u;</div><div class="line">            matched += p-&gt;val;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> matched;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">free</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> ;</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line">ACmachine disk;</div><div class="line"><span class="keyword">char</span> s[<span class="number">1048576</span>];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> n, m, cases = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n) == <span class="number">1</span>) &#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Case #%d:\n"</span>, ++cases);</div><div class="line">        disk.init();</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">            disk.insert(s);</div><div class="line">        &#125;</div><div class="line">        disk.build();</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;m);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">            <span class="keyword">int</span> t = disk.query(s);</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, t);</div><div class="line">        &#125;</div><div class="line">        disk.<span class="built_in">free</span>();</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/15/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><a class="page-number" href="/page/18/">18</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/17/">Next &raquo;</a>
@@ -928,7 +1128,7 @@ N_y = \begin{bmatrix}
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">35</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">12</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">35</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">12</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -938,6 +1138,14 @@ N_y = \begin{bmatrix}
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/08/15/diary-202108/">
+              
+                <i class="icon-file-o"></i> 
+              
+            被預告要開始管人的我，今天開始學管理？</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/08/14/work/company-ghost-story-12/">
@@ -1011,14 +1219,6 @@ N_y = \begin{bmatrix}
             二八進展</a>
           </li>
         
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-globl-var/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Global Variable</a>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -1027,15 +1227,9 @@ N_y = \begin{bmatrix}
     <div class="widget-wrap">
     <h3 class="widget-title">Links</h3>
     <div class="widget">   
-      	<ul>
-	      <li><a href="http://mypaper.pchome.com.tw/zerojudge" target="_blank" title="Old Blog"><i class="icon-star"></i> Morris' Blog (pchome)</a></li>
-	      <li><a href="http://flere114.blogspot.tw/" target="_blank" title="蘿莉勿觸"><i class="icon-googles"></i> flere's Blog</a></li>
-	      <li><a href="http://dreamoon4.blogspot.tw/" target="_blank" title="夢月"><i class="icon-googles"></i> dreamoon's Blog</a></li>
-	      <li><a href="http://m80126colin.github.io" target="_blank" title="許胖們"><i class="icon-github-alt"></i> m80126colin's Blog</a></li>
-	      <li><a href="http://sd12582000.blogspot.tw/" target="_blank" title="妮可妮可"><i class="icon-github-alt"></i> Nico's Blog</a></li>
-	      <li><a href="http://kuoe0.logdown.com/" target="_blank" title="郭至軒大神"><i class="icon-github-alt"></i> KuoE0's Dots</a></li>
-	      <li><a href="http://tyan.io/" title=""><i class="icon-github-alt"></i> Tyan Blog</a></li>
-    	</ul>
+        <ul>
+          <li><a href="http://mypaper.pchome.com.tw/zerojudge" target="_blank" title="Old Blog"><i class="icon-star"></i> Morris' Blog (pchome)</a></li>
+        </ul>
     </div>
 </div>
 

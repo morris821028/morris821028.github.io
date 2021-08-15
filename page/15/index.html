@@ -89,6 +89,63 @@
           
           <section id="main">
   
+    <article id="post-uva-13032" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/02/08/uva-13032/" class="article-date">
+  <time datetime="2016-02-08T02:02:34.000Z" itemprop="datePublished">2016-02-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/02/08/uva-13032/">UVa 13032 - Marbles in Jars</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/02/08/uva-13032/" data-id="cksbltjn000yjpovnxlbm58na" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/02/08/uva-13032/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dp/">dp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計數/">計數</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>有 <span>$N$</span><!-- Has MathJax --> 個罐子，其中有一個罐子放置彈珠時，每一個彈珠重量會是其他罐子的 1.1 倍，也就是說其中有一個魔法罐子，在魔法罐子中的彈珠都會特別重。現在限制每一個罐子放置彈珠的數量，請問有多少放置彈珠方案，可以找到魔法罐子。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">3</div><div class="line">3</div><div class="line">1 2 3</div><div class="line">3</div><div class="line">1 2 2</div><div class="line">2</div><div class="line">2 2</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">Case 1: 1</div><div class="line">Case 2: 0</div><div class="line">Case 3: 2</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>從題目描述中理解到，要找到魔法罐子最簡單的策略就是每一個罐子都擁有不同數量的彈珠，由於每一個罐子限制彈珠數量不一致，做起來就稍微複雜。</p>
+<p>假設先依照可仿製彈珠數量多寡排序，將放置少量的彈珠優先放置在前面，依序討論放入新的罐子又與之前放置不同個數的彈珠的方法數。</p>
+<p>定義 <code>dp[i][j]</code> 為前 <span>$i$</span><!-- Has MathJax --> 個罐子，其中有一罐放置最多的彈珠 <span>$j$</span><!-- Has MathJax --> 個。由於已經由小到大排序好，放入新的罐子，分成兩種情況考慮，其中一種是比 <span>$i$</span><!-- Has MathJax --> 個罐子放置更多的彈珠，不然就是放置較少的彈珠數量，數學組合一下即可。時間複雜度 <span>$\mathcal{O}(N M^2)$</span><!-- Has MathJax --></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> MOD = <span class="number">1000000007</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> testcase, cases = <span class="number">0</span>;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="keyword">int</span> N, M[<span class="number">128</span>];</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;N);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;M[i]);</div><div class="line">        sort(M+<span class="number">1</span>, M+<span class="number">1</span>+N);</div><div class="line">        </div><div class="line">        <span class="keyword">long</span> <span class="keyword">long</span> dp[<span class="number">128</span>][<span class="number">128</span>] = &#123;&#125;;</div><div class="line">        dp[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= M[i]; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (j - (i<span class="number">-1</span>) &gt;= <span class="number">0</span>) &#123;</div><div class="line">                    dp[i][j] = dp[i][j] + dp[i<span class="number">-1</span>][j] * (j - (i<span class="number">-1</span>));</div><div class="line">                    dp[i][j] %= MOD;</div><div class="line">                &#125;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> k = j+<span class="number">1</span>; k &lt;= M[i]; k++) &#123;</div><div class="line">                    dp[i][k] = dp[i][k] + dp[i<span class="number">-1</span>][j];</div><div class="line">                    dp[i][k] %= MOD;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= M[N]; i++)</div><div class="line">            ret = (ret + dp[N][i])%MOD;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Case %d: %lld\n"</span>, ++cases, ret);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-uva-13038" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/02/02/uva-13038/" class="article-date">
@@ -114,7 +171,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/02/uva-13038/" data-id="cksb6g9lo00ubd8vnpwfllrl8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/02/uva-13038/" data-id="cksbltjn200yppovnuqadwbuj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/02/uva-13038/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -169,7 +226,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/02/uva-13005/" data-id="cksb6g9l200sud8vn9ahzthpd" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/02/uva-13005/" data-id="cksbltjmo00xtpovnvdts79xm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/02/uva-13005/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -225,7 +282,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/" data-id="cksb6g9ah000cd8vn9f5pfifs" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/" data-id="cksbltj7y000hpovnn3vgch0e" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -296,7 +353,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/24/zj-b685/" data-id="cksb6g9qp015vd8vn8yplsqd0" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/24/zj-b685/" data-id="cksbltjt201bgpovnlkmhql4x" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/24/zj-b685/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -353,7 +410,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/24/uva-12415/" data-id="cksb6g9j900okd8vnqylpc9zv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/24/uva-12415/" data-id="cksbltjku00tkpovnd09x0ifd" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/24/uva-12415/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -418,7 +475,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/" data-id="cksb6g9eu00cgd8vn14vxqyys" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/" data-id="cksbltjgk00igpovnnsg26xzu" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/22/mproblem-sort-array-limited-memory/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -478,7 +535,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/plPcy1p.jpg" rel="gallery_cksb6g9e900atd8vnpr76bz5s">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/plPcy1p.jpg" rel="gallery_cksbltjg000gwpovn7e41u8hp">
         <img src="http://i.imgur.com/plPcy1p.jpg" itemprop="image">
       </a>
     
@@ -497,7 +554,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/" data-id="cksb6g9e900atd8vnpr76bz5s" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/" data-id="cksbltjg000gwpovn7e41u8hp" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -574,7 +631,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="cksb6g9fe00e1d8vno06qy20v" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="cksbltjh900kbpovn9pr3pvqj" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -750,7 +807,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="cksb6g9fh00ead8vnc858w7s3" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="cksbltjhb00kjpovnq8lcqloz" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-environment-lights/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -858,277 +915,6 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
 
 
   
-    <article id="post-rendering-realistic-camera" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/01/21/rendering-realistic-camera/" class="article-date">
-  <time datetime="2016-01-21T08:35:46.000Z" itemprop="datePublished">2016-01-21</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/01/21/rendering-realistic-camera/">pbrt-v2 加速結構 Realistic Camera 改寫</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="cksb6g9fg00e7d8vn84iqfwi4" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h3 id="Ray-Sphere-Intersection"><a href="#Ray-Sphere-Intersection" class="headerlink" title="Ray Sphere Intersection"></a>Ray Sphere Intersection</h3><p>計算射線和球體的交點，可以參照 <code>/pbrt-v2/shapes/sphere.cpp</code> 中 <code>bool Shpere::Intersect()</code> 的算法。</p>
-<p>假設球體圓心座標 <span>$O$</span><!-- Has MathJax -->，射線單位向量 <span>$I$</span><!-- Has MathJax --> 的起點座標 <span>$C$</span><!-- Has MathJax -->，且最近目標交點座標 <span>$P$</span><!-- Has MathJax -->，原半徑 <span>$\mathrm{radius}$</span><!-- Has MathJax -->。射線走單位時間 <span>$t$</span><!-- Has MathJax --> 會到達球面上。</p>
-<ul>
-<li><span>$\overrightarrow{OC} + \overrightarrow{I} \times t = \overrightarrow{OP}$</span><!-- Has MathJax --></li>
-<li><span>$|\overrightarrow{OP}| = \text{radius}$</span><!-- Has MathJax --></li>
-<li><span>$|\overrightarrow{OC} + \overrightarrow{I} \times t| = |\overrightarrow{OP}|$</span><!-- Has MathJax --></li>
-<li><span>$|\overrightarrow{I}|^2 t^2 + 2 \; (\overrightarrow{OC} \cdot \overrightarrow{I}) \; t + |\overrightarrow{OC}|^2 - \text{radius}^2 = 0$</span><!-- Has MathJax -->
-</li>
-</ul>
-<p>解一元二次方程式之後可以得到 <span>$t$</span><!-- Has MathJax --> 得值，並得到交點座標 <span>$P$</span><!-- Has MathJax -->。</p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/hw2_circle_intersect.png" alt=""></p>
-<h3 id="Snell’s-Law"><a href="#Snell’s-Law" class="headerlink" title="Snell’s Law"></a>Snell’s Law</h3><p>根據物理法則斯乃爾定律計算折射的方向向量，課程中提供三種做法。</p>
-<p>變數解釋：入射介面材質 <span>$\eta_1$</span><!-- Has MathJax -->，折射介面材質 <span>$\eta_2$</span><!-- Has MathJax -->，入射單位向量 <span>$\overrightarrow{I}$</span><!-- Has MathJax -->，交點面法向量 <span>$\overrightarrow{N}$</span><!-- Has MathJax -->，折射方向向量 <span>$\overrightarrow{T}$</span><!-- Has MathJax --></p>
-<p>特別小心 <code>ray-&gt;d = Normalize(ray-&gt;d)</code> 的處理，Heckbert’s Method 計算維持在單位圓上，故不用做最後的正規化計算。</p>
-<h4 id="Whitted’s-Method"><a href="#Whitted’s-Method" class="headerlink" title="Whitted’s Method"></a>Whitted’s Method</h4><table>
-<thead>
-<tr>
-<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
-<th><span>$/$</span><!-- Has MathJax --></th>
-<th><span>$\times$</span><!-- Has MathJax --></th>
-<th><span>$+$</span><!-- Has MathJax --></th>
-<th>compute</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>1</td>
-<td></td>
-<td></td>
-<td><span>$n = \eta_1 / \eta_2$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td>3</td>
-<td>3</td>
-<td>2</td>
-<td><span>$I&apos; = I / (-I \cdot N)$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-<td>3</td>
-<td><span>$J = I&apos; + N$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td>1</td>
-<td>8</td>
-<td>5</td>
-<td><span>$\alpha = 1 / \sqrt{n^2(I&apos; \cdot I&apos;) - (J \cdot J)}$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>3</td>
-<td>3</td>
-<td><span>$T&apos; = \alpha J - N$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td>3</td>
-<td>3</td>
-<td>2</td>
-<td><span>$T&apos; = T&apos; / \| T&apos; \|$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>2</td>
-<td>8</td>
-<td>17</td>
-<td>15</td>
-<td>TOTAL</td>
-</tr>
-</tbody>
-</table>
-<h4 id="Heckbert’s-Method"><a href="#Heckbert’s-Method" class="headerlink" title="Heckbert’s Method"></a>Heckbert’s Method</h4><table>
-<thead>
-<tr>
-<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
-<th><span>$/$</span><!-- Has MathJax --></th>
-<th><span>$\times$</span><!-- Has MathJax --></th>
-<th><span>$+$</span><!-- Has MathJax --></th>
-<th>compute</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>1</td>
-<td></td>
-<td></td>
-<td><span>$\eta = \eta_1 / \eta_2$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>3</td>
-<td>2</td>
-<td><span>$c_1 = - I \cdot N$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td></td>
-<td>3</td>
-<td>2</td>
-<td><span>$c_2 = \sqrt{1 - \eta^2(1 - c_1^2)}$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>7</td>
-<td>4</td>
-<td><span>$T = \eta I + (\eta c_1 - c_2) N$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td>1</td>
-<td>13</td>
-<td>8</td>
-<td>TOTAL</td>
-</tr>
-</tbody>
-</table>
-<h4 id="Other-Method"><a href="#Other-Method" class="headerlink" title="Other Method"></a>Other Method</h4><table>
-<thead>
-<tr>
-<th><span>$\sqrt{}$</span><!-- Has MathJax --></th>
-<th><span>$/$</span><!-- Has MathJax --></th>
-<th><span>$\times$</span><!-- Has MathJax --></th>
-<th><span>$+$</span><!-- Has MathJax --></th>
-<th>compute</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>1</td>
-<td></td>
-<td></td>
-<td><span>$n = \eta_2 / \eta_1$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td>3</td>
-<td>2</td>
-<td><span>$c_1 = - I \cdot N$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td></td>
-<td>2</td>
-<td>3</td>
-<td><span>$\beta = c_1 \sqrt{n^2 - 1 + c_1^2}$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td></td>
-<td>3</td>
-<td>3</td>
-<td>3</td>
-<td><span>$T = (I + \beta N ) / n$</span><!-- Has MathJax --></td>
-</tr>
-<tr>
-<td>1</td>
-<td>4</td>
-<td>8</td>
-<td>8</td>
-<td>TOTAL</td>
-</tr>
-</tbody>
-</table>
-<p>其中以 Heckbert’s Method 消耗最少計算數。如果除法速度快於乘法，則使用 Other Method，原則上很少有機器運算除法比乘法快。</p>
-<h3 id="RasterToCamera"><a href="#RasterToCamera" class="headerlink" title="RasterToCamera"></a>RasterToCamera</h3><p>這部分處理後得到 <code>Transform RasterToCamera</code>。若計算錯誤，會造成一片黑或者圖片顯示的大小問題。座標轉換處理細節可以參考實際的例子，如下圖所示：</p>
-<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/cambasic1A.png" alt="http://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays"></p>
-<ul>
-<li>Raster-To-NDC 轉換矩陣 <span>$A=\text{Scale}(scale, scale, 1)$</span><!-- Has MathJax -->，進行縮放。</li>
-<li>NDC-To-Camera 轉換矩陣 <span>$B=\text{Translate}(Vector(0, 0, filedistance)) \times \text{Translate}(Vector(X, -Y, 0))$</span><!-- Has MathJax -->，進行位移。</li>
-<li>最後得到 RasterToCamera 轉換矩陣 <span>$C= B \times A \times \text{Scale}(-1, 1, 1)$</span><!-- Has MathJax -->，最後將 x 軸顛倒以符合成像問題。</li>
-</ul>
-<h3 id="Ray-Weight"><a href="#Ray-Weight" class="headerlink" title="Ray Weight"></a>Ray Weight</h3><p>作業要求經過 <code>float GenerateRay()</code> 回傳 <span>$\mathrm{weight} = \frac{\cos^4 \theta&apos;}{Z^2}$</span><!-- Has MathJax -->，這麼設置會過暗，根據論文 A Realistic Camera Model for Computer Graphics 中寫道</p>
-<blockquote>
-<p>If the exit pupil subtends a small solid angle from <span>$x&apos;$</span><!-- Has MathJax -->, <span>$\theta&apos;$</span><!-- Has MathJax --> can be assumed to be constant and equal the angle between <span>$x&apos;$</span><!-- Has MathJax --> and the center of the disk. This allows us to simplify<br><span>$E(x&apos;) = \int_{x&apos;&apos; \in D} L(x&apos;&apos;, x&apos;) \frac{\cos \theta&apos; \cos \theta&apos;&apos;}{\| x&apos;&apos; - x&apos;\|} dA&apos;&apos;$&lt;span&gt;$to:$&lt;/span&gt;&lt;!-- Has MathJax --&gt;$E(x&rsquo;) = L \frac{A}{Z^2} \cos^4 \theta&rsquo;$</span><!-- Has MathJax --><br>where <span>$Z$</span><!-- Has MathJax --> is the axial distance from the film plane to the dist and <span>$A$</span><!-- Has MathJax --> is the area of the disk. </p>
-</blockquote>
-<p><img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/paperfigure6.jpg" alt="A Realistic Camera Model for Computer Graphics: Figure 6"></p>
-<p>因此需要額外乘上常數 <span>$A$</span><!-- Has MathJax -->，其中 <span>$A$</span><!-- Has MathJax --> 是最裡層的透鏡面積，因為我們是根據最裡層的透鏡面做均勻取樣，得到 <span>$A = \mathit{backLens.radius}^2 \pi$</span><!-- Has MathJax -->。</p>
-<h3 id="Sampling"><a href="#Sampling" class="headerlink" title="Sampling"></a>Sampling</h3><p>單位圓均勻取樣方法有以下兩種，而非均勻取樣的寫法可參照 Sample 3 (錯誤的做法參照) 出來的效果看出。</p>
-<h4 id="Sampling-1"><a href="#Sampling-1" class="headerlink" title="Sampling 1"></a>Sampling 1</h4><p>採用內建函數 <code>CencentricSampleDisk()</code>，採用 A Low Distortion Map Between Disk and Square 論文中提到的方案，將一個正方形壓縮到一個圓形中。參照作法如下圖所示  <img src="http://morris821028.github.io/hw-rendering/homework2/submission/images/pbrt_low_distortion.gif" alt=""></p>
-<p>其中給定 <span>$a, b$</span><!-- Has MathJax --> 均勻分布 <span>$[0, 1]$</span><!-- Has MathJax -->，則得到 <span>$r = a, \; \phi = \frac{\pi}{4} \frac{b}{a}$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。</p>
-<h4 id="Sampling-2"><a href="#Sampling-2" class="headerlink" title="Sampling 2"></a>Sampling 2</h4><p>採用教科書上提供，其中給定 <span>$a, b$</span><!-- Has MathJax --> 均勻分布 <span>$[0, 1]$</span><!-- Has MathJax -->，令 <span>$r = \sqrt{a}, \; \phi = 2 \pi b$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。</p>
-<h4 id="Sampling-3"><a href="#Sampling-3" class="headerlink" title="Sampling 3"></a>Sampling 3</h4><p>分布 <span>$[0, 1]$</span><!-- Has MathJax -->，令 <span>$r = a, \; \phi = 2 \pi b$</span><!-- Has MathJax -->，最後計算得到座標 <span>$x = r \cos \phi, \; y = r \sin \phi$</span><!-- Has MathJax -->。這種寫法在相同半徑下，角度均勻分布，不同半徑下的周長與 <span>$r$</span><!-- Has MathJax --> 成正比，導致不同半徑的取樣點不均勻，越靠近中心點取樣越密集，意即容易造成中心點看起來較亮。</p>
-<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
-<li><a href="http://blog.csdn.net/codeboycjy/article/details/6225886" target="_blank" rel="external">PBRT学习笔记：在单位圆内部均匀采样 -<br>codeboycjy的专栏</a></li>
-</ul>
-<h2>Final Images Rendered Compare 4 samples</h2>
-
-<p></p><h4>Gauss Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.dgauss_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-<p></p><h4>Fisheye Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.fisheye_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-<p></p><h4>Telephoto Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.telephoto_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-
-<p></p><h4>Wide-Angle Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.wide_4.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-<h2>Final Images Rendered Compare 512 samples</h2>
-
-<p></p><h4>Gauss Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.dgauss_512ref.jpg"><br>         <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.dgauss_512.jpg"><br>        <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.dgauss_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.dgauss_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-<p></p><h4>Fisheye Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.fisheye_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.fisheye_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-<p></p><h4>Telephoto Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.telephoto_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.telephoto_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-
-
-<p></p><h4>Wide-Angle Lens</h4><p></p>
-<table border="0" width="100%" cellspacing="0" cellpadding="0"><br>  <tr><br>     <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/ref/dof-dragons.wide_512ref.jpg"><br>      <p><font><tt>Reference</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling1/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 1)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling2/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 2)</tt></font></p><p><br>    </p></td><br>    <td width="25%"><img border="0" src="http://morris821028.github.io/hw-rendering/homework2/submission/images/expr/sampling3/dof-dragons.wide_512.jpg"><br>      <p><font><tt>My Implementation (Sampling 3)</tt></font></p><p><br>    </p></td><br>  </tr><br></table>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/14/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/85/">85</a><a class="extend next" rel="next" href="/page/16/">Next &raquo;</a>
@@ -1144,7 +930,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">35</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">12</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">46</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">35</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">12</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1154,6 +940,14 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/08/15/diary-202108/">
+              
+                <i class="icon-file-o"></i> 
+              
+            被預告要開始管人的我，今天開始學管理？</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/08/14/work/company-ghost-story-12/">
@@ -1227,14 +1021,6 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
             二八進展</a>
           </li>
         
-          <li>
-            <a class="text" href="/2021/01/31/work/meme-globl-var/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Global Variable</a>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -1243,15 +1029,9 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
     <div class="widget-wrap">
     <h3 class="widget-title">Links</h3>
     <div class="widget">   
-      	<ul>
-	      <li><a href="http://mypaper.pchome.com.tw/zerojudge" target="_blank" title="Old Blog"><i class="icon-star"></i> Morris' Blog (pchome)</a></li>
-	      <li><a href="http://flere114.blogspot.tw/" target="_blank" title="蘿莉勿觸"><i class="icon-googles"></i> flere's Blog</a></li>
-	      <li><a href="http://dreamoon4.blogspot.tw/" target="_blank" title="夢月"><i class="icon-googles"></i> dreamoon's Blog</a></li>
-	      <li><a href="http://m80126colin.github.io" target="_blank" title="許胖們"><i class="icon-github-alt"></i> m80126colin's Blog</a></li>
-	      <li><a href="http://sd12582000.blogspot.tw/" target="_blank" title="妮可妮可"><i class="icon-github-alt"></i> Nico's Blog</a></li>
-	      <li><a href="http://kuoe0.logdown.com/" target="_blank" title="郭至軒大神"><i class="icon-github-alt"></i> KuoE0's Dots</a></li>
-	      <li><a href="http://tyan.io/" title=""><i class="icon-github-alt"></i> Tyan Blog</a></li>
-    	</ul>
+        <ul>
+          <li><a href="http://mypaper.pchome.com.tw/zerojudge" target="_blank" title="Old Blog"><i class="icon-star"></i> Morris' Blog (pchome)</a></li>
+        </ul>
     </div>
 </div>
 
