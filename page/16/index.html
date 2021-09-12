@@ -89,6 +89,182 @@
           
           <section id="main">
   
+    <article id="post-rendering-bvh-contract-and-traversal" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/21/rendering-bvh-contract-and-traversal/" class="article-date">
+  <time datetime="2016-01-21T09:31:34.000Z" itemprop="datePublished">2016-01-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/01/21/rendering-bvh-contract-and-traversal/">pbrt-v2 加速結構 BVH-contract 改寫</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="cktgvu5pw00e5mwvnspcqg8bv" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h3 id="Description-of-implementation-approach-and-comments"><a href="#Description-of-implementation-approach-and-comments" class="headerlink" title="Description of implementation approach and comments"></a>Description of implementation approach and comments</h3><p>從一般 BVH 架構中，一般都是用 full binary tree，子節點要不 0 個要不 2 個。若有 <span>$N$</span><!-- Has MathJax --> 個 primitive 物件，則表示有 <span>$N$</span><!-- Has MathJax --> 個葉節點放置這些 primitive 物件，而有 <span>$N-1$</span><!-- Has MathJax --> 個內部節點紀錄 Bounding Box 的部分。在測試交點和遍歷走訪的使用上，最慘有一半是多餘計算和走訪，而另一半屬於加速結構。</p>
+<p>在論文 <a href="">Ray Specialized Contraction on Bounding Volume Hierarchies</a> 中，企圖想要利用 generic tree 取代一般使用 full binary tree 實作，在不更動 BVH 的效能下，減少運行上較沒用的內部節點，用以提升遍歷走訪效能，以及提升內存快取的效率。</p>
+<p>降低內部節點步驟如下所示：</p>
+<ol>
+<li>利用原生方法建立 full binary tree 的 BVH (利用各種分割策略完成)</li>
+<li>進行坍倒 (flatten)，將二元樹不連續的記憶體分布調整成線性分布，加速遍歷走訪的內存快取效率。</li>
+<li>靜態調整成 generic tree 版本，藉由啟發式收縮 (Contract)，利用節點與其子節點的 Bounding Box 表面積比例，評估浪費的走訪節點。</li>
+<li>動態調整部分，採用隨機取樣，根據取樣 ray，取樣走訪次數，將比較容易打到的節點盡可能收縮到接近根節點。</li>
+</ol>
+<p>若要收縮節點 <span>$N$</span><!-- Has MathJax -->，假設 Bounding box 計算交點花費為 <span>$C_B$</span><!-- Has MathJax -->，穿過節點 <span>$N$</span><!-- Has MathJax --> 的 Bounding box 射線機率 <span>$\alpha_N$</span><!-- Has MathJax -->，得到收縮前後的計算差值 <span>$\delta(N)$</span><!-- Has MathJax -->，如下所示。</p>
+<span>$$\begin{align}
+\delta(N) &amp;= n_{N.\text{child}} \; C_B - (\alpha_N (1+n_{N.\text{child}}) +(1 - \alpha_N)) \; C_B \\
+&amp; = ((1 - \alpha_N) \; n_{N.\text{child}} - 1) \; C_B
+\end{align}$$</span><!-- Has MathJax -->
+<p>目標讓 <span>$\delta(N) &lt; 0$</span><!-- Has MathJax -->，得到</p>
+<span>$\alpha(N) &gt; 1 - \frac{1}{n_{N.\text{child}}}$</span><!-- Has MathJax -->
+<p>計算 <span>$\delta(N)$</span><!-- Has MathJax --> 顯得要有效率，但又沒辦法全局考量，需要提供一個猜測算法，藉由部分取樣以及步驟 2. 的表面積總和比例進行收縮。</p>
+<h3 id="實作部分"><a href="#實作部分" class="headerlink" title="實作部分"></a>實作部分</h3><p>從實作中，在步驟 2. 約略可以減少 <span>$25\%$</span><!-- Has MathJax --> 的節點，在記憶體方面的影響量沒有太大影響，節點紀錄資訊也增加 (<code>sizeof(struct Node)</code> 相對地大上許多)。</p>
+<p>在步驟 3. 中，根據 pbrt-v2 的架構，加速結構能取得的場景資訊並不容易竄改，大部分的類別函數都是 <code>const function()</code>，意即無法變動 object member 的值，但針對指向位址的值可以改變。這類寫法，猜想所有加速結構都是靜態決定，在多核心運行時較不會存在同步 overhead 的影響。</p>
+<p>在此，換成另外一種修改方案，在 <code>pbrt-v2/core/scene.h</code> 的 <code>bool Scene::Intersect(...)</code> 函數中加入 <code>aggregate-&gt;tick();</code>。利用 <code>aggregate-&gt;tick();</code> 這個函數，大部分呼叫都沒有更動樹狀結構。當呼叫次數 <span>$T$</span><!-- Has MathJax --> 達到一定次數時，加速結構會進行大規模的結構調整。</p>
+<p>根據 pbrt rendering 的步驟，儘管不斷地測試或者是估計 <span>$T$</span><!-- Has MathJax --> 要設定的值，都無法接近全局的取樣評估，其中最大的原因是取樣順序和局部取樣調整，從理論上得知不可能會有比較好的結果。這樣的寫法提供簡便的方案去統計 pbrt 運算時較有可能的 ray 從哪裡射出，不用挖掘所有的不同類型 ray 進行取樣。</p>
+<p>最後，修改檔案如下：</p>
+<h4 id="修改檔案清單"><a href="#修改檔案清單" class="headerlink" title="修改檔案清單"></a>修改檔案清單</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">.</div><div class="line">├── accelerators</div><div class="line">│   ├── bvhcontract.cpp</div><div class="line">│   └── bvhcontract.h</div><div class="line">└── core</div><div class="line">    ├── api.cpp</div><div class="line">    ├── primitive.cpp</div><div class="line">    ├── primitive.h</div><div class="line">    └── scene.h</div></pre></td></tr></table></figure>
+<h4 id="core-api-cpp"><a href="#core-api-cpp" class="headerlink" title="core/api.cpp"></a><code>core/api.cpp</code></h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function">Primitive *<span class="title">MakeAccelerator</span><span class="params">(<span class="keyword">const</span> <span class="built_in">string</span> &amp;name,</span></span></div><div class="line"><span class="function"><span class="params">                           <span class="keyword">const</span> <span class="built_in">vector</span>&lt;Reference&lt;Primitive&gt; &gt; &amp;prims,</span></span></div><div class="line"><span class="function"><span class="params">                           <span class="keyword">const</span> ParamSet &amp;paramSet)</span> </span>&#123;</div><div class="line">    ...</div><div class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (name == <span class="string">"bvhcontract"</span>)</div><div class="line">        accel = CreateBVHContractAccelerator(prims, paramSet);</div><div class="line">    ...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="core-primitive-h"><a href="#core-primitive-h" class="headerlink" title="core/primitive.h"></a><code>core/primitive.h</code></h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Primitive</span> :</span> <span class="keyword">public</span> ReferenceCounted &#123;</div><div class="line"><span class="keyword">public</span>:</div><div class="line">    ...</div><div class="line">    <span class="comment">// MORRIS ADD</span></div><div class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">tick</span><span class="params">()</span></span>;</div><div class="line">    ...</div><div class="line"><span class="keyword">protected</span>:</div><div class="line">    ...</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<h4 id="core-scene-h"><a href="#core-scene-h" class="headerlink" title="core/scene.h"></a><code>core/scene.h</code></h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scene</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="comment">// Scene Public Methods</span></div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">Intersect</span><span class="params">(<span class="keyword">const</span> Ray &amp;ray, Intersection *isect)</span> <span class="keyword">const</span> </span>&#123;</div><div class="line">        ...</div><div class="line">        aggregate-&gt;tick();</div><div class="line">        ...</div><div class="line">    &#125;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<h3 id="Generic-Tree-設計與走訪測試"><a href="#Generic-Tree-設計與走訪測試" class="headerlink" title="Generic Tree 設計與走訪測試"></a>Generic Tree 設計與走訪測試</h3><p>在 Full binary tree style - BVH 實作中，利用前序走訪分配節點編號範圍 <span>$[0, 2N-1]$</span><!-- Has MathJax -->，因此節點編號 <span>$u$</span><!-- Has MathJax --> 的左子樹的編號為 <span>$u+1$</span><!-- Has MathJax -->，只需要紀錄右子樹編號 <code>secondChildOffset</code>，這種寫法在空間和走訪時的快取都有效能改善。在標準程序中也單用迭代方式即可完成，不採用遞迴走訪，減少 push stack 的指令。</p>
+<p>在 Generic tree 版本中，基礎節點紀錄架構如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">LinearTreeNode</span> &#123;</span></div><div class="line">    <span class="comment">// node link information</span></div><div class="line">    <span class="keyword">uint32_t</span> parentOffset;</div><div class="line">    <span class="keyword">uint32_t</span> childOffsetHead, childOffsetTail;</div><div class="line">    <span class="keyword">uint32_t</span> siblingOffsetNext, siblingOffsetPrev;</div><div class="line">    <span class="comment">// faster record</span></div><div class="line">    <span class="keyword">uint32_t</span> numChild;</div><div class="line">    <span class="comment">// node data</span></div><div class="line">    TreeData e;</div><div class="line">    <span class="keyword">uint32_t</span> visitCount;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<p>在原生 BVH 求交點寫法中，根據節點的 Split-Axis 以及 Ray 的方向決定先左子樹還是先右子樹走訪，藉以獲得較高的剪枝機率。但全部先左子樹走訪的快取優勢比較高 (因為前序分配節點編號)，反之在 Split-Axis 有一半的機率走會走快取優勢不高的情況，在權衡兩者之間。</p>
+<p>然而在 Generic Tree 實作上，若要提供 Split-Axis 則需要提供 <code>childOffsetTail</code> 和 <code>siblingOffsetPrev</code> 兩個指針，則多了兩個紀錄欄位，單一節點大小從 <code>sizeof(LinearBVHNode) = 32</code>拓展到 <code>sizeof(LinearBVHContractNode) = 60</code>，記憶體用量整整接近兩倍。從 Contract 算法中，節點個數保證無法減少一半，推論得到在 Contract 後記憶體用量會多一些。</p>
+<p>走訪實作上分成遞迴和迭代兩種版本，遞迴在效能上會卡在 push esp, argument 等資訊上，而在迭代版本省了 call function overhead 和空間使用，但增加計算次數。而在我撰寫的版本中，還必須 access 父節點的資訊決定要往 <code>siblingOffsetNext</code> 還是 <code>siblingOffsetprev</code>，因此快取效能從理論上嚴重下滑。</p>
+<p>遞迴和迭代走訪寫法如下：</p>
+<h4 id="遞迴版本走訪"><a href="#遞迴版本走訪" class="headerlink" title="遞迴版本走訪"></a>遞迴版本走訪</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">recursiveTraverse</span><span class="params">(LinearTreeNode *node, LinearTreeNode *_mem)</span> </span>&#123;</div><div class="line">    <span class="comment">// proess</span></div><div class="line">    <span class="keyword">uint32_t</span> offset = node-&gt;childOffsetHead;</div><div class="line">    <span class="keyword">if</span> (offset == <span class="number">-1</span>)</div><div class="line">        <span class="keyword">return</span> ;</div><div class="line">    <span class="keyword">for</span> (LinearTreeNode *u; offset != <span class="number">-1</span>; offset = u-&gt;siblingOffsetNext) &#123;</div><div class="line">        u = &amp;_mem[offset];</div><div class="line">        recursiveTraverse(u, _mem);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="迭代版本走訪"><a href="#迭代版本走訪" class="headerlink" title="迭代版本走訪"></a>迭代版本走訪</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">iteratorTraverse</span><span class="params">(<span class="keyword">uint32_t</span> offset, LinearTreeNode *_mem)</span> </span>&#123;</div><div class="line">    <span class="keyword">bool</span> process = <span class="literal">true</span>;</div><div class="line">    <span class="keyword">while</span> (offset != <span class="number">-1</span>) &#123;</div><div class="line">        LinearTreeNode *node = &amp;_mem[offset];</div><div class="line">        <span class="keyword">if</span> (process) &#123;</div><div class="line">            <span class="comment">// process</span></div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (node-&gt;childOffsetHead != <span class="number">-1</span> &amp;&amp; process) &#123;</div><div class="line">            offset = node-&gt;childOffsetHead;</div><div class="line">            process = <span class="literal">true</span>;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (node-&gt;siblingOffsetNext != <span class="number">-1</span>) &#123;</div><div class="line">            offset = node-&gt;siblingOffsetNext;</div><div class="line">            process = <span class="literal">true</span>;</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            offset = node-&gt;parentOffset;</div><div class="line">            process = <span class="literal">false</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="節點大小對走訪效能影響"><a href="#節點大小對走訪效能影響" class="headerlink" title="節點大小對走訪效能影響"></a>節點大小對走訪效能影響</h4><p>從實驗數據看來，遞迴版本比迭代版本在越大節點情況效能普遍性地好，預估是在遞迴版本造成的快取效能好上許多。</p>
+<table>
+<thead>
+<tr>
+<th>sizeof(LinearTreeNode) bytes \ Traversal</th>
+<th>Recursive</th>
+<th>Loop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>6.049s</td>
+<td>5.628s</td>
+</tr>
+<tr>
+<td>44</td>
+<td>6.651s</td>
+<td>6.817s</td>
+</tr>
+<tr>
+<td>60</td>
+<td>7.460s</td>
+<td>6.888s</td>
+</tr>
+<tr>
+<td>92</td>
+<td>9.361s</td>
+<td>9.271s</td>
+</tr>
+<tr>
+<td>156</td>
+<td>16.844s</td>
+<td>16.694s</td>
+</tr>
+<tr>
+<td>220</td>
+<td>25.294s</td>
+<td>27.031s</td>
+</tr>
+<tr>
+<td>284</td>
+<td>28.181s</td>
+<td>30.900s</td>
+</tr>
+<tr>
+<td>540</td>
+<td>28.560s</td>
+<td>33.707s</td>
+</tr>
+</tbody>
+</table>
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><p>由於 <code>tick()</code> 效果並不好，調整參數後與原生的作法差距仍然存在，單靠表面積提供的啟發式收縮，效率比加上動態結果還好。但從實驗結果中得知，實作方面存在一些尚未排除的效能障礙，在多核心部分效能差距就非常明顯，預計是在求交點時同步資料造成的 overhead 時間。</p>
+<p>而在減少的節點數量，光是啟發是的表面收縮就減少 <span>$25\%$</span><!-- Has MathJax --> 節點量，而在動態收縮處理，儘管已經探訪 <span>$10^7$</span><!-- Has MathJax --> 收縮點數量近乎微乎其微 (不到一兩百個節點)。</p>
+<table>
+<thead>
+<tr>
+<th>sences \ BVH policy</th>
+<th>Native</th>
+<th>Contract(loop)</th>
+<th>Contract(recursive)</th>
+<th>Node Reduce</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sibenik.pbrt</td>
+<td>7.000s</td>
+<td>10.502s</td>
+<td>9.411s</td>
+<td>99576 / 131457</td>
+</tr>
+<tr>
+<td>yeahright.pbrt</td>
+<td>12.297s</td>
+<td>14.638s</td>
+<td>14.210s</td>
+<td>288707 / 376317</td>
+</tr>
+<tr>
+<td>sponza-fog.pbrt</td>
+<td>16m36.037s</td>
+<td>21m09.960s</td>
+<td>20m12.012s</td>
+<td>91412 / 121155</td>
+</tr>
+</tbody>
+</table>
+<h3 id="Test-sences"><a href="#Test-sences" class="headerlink" title="Test sences"></a>Test sences</h3><ul>
+<li><a href="http://www.pbrt.org/scenes.php" target="_blank" rel="external">pbrt.org scenes</a></li>
+</ul>
+<h3 id="Reference-paper"><a href="#Reference-paper" class="headerlink" title="Reference paper"></a>Reference paper</h3><p><a href="http://www.cs.cmu.edu/~ygu1/paper/PG15/conference.pdf" target="_blank" rel="external">Ray Specialized Contraction on Bounding Volume Hierarchies, Yan Gu Yong He Guy E. Blelloch</a></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-rendering-environment-lights" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/01/21/rendering-environment-lights/" class="article-date">
@@ -114,7 +290,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="cktgns9tn00e3rovnf928iyiv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="cktgvu5py00eamwvn984nta90" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-environment-lights/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -247,7 +423,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="cktgns9tp00ebrovndpujbwra" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="cktgvu5q000eimwvnm6c2a0r4" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -518,7 +694,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="cktgns9to00e8rovnbewdntyk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="cktgvu5pz00edmwvnfpdkq0ml" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -613,7 +789,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_cktgns9tj00dvrovnwkfh8tg5">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_cktgvu5pr00dvmwvng5mhrb8f">
         <img src="http://i.imgur.com/3eq7W2z.jpg" itemprop="image">
       </a>
     
@@ -632,7 +808,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="cktgns9tj00dvrovnwkfh8tg5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="cktgvu5pr00dvmwvng5mhrb8f" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -715,7 +891,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_cktgns9tk00dyrovnujq0n2i0">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_cktgvu5ps00dxmwvn0lpbx9rn">
         <img src="http://i.imgur.com/2sHgITS.jpg" itemprop="image">
       </a>
     
@@ -734,7 +910,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="cktgns9tk00dyrovnujq0n2i0" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="cktgvu5ps00dxmwvn0lpbx9rn" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-qemu/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -817,7 +993,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_cktgns9tm00e1rovnbnefos7m">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_cktgvu5pv00e2mwvn9n3l8832">
         <img src="http://i.imgur.com/2L6Zmwa.jpg" itemprop="image">
       </a>
     
@@ -836,7 +1012,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="cktgns9tm00e1rovnbnefos7m" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="cktgvu5pv00e2mwvn9n3l8832" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -922,7 +1098,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="cktgns9oa000frovnkw14dc35" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="cktgvu5ki000fmwvne49vxejd" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -993,7 +1169,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="cktgns9o9000crovnv9qlzoxy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="cktgvu5kg000cmwvn6sx47yuy" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1049,7 +1225,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/pjV0MV0.jpg" rel="gallery_cktgns9p9002urovnxlxqjq0c">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/pjV0MV0.jpg" rel="gallery_cktgvu5lf002vmwvniuy75nft">
         <img src="http://i.imgur.com/pjV0MV0.jpg" itemprop="image">
       </a>
     
@@ -1068,7 +1244,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/10/30/diary-20151030/" data-id="cktgns9p9002urovnxlxqjq0c" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/10/30/diary-20151030/" data-id="cktgvu5lf002vmwvniuy75nft" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/10/30/diary-20151030/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1106,74 +1282,6 @@ N_y = \begin{bmatrix}
 
 
   
-    <article id="post-diary-20150827" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/08/27/diary-20150827/" class="article-date">
-  <time datetime="2015-08-27T12:31:15.000Z" itemprop="datePublished">2015-08-27</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/1P4kaQL.jpg" rel="gallery_cktgns9p8002qrovncewqn6ws">
-        <img src="http://i.imgur.com/1P4kaQL.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/08/27/diary-20150827/">不懂的點滴</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/08/27/diary-20150827/" data-id="cktgns9p8002qrovncewqn6ws" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/08/27/diary-20150827/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>對研究所本身並沒多大的興趣，但仍一不小心有那個資格讀研究所，接著就被眾人催促去讀，的確我在此外沒有專長，但也不表示對這非常擅長，「有些事情，不試試看怎知道。」此話一出，無可奈何。</p>
-<p>好不容易畢業，第一個問題除了找教授收留，另一個困擾是住宿，台大抽宿舍在我暑修英文時已經結束，連抽的資格都沒有，扣除掉北北基的同學，中籤率也只有 10% 左右，咱對此也沒有太大想法，每個月算住宿費 5000 到 8000 左右，而外頭找房子也差不多是這個價錢，套房則是接近萬元。</p>
-<p>在還沒找到住宿的地點，暫時在別人家暫住一陣子，對台北生態相當不適應，每天搭捷運上下已經成了日常生活，每日開銷多一個麵包錢，以前中央住宿去便利商店要 15 分鐘的路程，現在若要吃點好的，看來要走比較遠去覓食，看到自助餐簡直是救星，也許能連續吃一個月！</p>
-<p>研究所想要做什麼？第一次找教授目標就是算法相關，這麼說有點模糊，那用點排除法，網路硬體比較不能測試，個人對其不太感興趣，無法實作表示無法錯誤，更無法驗證理解。或者是數學梯度相關的機器學習、類神經網路，以前線代、微積分沒學好的債務，研究所估計是還不完的。</p>
-<p>後來看到平行及分散式的實驗室，感覺實驗內容範圍可以接受，做好在裡面休學的心理準備，原本打算找純算法的教授，但被教授說請三思，的確我這種半吊子的算法理解很危險，那做點稍微應用的。當然平行分散這種加速方法，有很多替代方案，加速計算 = 減少算法複雜度，兩邊可以同時做，但算法設計的概念就不同，死亡 flag 插得穩穩。</p>
-<p>進實驗室還有點緊張，在人生地不熟的環境生活，丟個垃圾都覺得麻煩，這裏人有著什麼樣的文化、必須做什麼樣的事都不懂，看著實驗室牆上的 LL 和其他動漫壁紙以及防潮箱的各種手辦，帶有一點親切感，沒想到這兒也有這樣的風情。看著實驗室的一角，充滿紙張的桌面，碩二學長再三問我「確定要選這個實驗室嗎？畢業機率去年好像是 38% 的樣子。而我們這一屆折損了一些人。」學長的話語聽來略帶威嚇，看來我走不出去了。</p>
-<p>嗯 … 不久之後要跟教授約中午買便當過去談話，說這幾週做了什麼有趣的，便當問題是一重大挑戰，要是不仔細想想，絕對送坑給教授吃。而今天聽即將學長跟老師談話，沒想到老師打錯學長的名字，學長一度覺得「老師連我的名字都沒記住，還要下星期交出大部份的論文，其實我都只有實作，然而那還不完全，根本沒辦法下筆。」看著學長不斷地訴說學術的黑暗面，他說他要從打開窗戶跳下去，那樣的畫面已經自動浮出。</p>
-<p>找教授的第一步，首先被問的是每個科目學了什麼，專題選了什麼，接著問道我解題目有沒有碰過跟實驗室相關的，接著又問近幾年 IOI 的問題有沒有碰，PTC 排程的問題有沒有看到，如果沒有就去寫寫吧！於是找完教授的幾天，過著一如往常的解題生活，順道開了幾個題坑，把以前一直沒解決的問題依序處理。</p>
-<p>如果我還活著，下次再做生存回報吧。突然跳下去什麼的 … </p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/15/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/14/">14</a><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><a class="page-number" href="/page/18/">18</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/17/">Next &raquo;</a>
@@ -1189,7 +1297,7 @@ N_y = \begin{bmatrix}
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">36</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">13</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">37</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">13</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1199,6 +1307,14 @@ N_y = \begin{bmatrix}
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/09/12/work/appreciation-letter/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Shiny People 感謝</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/09/12/work/company-ghost-story-13/">
@@ -1270,14 +1386,6 @@ N_y = \begin{bmatrix}
                 <i class="icon-file-o"></i> 
               
             Java 優化內存使用 組合篇</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/java/java-memory-optimization-1/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Java 優化內存使用 結構篇</a>
           </li>
         
       </ul>
