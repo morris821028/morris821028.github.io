@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-09-12T09:11:28.467Z</updated>
+  <updated>2021-10-29T12:10:21.494Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -15,6 +15,33 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 14</title>
+    <link href="http://morris821028.github.io/2021/10/29/work/company-ghost-story-14/"/>
+    <id>http://morris821028.github.io/2021/10/29/work/company-ghost-story-14/</id>
+    <published>2021-10-29T02:00:00.000Z</published>
+    <updated>2021-10-29T12:10:21.494Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Format-vs-Concatenation"><a href="#Format-vs-Concatenation" class="headerlink" title="Format vs. Concatenation"></a>Format vs. Concatenation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">String.format(<span class="string">"format "</span> + a + <span class="string">"%s"</span>, b);</div></pre></td></tr></table></figure><p>大部分情況，很少去生成 format string，<br>混合使用很容易遇到表示錯誤，因為當 <code>a</code> 中出現 <code>%</code> 等特殊字元時，解析上會發生錯誤。最好是統一一種使用規則。</p><h3 id="Comparator-Signum"><a href="#Comparator-Signum" class="headerlink" title="Comparator Signum"></a>Comparator Signum</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">long</span> a = func(x);</div><div class="line"><span class="keyword">long</span> b = func(y);</div><div class="line"><span class="keyword">long</span> dir = mDir;</div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) a - (<span class="keyword">int</span>) b;   <span class="comment">// SHOULD Long.compare(a, b);</span></div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) (a - b) * dir; <span class="comment">// SHOULD Long.compare(a, b) * Long.signum(dir);</span></div></pre></td></tr></table></figure><p>隨意 casting 三不五時就會 arithmetic overflow 搞砸了排序。</p><h3 id="What’s-Not-Equal"><a href="#What’s-Not-Equal" class="headerlink" title="What’s Not-Equal"></a>What’s Not-Equal</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> ((a == <span class="keyword">null</span> &amp;&amp; b != <span class="keyword">null</span>) || </div><div class="line">    (a != <span class="keyword">null</span> &amp;&amp; b == <span class="keyword">null</span>) || </div><div class="line">    !a.equals(b)) &#123;</div><div class="line">&#125;</div><div class="line"><span class="comment">// WAIT, if a == null and b == null ?</span></div><div class="line"><span class="comment">// SHOULD Objects.equals(a, b);</span></div></pre></td></tr></table></figure><p>有內建方便使用的函數，別再這樣寫了。</p><h3 id="Sync-Up"><a href="#Sync-Up" class="headerlink" title="Sync-Up"></a>Sync-Up</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Record</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">merge</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> a.setParent(b.getParent().copy());</div><div class="line">        <span class="comment">// refactor, a.setParent(b.getParent());</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Merger</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(Record r)</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            merge();</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="comment">// nothing here</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>為什麼偷偷搞了一個 Exception 又不給 log message，一不小心就 refactor 到奇怪的東西，曾經把 <code>NullPointerException</code> 視為一個正常邏輯，修掉來自另一個 call path 的 NPE，卻又踩了另一塊的雷。</p><h3 id="Keyboard"><a href="#Keyboard" class="headerlink" title="Keyboard"></a>Keyboard</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">SHIFT + INSERT = CTRL + V</div><div class="line">CTRL + C</div><div class="line">CTRL + Z + ENTER</div><div class="line">HOME/END</div></pre></td></tr></table></figure><p>大家耳熟能詳的 CTRL C+V，都不知道 CTRL+INSERT/SHIFT+INSERT，而在 X Window System 上，選取時會自動複製，不用額外按下複製操作。</p><p>至於問 INSERT/DELTE/HOME/END 是什麼的小夥伴，還是好好看清楚鍵盤吧。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;Java&quot;&gt;&lt;a href=&quot;#Java&quot; class=&quot;headerlink&quot; title=&quot;Java&quot;&gt;&lt;/a&gt;Java&lt;/h2&gt;&lt;h3 id=&quot;Format-vs-Concatenation&quot;&gt;&lt;a href=&quot;#Format-vs-Concatenatio
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+    
+      <category term="鬼故事" scheme="http://morris821028.github.io/tags/%E9%AC%BC%E6%95%85%E4%BA%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>Shiny People 感謝</title>
@@ -279,15 +306,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
+    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
-    
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -318,15 +345,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
+    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
-    
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -350,6 +377,34 @@
     
       <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
     
+    
+  </entry>
+  
+  <entry>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
+    <published>2021-01-31T05:00:00.000Z</published>
+    <updated>2021-01-31T03:39:01.704Z</updated>
+    
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+
+      
+    
+    </summary>
+    
+      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
+    
+      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
+    
+    
+      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
     
   </entry>
   
@@ -398,34 +453,6 @@
       
         &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
 &lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Handover</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:39:01.704Z</updated>
-    
-    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
 
       
     
@@ -513,37 +540,6 @@
       
         &lt;p&gt;最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。&lt;/p&gt;
 &lt;p&gt;然後，得知這一年的台灣大學資訊工
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Programming Language Impostors</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-lang/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-lang/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:04:37.709Z</updated>
-    
-    <content type="html"><![CDATA[<blockquote><p>“There are many Impostors among us”</p></blockquote><p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;blockquote&gt;
-&lt;p&gt;“There are many Impostors among us”&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。&lt;/p&gt;
-
       
     
     </summary>

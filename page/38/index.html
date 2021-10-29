@@ -89,6 +89,127 @@
           
           <section id="main">
   
+    <article id="post-lesson/NLP-project" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/01/16/lesson/NLP-project/" class="article-date">
+  <time datetime="2015-01-16T00:15:31.000Z" itemprop="datePublished">2015-01-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/自然語言/">自然語言</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/01/16/lesson/NLP-project/">自然語言處理 Project</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/01/16/lesson/NLP-project/" data-id="ckvcbhg9j027c6cvnhuewve0x" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/01/16/lesson/NLP-project/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/自然語言/">自然語言</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h1 id="Polarity-Analysis-for-Sentiment-Classification"><a href="#Polarity-Analysis-for-Sentiment-Classification" class="headerlink" title="Polarity Analysis for Sentiment Classification"></a>Polarity Analysis for Sentiment Classification</h1><h2 id="Stop-Word-List"><a href="#Stop-Word-List" class="headerlink" title="Stop Word List"></a>Stop Word List</h2><p>This stopword list is probably the most widely used stopword list. It covers a wide number of stopwords without getting too aggressive and including too many words which a user might search upon. This wordlist contains only 11 words.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">the</div><div class="line">i</div><div class="line">it</div><div class="line">he</div><div class="line">she</div><div class="line">they</div><div class="line">we</div><div class="line">you</div><div class="line">-</div><div class="line">a</div><div class="line">an</div></pre></td></tr></table></figure>
+<p>比起其他網路上的 stop word list 少了很多介系詞，原因是這樣的，例如 <code>who, whom, where, ...</code> 這些詞作為描述對象的主體，這些主體通常不可省略。例如在描述『演員很不錯，但是電影劇本很糟糕。』這段話時，根據實驗的幾種模型，如果忽略主體的存在，很容易造成描述的需求面向錯誤。必然地，無法將 <code>movie, film</code> 過濾掉，主體是相當重要的，即使他在單一詞的極性上不夠明確。</p>
+<h2 id="Parsing-Sentence"><a href="#Parsing-Sentence" class="headerlink" title="Parsing Sentence"></a>Parsing Sentence</h2><p>首先，必須把所有縮寫單位展開，當然有可能把錯誤的 <code>Bob&#39;s</code> 展開成錯誤的意思，實驗上不構成多大的影響，但以下的操作會更明確地把潛在的 feature 更清楚地劃分，而不會挑到已經重複的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">`can&apos;t` = `can not`</div><div class="line">`n&apos;t` = ` not`</div><div class="line">`&apos;re` = ` are`</div><div class="line">`&apos;m` = ` am`</div><div class="line">`&apos;s` = ` is`</div><div class="line">`&apos;ve` = ` have`</div><div class="line">`&apos;ll` = ` will`</div><div class="line">... maybe more</div></pre></td></tr></table></figure>
+<p>再來，必須針對符號轉英詞，有可能是在描述電影名稱會用到 <code>&amp;</code>，一律將其轉換成 <code>and</code> 會更有效。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">`&amp;` = ` and`</div></pre></td></tr></table></figure>
+<p>最後，語法上的變換統一。這可能會遭遇到描述『過去的版本很好，現在這個版本很糟。』也許規則應該對時間做點細部劃分。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">`am, are, is, was, were` = `be`</div><div class="line">`no` = `not`</div><div class="line">`film` = `movie`</div></pre></td></tr></table></figure>
+<p>更多的口語描述，例如 <code>uuuuuuuugggggggggglllllllllllyyyyyyy = ugly</code> 的可能，特別針對 long duplicate word 特別處理，查看濃縮之後，是否會在字典中。狀聲詞 <code>oh, wow, ah, ...</code> 可能是一個極性指標，在此就不濾掉這幾個單詞。</p>
+<p>當使用 stop word 過濾某一個句子時，剩餘的詞應該串在一起成為新的句子，而不以 stop word 分開成新的句子。</p>
+<h2 id="Filter-N-grams-Feature"><a href="#Filter-N-grams-Feature" class="headerlink" title="Filter N-grams Feature"></a>Filter N-grams Feature</h2><p>在挑選 n-grams 時，根據給定的公式，從 800 正向評論、800 反向評論中，大約會得到 50M ~ 100M 不同的 n-grams。當我們篩選 n = 3 時，<code>bad</code> 將可能被儲存為 <code>(bad, null, null)</code>。挑選時，必須保障 high order n-grams 佔有一定的數量，大約落在 <code>n-grams : (n+1)-grams = 7 : 3</code>。</p>
+<p>評分時，額外增加 high order 的評分權重，以下是程式中使用的分配。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">N-grams Bonus = &#123;1, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07&#125;;</div></pre></td></tr></table></figure>
+<p>這麼做確保實驗上有保留之前的優良，同時也增加新的元素進去。</p>
+<p>當挑選 K-top feature 時，必須將正反兩方的 feature N-grams 分別佔有約 50%，並且去掉同時挑到的情況。</p>
+<p>更多的策略，例如 <code>(bad, too, null)</code> 可以視為 <code>(too, bad, null)</code>，使用 dag 的方式紀錄 N-grams。</p>
+<h2 id="How-To-Decide-K-top"><a href="#How-To-Decide-K-top" class="headerlink" title="How To Decide K-top"></a>How To Decide K-top</h2><p>明顯地觀察到，K 越大時，Language Model 越穩定，平均效能穩定，但最好效能可能會下降，對於 Winnow algorithm 或者是 Passive-Aggressive algorithm 來說，feature vector 會非常大，造成在找到合適的參數會消耗更多的時間，並且難在有限的迭代次數中找到好的切平面。</p>
+<p>當 K 很大時，部分的 n-grams 甚至只出現在某些的 training set 中，這造成訓練 Winnow, Passive-Aggressive 的結果並不好，過於分配無用的權重給只出現在 training set 的 feature。在實驗中，挑選 K = 30000 與 K = 50000 的差異並不大，挑選的比例約為 5% 以內。</p>
+<h3 id="Improve"><a href="#Improve" class="headerlink" title="Improve"></a>Improve</h3><h4 id="LM-Classifier"><a href="#LM-Classifier" class="headerlink" title="LM Classifier"></a>LM Classifier</h4><p>關於論文中提到的 LM filter，試圖去替除掉一些主觀句子，根據每一個句子進行閥值的評測，實驗中測試到非常低的值作為閥值才具有較好的可能性，由於太高、太低都會使得準確度下降，估計這個閥值的調整不具有普遍性。</p>
+<p>而其他的 Classifier 並沒有做這類的主客觀篩選，也許可以藉由主客觀句子的判斷做一套分類器，說不定可以改善另外兩個分類器的語意判斷能力。</p>
+<h4 id="Combine-Classifier"><a href="#Combine-Classifier" class="headerlink" title="Combine Classifier"></a>Combine Classifier</h4><p>發現到 Winnow, Passive-Aggressive (PA) 都是以閥值作為判斷標準，因此當得到靠近閥值的數據下，判斷能力是相當脆弱。雖然 PA 在平均表現最好，大約落在 85% 附近，遠比 LM 和 Winnow 多了 5% ~ 10% 的準確度，如何加強？ </p>
+<p>將四個 Classifier 串在一起，並且用八個 attribute 作為一個 feature vector，接著訓練這一個感知機。這八個 attribute 分別是每一個 Classifier 的判斷強度。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(LM_POS, LM_NEG, WINNOW_POS, WINNOW_NEG, PA_POS, PA_NEG, SIMPLE_POS, SIMPLE_NEG)</div></pre></td></tr></table></figure>
+<p>其中由於 Language Model (LM) 的機率不好量化，因此單純採用 0/1 的方式表示。嘗試過取 log 發現仍然並不好。</p>
+<ul>
+<li>LM_POS : if LM.classify(x) = POS, then LM_POS = 1. Otherwise LM_POS = 0</li>
+<li>LM_NEG : if LM.classify(x) = NEG, then LM_NEG = 1. Otherwise LM_POS = 0</li>
+<li>WINNOW_POS : if Winnow.classify(x) = POS, the WINNOW_POS = Winnow.strongClassify(x).</li>
+<li>WINNOW_NEG : if Winnow.classify(x) = NEG, the WINNOW_NEG = Winnow.strongClassify(x).</li>
+</ul>
+<p>strongClassify(x) 從 training data 中得到 h(x) 的出現的最大值，然後根據將判斷的函數大小得到，<code>strongClassify(x) = h(x) / TRAINING_MAX_H_VALUE</code>，之所以不直接使用 <code>strongClassify(x) = h(x)</code> 是因為很容易造成 overflow 或者是過度的調整判斷。在實驗結果後，將後者公式調整為前者所使用的。</p>
+<p>當然可以訓練多台，並且串在一起，但是這種串法必須盡可能有所歧異性，並不是串越多越好，可以藉較少次的迭代次數、洗牌後的訓練序列來達到歧異性。PA 具有良好的適應性，在訓練集與測資集大小、差異不大時，效能仍然可以保持著線性關係，相當具有魯棒性。 </p>
+<p>在實驗觀察中可以明白感知器在越少 feature 下，可以在越少迭代次數中訓練完成，相對地適應能力就會隨差異嚴重波動，實驗中使用的幾個感知機模型，都能在 vector 得到後的幾秒內完成訓練，不用勞費 SVM 的數個小時。Language Model 則會因為 feature 越多，展現更加穩定的效能，即便如此，LM 在負面評論的辨識率仍然不高，這一點從論文中也可以看得出具有相同的現象。</p>
+<p>藉此把 LM 對於負面評論辨識率很差的特性，才將其判斷與其他的感知機串在一起使用。這一類的串許多的分類器的算法，可以參照 Adaboost (Adaptive Boosting) 的想法。</p>
+<h4 id="N-grams-Score"><a href="#N-grams-Score" class="headerlink" title="N-grams Score"></a>N-grams Score</h4><p>特別小心公式的計算，雖然有很多乘除法，可以使用 <code>Math.log</code> 降下來，防止 overflow 的可能，但同時也會造成嚴重的浮點數誤差。所以使用恰當的 <code>double</code> 運算即可，即使遇到 <code>NaN</code> 也沒有關係。</p>
+<p>論文中提及的公式，額外增加變成</p>
+<span>$\chi^{2}(t, c) = \frac{N \times (AD - CB)^{2} }{(A+C)\times (B + D) \times (A + B) \times (C + D)} \times Weight[t.getSize()] \times Score(t)$</span><!-- Has MathJax -->
+<p>其中，<code>Weight[t.getSize()]</code> 正如上述的 <code>N-grams Bonus</code>，當最大上為 <code>n = 5</code> 時，部分 unigram、bigram 仍然有用。而 <code>Score(t)</code> 則是取額外資料中的 <code>AFINN-111.txt</code> 單詞正反面的絕對值權重和，有可能正負兩個詞合併成 bigram 來描述更強烈的負面，因此必須取絕對值。</p>
+<h4 id="Vector"><a href="#Vector" class="headerlink" title="Vector"></a>Vector</h4><p>選擇 K-top feature n-grams 後，感知機的 Vector 如何放置權重仍然是個困難，從實驗中，單純拿 <code>n-grams appear times</code> 作為一個 attribute weight 效果並不好，於是嘗試拿 <code>Math.log(n-grams appear times)</code>，但是效果並不好，有可能是浮點數誤差造成的差異並不大，而 <code>Math.log</code> 本身就很小，尤其是 <code>n-grams appear times = 1</code> 的時候會變成 0，額外加上一個基底 base 來補足也拿以取捨。</p>
+<p>最後取用</p>
+<span>$vector[i] = Score(ngrams(i)) + \sqrt{n-grams(i) \text{ appear times}}$</span><!-- Has MathJax -->
+<p>這部分仍然要做實驗，<code>Score(ngrams(i))</code> 大約落在 <code>1 ~ 10</code> 之間。</p>
+<h4 id="Process"><a href="#Process" class="headerlink" title="Process"></a>Process</h4><p>經過幾次的 cross validation 後，每一次會挑到不同的 feature n-grams，藉由交叉驗證得到不同的精準度 P，同時也將挑選的 n-grams 增加 P 的權重，在實驗中總共做了 5 次 cross validation，針對同一組 800 資料，進行 <code>1 : 1</code> 的劃分。原本預期挑選 40K 個不同的 n-grams 作為 feature，但是經過 5 次實驗，總共得到 50K 個不同的 n-grams，根據累加的 P 值進行由大排到小，挑選 1/5 的 n-grams 出來，最後挑了少於 10K 個做為 feature。</p>
+<p>針對已知的 1600 筆資料進行 <code>3 : 1</code> 的劃分，先對數量較多的資料重訓練，隨後才將數量較少放在一起做第二次訓練。防止過度的訓練，導致感知器針對訓練集的已知資訊分配過多的權重，反而針對未知的元素不足以判斷。</p>
+<h2 id="extra-data-support"><a href="#extra-data-support" class="headerlink" title="extra data support"></a>extra data support</h2><ul>
+<li>AFINN-111.txt</li>
+<li>positive word list (ignore) 毫無幫助</li>
+<li>negative word list (ignore) 毫無幫助</li>
+<li>negation not (ignore) 目前發現只會更糟糕</li>
+</ul>
+<h1 id="程式撰寫"><a href="#程式撰寫" class="headerlink" title="程式撰寫"></a>程式撰寫</h1><h2 id="N-grams-Storing"><a href="#N-grams-Storing" class="headerlink" title="N-grams Storing"></a>N-grams Storing</h2><p><code>string</code> 轉 <code>integer</code> 標記。</p>
+<h2 id="How-to-improve-experiment"><a href="#How-to-improve-experiment" class="headerlink" title="How to improve experiment"></a>How to improve experiment</h2><p>先用同一份資料訓練、測試，查看是否接近 <code>P = R = 100%</code>，接著放入未知的資料，找到挑選 feature n-grams 之間的差異。</p>
+<p>列出幾個可能的差異後，從訓練的感知機中得到每一項的權重，由於是線性分類器，權重的大小即可作為是否具有特色，通常差距會達到 10 ~ 100 倍之間。即使從 N-grams score 得到較高的分數，從感知機中會發現到未必是較大的權重，有可能是某幾篇相關的電影所造成的一面倒。</p>
+<h2 id="Pseudocode"><a href="#Pseudocode" class="headerlink" title="Pseudocode"></a>Pseudocode</h2><h3 id="preprocess"><a href="#preprocess" class="headerlink" title="preprocess"></a>preprocess</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">gobal_record(n-grams, score)</div><div class="line">for i  = 0 to CROSS_VALIDATION_MAX</div><div class="line">    shuffle_order(training_data)</div><div class="line">    (ttraining, ttest) = split(training_data, 1 : 1)</div><div class="line">    Vectraining = n-grams_sieve(ttraining)</div><div class="line">    (LM, Winnow, PA) = training(Vectraining)</div><div class="line">    P = test(LM, Winnow, PA, Vectraining)</div><div class="line">    gobal_record.add(P, Vectraining)</div><div class="line"> </div><div class="line">sort gobal_record(n-grams, score) by descending order.</div><div class="line">shuffle_order(training_data)</div><div class="line"></div><div class="line">(ttraining, tretain) = split(training_data, 4 : 1)</div><div class="line">N-gramsTable = gobel_record.sublist(K)</div><div class="line">Vectraining = parsingInput(ttraining,, N-gramsTable)</div><div class="line">Vecretain= parsingInput(tretain,, N-gramsTable)</div><div class="line"></div><div class="line">(LM, Winnow, PA) = training(Vectraining)</div><div class="line">(LM, Winnow, PA) = retraining(Vecretain)</div><div class="line"></div><div class="line">simpleTest(testdata, LM, Winnow, PA)</div><div class="line">onlineTest(testdata, LM, Winnow, PA)</div></pre></td></tr></table></figure>
+<h3 id="online-test"><a href="#online-test" class="headerlink" title="online test"></a>online test</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">GROUP_SIZE = 50</div><div class="line">groups = splitEach(testdata, GROUP_SIZE)</div><div class="line">foreach(group : groups)</div><div class="line">    appear set = find(group, N-gramsTable)</div><div class="line">    (LM, Winnow, PA) = retrainingLimited(Vectraining, appear set)</div><div class="line">    foreach(data : group)</div><div class="line">        classify(LM, Winnow, PA, data)</div></pre></td></tr></table></figure>
+<h3 id="fail-online-test-idea"><a href="#fail-online-test-idea" class="headerlink" title="fail online test idea"></a>fail online test idea</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">GROUP_SIZE = 10</div><div class="line">groups = splitEach(testdata, GROUP_SIZE)</div><div class="line">foreach(group : groups)</div><div class="line">    backtracking 210 possible solution</div><div class="line">        training &amp; test</div><div class="line">        if (better performance)</div><div class="line">            record solution.</div><div class="line">Work, but not helpful.</div></pre></td></tr></table></figure>
+<h3 id="Support-N-grams-Sieve"><a href="#Support-N-grams-Sieve" class="headerlink" title="Support N-grams Sieve"></a>Support N-grams Sieve</h3><ul>
+<li>AFINN-111.txt<br>The file AFINN-111.txt contains a list of sentiment scores</li>
+<li>Stop word list<br>Small set, |S| &lt; 20</li>
+<li>Synonymous “Not” list<br>unused</li>
+<li>Abbreviation list<br>Rule, |R| &lt; 10</li>
+<li>No CRF, No Parsing tree, No Subjective filter </li>
+</ul>
+<h1 id="To-Do"><a href="#To-Do" class="headerlink" title="To Do"></a>To Do</h1><p>增加兩個不在 top feature 中的 attribute，但是在 pos/neg word weight 中的 n-grams 所評分的結果。在量化這些 n-grams 的分數時，不管正反面的強度，一律取絕對值進行加總，有可能一個正面單詞跟一個負面單詞合併在一起來表示一個更強烈的正面或反面資訊。</p>
+<p>Training Classifier with 5000 subjective and 5000 objective processed sentences.</p>
+<p>實作判斷主觀、客觀的分類器。</p>
+<p><a href="http://www.cs.cornell.edu/People/pabo/movie-review-data/" target="_blank" rel="external">http://www.cs.cornell.edu/People/pabo/movie-review-data/</a></p>
+<h1 id="Github"><a href="#Github" class="headerlink" title="Github"></a>Github</h1><script type="text/javascript" src="http://morris821028.github.io/hexo-tag-oj/jquery.githubRepoWidget.js"></script><div class="github-widget" data-repo="morris821028/NLP-SentimentClassification"></div>
+<p>感謝。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-lesson/civilization-project" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/01/14/lesson/civilization-project/" class="article-date">
@@ -114,7 +235,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/14/lesson/civilization-project/" data-id="cktr6co88028vjkvn88amzoel" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/14/lesson/civilization-project/" data-id="ckvcbhg9p027k6cvnrj4vrtxw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/14/lesson/civilization-project/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -315,7 +436,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/14/2015-facebook-hacker-cup-qualification/" data-id="cktr6cn96000cjkvnkf3txdbx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/14/2015-facebook-hacker-cup-qualification/" data-id="ckvcbhfdh000a6cvn2uq5n16s" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/14/2015-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -384,7 +505,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/lesson/database-review2/" data-id="cktr6co8n029djkvnekm0qom0" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/lesson/database-review2/" data-id="ckvcbhgax02946cvnxh4sk37b" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/lesson/database-review2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -505,7 +626,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/lesson/database-review/" data-id="cktr6co8l029ajkvnixjkrrar" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/lesson/database-review/" data-id="ckvcbhgav02916cvnfiqxa8cs" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/lesson/database-review/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -781,7 +902,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-11186/" data-id="cktr6cnmt00ugjkvndtj90pke" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/uva-11186/" data-id="ckvcbhfqq00ur6cvn2fkrzvwz" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/uva-11186/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -838,7 +959,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-904/" data-id="cktr6cntj017rjkvnkprutsvf" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/uva-904/" data-id="ckvcbhfx101886cvnjhoowk0e" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/uva-904/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -894,7 +1015,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-10729/" data-id="cktr6cnlw00spjkvnhcauffai" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/uva-10729/" data-id="ckvcbhfpw00sv6cvn2ur6ecpe" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/uva-10729/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -950,7 +1071,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-10335/" data-id="cktr6cnl900r9jkvntrvex5rm" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/uva-10335/" data-id="ckvcbhfpa00rf6cvnvkpswece" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/uva-10335/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1006,7 +1127,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-12684/" data-id="cktr6cno300x6jkvnrtil03cr" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/01/10/uva-12684/" data-id="ckvcbhfs600y06cvnjqxbzw4y" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/01/10/uva-12684/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1038,64 +1159,6 @@
 
 
   
-    <article id="post-uva-12763" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/01/10/uva-12763/" class="article-date">
-  <time datetime="2015-01-09T23:30:25.000Z" itemprop="datePublished">2015-01-10</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/01/10/uva-12763/">UVA 12763 - Dicey Dice</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/01/10/uva-12763/" data-id="cktr6cno600xdjkvn1625tluy" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/01/10/uva-12763/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/博弈/">博弈</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/窮舉/">窮舉</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>有兩個玩家 A, B，盤面上有三個骰子，先手先挑一個骰子出來，後手再從剩餘兩個骰子中挑一個。接著兩個人會分別骰出點數，骰出最大的那個玩家獲勝，如果骰出一樣點數則平手</p>
-<p>給予先手玩家，和三個六面骰子，請問獲勝機率高的玩家為何？</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">3</div><div class="line">A</div><div class="line">1 1 1 1 1 1</div><div class="line">2 3 2 4 5 3</div><div class="line">6 6 6 6 6 6</div><div class="line">A</div><div class="line">4 3 7 9 2 5</div><div class="line">8 1 4 6 9 2</div><div class="line">6 5 1 8 3 7</div><div class="line">B</div><div class="line">1 2 3 4 4 4</div><div class="line">1 2 3 4 4 4</div><div class="line">1 2 3 4 4 4</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">A</div><div class="line">B</div><div class="line">fair</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>先手必然是最大化自己的獲勝機會下，最小化對方的獲勝機會。而後手則是在剩餘兩個骰子的時候，挑選獲勝機會最高的那個骰子。</p>
-<p>因此這一題窮舉先手拿哪一個骰子，模擬後手選剩餘哪個骰子獲勝機會最高，最大化先手的獲勝機會下、最小化後手獲勝機會。</p>
-<p>題目描述相當少，就當作是兩個完美玩家吧。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> testcase;</div><div class="line">    <span class="keyword">char</span> s[<span class="number">10</span>];</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s);</div><div class="line">        <span class="keyword">int</span> player = s[<span class="number">0</span>] - <span class="string">'A'</span>;</div><div class="line">        <span class="keyword">int</span> dice[<span class="number">3</span>][<span class="number">6</span>];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; <span class="number">6</span>; j++) &#123;</div><div class="line">                <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;dice[i][j]);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">double</span> rmx = <span class="number">0</span>, rmx2 = <span class="number">1</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123; <span class="comment">// A player pick</span></div><div class="line">            <span class="keyword">double</span> mx = <span class="number">1</span>, mx2 = <span class="number">0</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; <span class="number">3</span>; j++) &#123; <span class="comment">// B player pick</span></div><div class="line">                <span class="keyword">if</span> (i == j)	<span class="keyword">continue</span>;</div><div class="line">                <span class="keyword">int</span> pa = <span class="number">0</span>, pb = <span class="number">0</span>;</div><div class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> p = <span class="number">0</span>; p &lt; <span class="number">6</span>; p++) &#123;</div><div class="line">                    <span class="keyword">for</span> (<span class="keyword">int</span> q = <span class="number">0</span>; q &lt; <span class="number">6</span>; q++) &#123;</div><div class="line">                        pa += dice[i][p] &gt; dice[j][q];</div><div class="line">                        pb += dice[i][p] &lt; dice[j][q];</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">                </div><div class="line">                <span class="keyword">if</span> (mx &gt; pa / <span class="number">36.0</span> || (mx == pa / <span class="number">36.0</span> &amp;&amp; mx2 &lt; pb/<span class="number">36.0</span>)) &#123;</div><div class="line">                    mx = pa /<span class="number">36.0</span>;</div><div class="line">                    mx2 = pb / <span class="number">36.0</span>;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> (rmx &lt; mx || (rmx == mx &amp;&amp; rmx2 &gt; mx2)) &#123;</div><div class="line">                rmx = mx;</div><div class="line">                rmx2 = mx2;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (rmx &gt; rmx2)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%c\n"</span>, player + <span class="string">'A'</span>);</div><div class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (rmx &lt; rmx2)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%c\n"</span>, <span class="number">1</span> - player + <span class="string">'A'</span>);</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="built_in">printf</span>(<span class="string">"fair\n"</span>);</div><div class="line"><span class="comment">//			printf("%lf %lf\n", rmx, rmx2);</span></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*</span></div><div class="line"><span class="comment">3</span></div><div class="line"><span class="comment">A</span></div><div class="line"><span class="comment">1 1 1 1 1 1</span></div><div class="line"><span class="comment">2 3 2 4 5 3</span></div><div class="line"><span class="comment">6 6 6 6 6 6</span></div><div class="line"><span class="comment">A</span></div><div class="line"><span class="comment">4 3 7 9 2 5</span></div><div class="line"><span class="comment">8 1 4 6 9 2</span></div><div class="line"><span class="comment">6 5 1 8 3 7</span></div><div class="line"><span class="comment">B</span></div><div class="line"><span class="comment">1 2 3 4 4 4</span></div><div class="line"><span class="comment">1 2 3 4 4 4</span></div><div class="line"><span class="comment">1 2 3 4 4 4</span></div><div class="line"><span class="comment">*/</span></div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/37/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/36/">36</a><a class="page-number" href="/page/37/">37</a><span class="page-number current">38</span><a class="page-number" href="/page/39/">39</a><a class="page-number" href="/page/40/">40</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/39/">Next &raquo;</a>
@@ -1111,7 +1174,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">37</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">13</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1121,6 +1184,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/10/29/work/company-ghost-story-14/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Company Ghost Story 公司鬼故事 14</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/09/12/work/appreciation-letter/">
@@ -1192,14 +1263,6 @@
                 <i class="icon-file-o"></i> 
               
             前思後想 新居落成</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/java/java-memory-optimization-2/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Java 優化內存使用 組合篇</a>
           </li>
         
       </ul>

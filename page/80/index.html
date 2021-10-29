@@ -89,6 +89,100 @@
           
           <section id="main">
   
+    <article id="post-lesson/hw-multiprocess-and-multithread" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/05/25/lesson/hw-multiprocess-and-multithread/" class="article-date">
+  <time datetime="2014-05-25T12:15:47.000Z" itemprop="datePublished">2014-05-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/作業系統/">作業系統</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/05/25/lesson/hw-multiprocess-and-multithread/">作業系統 multiprocess &amp; multithread 作業</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/" data-id="ckvcbhgca02aq6cvnju58n08p" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/05/25/lesson/hw-multiprocess-and-multithread/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/multiprocess/">multiprocess</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/multithread/">multithread</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h1 id="A-班程式要求"><a href="#A-班程式要求" class="headerlink" title="A 班程式要求"></a>A 班程式要求</h1><p>請使用所熟悉的程式開發環境設計單一行程產生子行程 ( Child Process ) 與 多執行緒 ( Multi-Thread) 的程式，意即完成下列傳統 for loop 之列印工作，將其改寫成多行程與多執行緒，由不同的行程與執行緒列印不同 i 值。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"output i = %d\n"</span>, i);</div></pre></td></tr></table></figure>
+<h1 id="注意事項"><a href="#注意事項" class="headerlink" title="注意事項"></a>注意事項</h1><ul>
+<li><strong> 嚴禁從網路抄襲作業 </strong>。每份程式作業將被程式比對軟體檢查，一旦發現抄襲，該份作業以零分計，並且這學期作業系統作業成績以零分計。</li>
+<li>後略</li>
+</ul>
+<blockquote>
+<p>這種作業不抄來抄去也難。但是作業格式不清楚，所以也有不同理解方式就是了。</p>
+</blockquote>
+<h1 id="開始動手"><a href="#開始動手" class="headerlink" title="開始動手"></a>開始動手</h1><p>對於將 for 迴圈改寫，我們必須認知到幾項</p>
+<ul>
+<li>是否要按照順序輸出？</li>
+<li>平台 M$, Linux, or Max OS？</li>
+</ul>
+<blockquote>
+<p>此篇假設目標是一模一樣的輸出</p>
+</blockquote>
+<h2 id="multiprocess"><a href="#multiprocess" class="headerlink" title="multiprocess"></a>multiprocess</h2><p><code>child process</code> 屬於 multiprocess 中的一種方式。為什麼這麼說呢？multiprocess 只是要求一個 CPU 中有多個工作同時在進行，藉由排程器去進行工作分配。</p>
+<p>先不管這些，要實作 <code>child process</code> 看起來只有走向 <code>fork()</code> 一途。而之前 inker 大神則是走非 child process 使用類似 <code>./nachos -e ../test/test1 -e ../test/test1</code> 的方式去運行。</p>
+<p>為了實作按照順序輸出，我們需要 process 共同擁有的 shared memory，這個 shared memory 將要紀錄原本 for 裡面的 <code>i</code> 值和一個 <code>sem_t</code>，來保證 process 和 process 之間不會同時搶先動作，<code>sem_t</code> 也許是不需要的，這裡留給實驗者去測試。</p>
+<p>為了使輸出一致，在 <code>fork()</code> 完之後，使用 <code>wait()</code> 來等待所有子程序結束。這樣會造成當 for loop 需要跑 n 次，就會總共 n 個 process，也就是一整條鏈下去。</p>
+<ul>
+<li>思考 <code>wait()</code> 和 <code>sem_t</code> 都不是這麼必要？// 這個要看寫法</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/wait.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;semaphore.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span>  MAP_ANONYMOUS</span></div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span>  MAP_ANON</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAP_ANONYMOUS MAP_ANON</span></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> *glob_var;</div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> n = <span class="number">32</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">    glob_var = (<span class="keyword">int</span> *)mmap(<span class="literal">NULL</span>, <span class="keyword">sizeof</span> *glob_var, PROT_READ | PROT_WRITE,</div><div class="line">                    MAP_SHARED | MAP_ANONYMOUS, <span class="number">-1</span>, <span class="number">0</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">sem_t</span> *sema = (<span class="keyword">sem_t</span> *)mmap(<span class="literal">NULL</span>, <span class="keyword">sizeof</span>(sema),</div><div class="line">                       PROT_READ |PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS,</div><div class="line">                       <span class="number">-1</span>, <span class="number">0</span>);</div><div class="line">    sem_init(sema, <span class="number">1</span>, <span class="number">0</span>);</div><div class="line">    *glob_var = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span> (*glob_var &lt; n) &#123;</div><div class="line">        sem_wait(sema);</div><div class="line">        <span class="keyword">int</span> pid = fork();</div><div class="line">        <span class="keyword">int</span> output = (*glob_var)++;</div><div class="line">        <span class="keyword">if</span> (output &lt; n)</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%d, pid = %d\n"</span>, output, pid);</div><div class="line">        sem_post(sema);</div><div class="line">        <span class="keyword">int</span> wpid, status = <span class="number">0</span>;</div><div class="line">        <span class="keyword">while</span> ((wpid = wait(&amp;status)) &gt; <span class="number">0</span>)</div><div class="line">        &#123;</div><div class="line">            <span class="comment">//printf("Exit status of %d was %d (%s)\n", (int)wpid, status, (status &gt; 0) ? "accept" : "reject");</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    munmap(glob_var, <span class="keyword">sizeof</span> *glob_var);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="multithread"><a href="#multithread" class="headerlink" title="multithread"></a>multithread</h2><p>Thread 就相當簡單，因為它們是共用同一個記憶體區段，因此沒有 share memory 的問題。<br>雖然使用 <code>sem_wait(&amp;sem)</code> 和 <code>sem_post(&amp;sem)</code> 來保證區域內的代碼不會同時有多個 thread 在運行，但仍遇到 <code>i = 0</code> 同時在多個 Thread 噴出的情況，這一點百思不得其解，為了解決這一切問題，使用課本提到的 <code>Producer–consumer problem</code> 寫法。</p>
+<p>希望能從代碼中看懂。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;semaphore.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"><span class="keyword">int</span> i = <span class="number">0</span>, n = <span class="number">16</span>;</div><div class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</div><div class="line"><span class="keyword">sem_t</span> sem;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAX_THREAD = <span class="number">4</span>;</div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">Producer</span><span class="params">(<span class="keyword">void</span> *arg)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n;) &#123;</div><div class="line">        sem_wait(&amp;sem);</div><div class="line">        <span class="keyword">if</span>(count == <span class="number">1</span>) &#123;</div><div class="line">            sem_post(&amp;sem);</div><div class="line">            <span class="keyword">continue</span>;</div><div class="line">        &#125;</div><div class="line">        count++;</div><div class="line">        <span class="comment">// printf("\nProducer is :%d\n", count);</span></div><div class="line">        sem_post(&amp;sem);</div><div class="line">        i++;</div><div class="line">    &#125;</div><div class="line">    pthread_exit(<span class="literal">NULL</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">runPrint</span><span class="params">(<span class="keyword">void</span> *arg)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> id = *((<span class="keyword">int</span> *) arg);</div><div class="line">    <span class="keyword">for</span> (; i &lt; n ;) &#123;</div><div class="line">        sem_wait(&amp;sem);</div><div class="line">        <span class="keyword">if</span> (count == <span class="number">0</span>) &#123;</div><div class="line">            sem_post(&amp;sem);</div><div class="line">            <span class="keyword">continue</span>;</div><div class="line">        &#125;</div><div class="line">        count--;</div><div class="line">        i++;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"loop i = %d, thread id %d\n"</span>, i, id);</div><div class="line">        sem_post(&amp;sem);</div><div class="line">    &#125;</div><div class="line">    pthread_exit(<span class="literal">NULL</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">pthread_t</span> *threads;</div><div class="line">    sem_init(&amp;sem, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    threads = (<span class="keyword">pthread_t</span> *) <span class="built_in">malloc</span>(MAX_THREAD * <span class="keyword">sizeof</span>(<span class="keyword">pthread_t</span>));</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; MAX_THREAD; i++) &#123;</div><div class="line">        <span class="keyword">int</span> *p = (<span class="keyword">int</span> *) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line">        *p = i;</div><div class="line">        pthread_create(&amp;threads[i], <span class="literal">NULL</span>, runPrint, (<span class="keyword">void</span> *)(p));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">pthread_t</span> producer;</div><div class="line">    <span class="keyword">int</span> *p = (<span class="keyword">int</span> *) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line">    *p = <span class="number">-1</span>;</div><div class="line">    pthread_create(&amp;producer, <span class="literal">NULL</span>, Producer, (<span class="keyword">void</span> *)(p));</div><div class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; MAX_THREAD; i++) &#123;</div><div class="line">        pthread_join(threads[i], <span class="literal">NULL</span>);</div><div class="line">    &#125;</div><div class="line">    sem_destroy(&amp;sem);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h2 id="後記"><a href="#後記" class="headerlink" title="後記"></a>後記</h2><p>代碼沒有寫得很完整，也就是能達到輸出相同且用符合需求，這一點是有很多漏洞的，前人也是鑽漏洞交作業的。相較之下，我們 B 班的作業略顯兇殘，但是網路上資料還真是少呢，雖然還是找地方抄和理解。</p>
+<p>測試的時候，為了保證輸出是穩定的，記得得多測試幾次，並且把數字範圍作變調，當然能不能讓一個 create thread 跑完整個迴圈呢？畢竟加上 main thread 就算是 multithread？haha</p>
+<h1 id="執行"><a href="#執行" class="headerlink" title="執行"></a>執行</h1><h2 id="編譯"><a href="#編譯" class="headerlink" title="編譯"></a>編譯</h2><ul>
+<li><p>Mac OSX</p>
+<pre><code>$ clang -pthread x.cpp -o x
+</code></pre></li>
+<li><p>Linux</p>
+<pre><code>$ gcc -lpthread x.cpp -o x
+</code></pre><h2 id="運行"><a href="#運行" class="headerlink" title="運行"></a>運行</h2></li>
+<li><p>Linux &amp; Max OSX</p>
+<pre><code>$ ./x
+</code></pre></li>
+</ul>
+<h1 id="Mac-運行問題"><a href="#Mac-運行問題" class="headerlink" title="Mac 運行問題"></a>Mac 運行問題</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">#ifndef  MAP_ANONYMOUS</div><div class="line">#ifdef  MAP_ANON</div><div class="line">#define MAP_ANONYMOUS MAP_ANON</div><div class="line">#endif</div><div class="line">#endif</div></pre></td></tr></table></figure>
+<p>不知道為什麼 clang 中沒有定義 <code>MAP_ANONYMOUS</code>，增加上述代碼後正確運行。</p>
+<h1 id="其他作業"><a href="#其他作業" class="headerlink" title="其他作業"></a>其他作業</h1><p><a href="http://morris821028.github.io/2014/05/18/operating-system-hw-thread/">B 班程式作業 1</a><br><a href="http://morris821028.github.io/2014/05/24/hw-nachos4/">B 班程式作業 2</a></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-lesson/consumption-item-1" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/05/25/lesson/consumption-item-1/" class="article-date">
@@ -105,7 +199,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="/img/sungirl3.jpg" rel="gallery_cktr6co8i0295jkvnko05dwqr">
+      <a class="article-gallery-img fancybox" href="/img/sungirl3.jpg" rel="gallery_ckvcbhgb3029c6cvng4envrcl">
         <img src="/img/sungirl3.jpg" itemprop="image">
       </a>
     
@@ -124,7 +218,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/25/lesson/consumption-item-1/" data-id="cktr6co8i0295jkvnko05dwqr" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/25/lesson/consumption-item-1/" data-id="ckvcbhgb3029c6cvng4envrcl" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/25/lesson/consumption-item-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -189,7 +283,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/24/lesson/hw-nachos4/" data-id="cktr6co9v02aujkvnn1jk10ve" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/24/lesson/hw-nachos4/" data-id="ckvcbhgcy02bl6cvnot1h022z" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/24/lesson/hw-nachos4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -341,7 +435,7 @@ make
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/23/oj/uva/uva-134-/" data-id="cktr6cp7d03a9jkvnl2agyp1w" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/23/oj/uva/uva-134-/" data-id="ckvcbhh7c03816cvn9fw0g7cl" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/23/oj/uva/uva-134-/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -401,7 +495,7 @@ make
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="/img/1400100597593.jpg" rel="gallery_cktr6cob702cmjkvnxwu2824f">
+      <a class="article-gallery-img fancybox" href="/img/1400100597593.jpg" rel="gallery_ckvcbhgex02ft6cvnkxqpti7d">
         <img src="/img/1400100597593.jpg" itemprop="image">
       </a>
     
@@ -420,7 +514,7 @@ make
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/22/note/hardware-interview/" data-id="cktr6cob702cmjkvnxwu2824f" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/22/note/hardware-interview/" data-id="ckvcbhgex02ft6cvnkxqpti7d" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/22/note/hardware-interview/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -513,7 +607,7 @@ make
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/22/oj/uva/icpc-4020/" data-id="cktr6coie02n4jkvn4pjf2s6g" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/22/oj/uva/icpc-4020/" data-id="ckvcbhglo02ms6cvnfhv3w3wt" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/22/oj/uva/icpc-4020/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -580,7 +674,7 @@ make
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/21/oj/uva/uva-10320/" data-id="cktr6cok202ovjkvnx3qtrhn1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/21/oj/uva/uva-10320/" data-id="ckvcbhgoh02pr6cvnrt5wjh5f" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/21/oj/uva/uva-10320/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -642,7 +736,7 @@ make
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/19/lesson/hw-computational-intelligence/" data-id="cktr6coa802b8jkvnhuzegy3v" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/19/lesson/hw-computational-intelligence/" data-id="ckvcbhgcd02at6cvnex8llxa8" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/19/lesson/hw-computational-intelligence/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -815,7 +909,7 @@ If d1 small, θ = -60
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/" data-id="cktr6cp2t0368jkvn26e8c6yj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/" data-id="ckvcbhh3a03466cvnxsv0v0nx" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -886,7 +980,7 @@ If d1 small, θ = -60
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/" data-id="cktr6cp2n0362jkvnyy3jumbc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/" data-id="ckvcbhh3603436cvnqyts0x0z" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -926,71 +1020,6 @@ If d1 small, θ = -60
 
 
   
-    <article id="post-web/md-file-format" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/05/18/web/md-file-format/" class="article-date">
-  <time datetime="2014-05-18T11:26:12.000Z" itemprop="datePublished">2014-05-18</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/網頁設計/">網頁設計</a>/<a class="article-category-link" href="/categories/網頁設計/Markdown/">Markdown</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://github.com/github.png" rel="gallery_cktr6cod802gnjkvn74q86se2">
-        <img src="http://github.com/github.png" itemprop="image">
-      </a>
-    
-      <a class="article-gallery-img fancybox" href="http://github.com/unicorn.png" rel="gallery_cktr6cod802gnjkvn74q86se2">
-        <img src="http://github.com/unicorn.png" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/05/18/web/md-file-format/">Markdown 檔格式</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/18/web/md-file-format/" data-id="cktr6cod802gnjkvn74q86se2" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2014/05/18/web/md-file-format/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/format/">format</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/markdown/">markdown</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/md/">md</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/md檔/">md檔</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/usage/">usage</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/使用說明/">使用說明</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/格式/">格式</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-        <h1 id="fancybox-js-example"><a href="#fancybox-js-example" class="headerlink" title="fancybox.js example"></a>fancybox.js example</h1><h1 id="中文"><a href="#中文" class="headerlink" title="中文"></a>中文</h1><p>#中文2</p>
-<h1 id="English"><a href="#English" class="headerlink" title="English"></a>English</h1><p>#English2</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/05/18/web/md-file-format/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/79/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/78/">78</a><a class="page-number" href="/page/79/">79</a><span class="page-number current">80</span><a class="page-number" href="/page/81/">81</a><a class="page-number" href="/page/82/">82</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/81/">Next &raquo;</a>
@@ -1006,7 +1035,7 @@ If d1 small, θ = -60
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">37</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">13</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1016,6 +1045,14 @@ If d1 small, θ = -60
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/10/29/work/company-ghost-story-14/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Company Ghost Story 公司鬼故事 14</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/09/12/work/appreciation-letter/">
@@ -1087,14 +1124,6 @@ If d1 small, θ = -60
                 <i class="icon-file-o"></i> 
               
             前思後想 新居落成</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/java/java-memory-optimization-2/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Java 優化內存使用 組合篇</a>
           </li>
         
       </ul>
