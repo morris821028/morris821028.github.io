@@ -89,6 +89,312 @@
           
           <section id="main">
   
+    <article id="post-icg-final-project-radiosity" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/22/icg-final-project-radiosity/" class="article-date">
+  <time datetime="2017-01-22T03:40:03.000Z" itemprop="datePublished">2017-01-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/01/22/icg-final-project-radiosity/">探討平行與優化技術於熱輻射法 (上)</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckvd6e837005t9cvns7b3y2ds" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計算機圖學/">計算機圖學</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <blockquote>
+<p>此為計算機圖學課程中的一環，自由挑選主題。而這個 Radiosity 有好幾年前的原始碼，程式碼部分由老師提供。看到幾處寫得不是很好的地方，於是就拿來加速。在 tracing code 耗費了相當大的力氣，雖然才幾千行的 C 程序，完全不熟的領域，慢慢做起來也別有一番風趣。<a href="https://github.com/morris821028/hw-radiosity" target="_blank" rel="external">morris821028/hw-radiosity</a></p>
+</blockquote>
+<h2 id="Parallel-Computing-and-Optimization-Skills-for-Radiosity"><a href="#Parallel-Computing-and-Optimization-Skills-for-Radiosity" class="headerlink" title="Parallel Computing and Optimization Skills for Radiosity"></a>Parallel Computing and Optimization Skills for Radiosity</h2><ul>
+<li>R04922067 楊翔雲、R04922133 古君葳</li>
+</ul>
+<h2 id="介紹-Introduction"><a href="#介紹-Introduction" class="headerlink" title="介紹 Introduction"></a>介紹 Introduction</h2><p>熱輻射法 (Radiosity) 是一種渲染的技術。相較於光線追蹤法 (Ray Tracing)，熱輻射法可以產生更接近於現實場景中光亮的變化。當場景使用光線追蹤法時，物體的陰影的邊緣相對銳利，但在現實情況下，物體陰影漸層呈現，因此使用熱輻射法可以更貼近我們想要的。</p>
+<span>$$\begin{align*}
+B_i dA_i = E_i dA_i + R_i \int_j B_j F_{ji} dA_j
+\end{align*}$$</span><!-- Has MathJax -->
+<ul>
+<li><span>$A_i$</span><!-- Has MathJax --> : Area of element i (computable)</li>
+<li><span>$B_i$</span><!-- Has MathJax --> : Radiosity of element i (unknown)</li>
+<li><span>$E_i$</span><!-- Has MathJax --> : Radient emitted flux density of element i (given)</li>
+<li><span>$R_i$</span><!-- Has MathJax --> : Refletance of element i (given)</li>
+<li><span>$F_{ji}$</span><!-- Has MathJax --> : Form Factor from j to i (computable)</li>
+</ul>
+<p>假設整個場景中有 <span>$N$</span><!-- Has MathJax --> 個三角形，每一次迭代選擇一個最亮的三角形當作光源，由這個光源計算與場景中其他三角形的 Radiosity 之值。其中，判斷光源是否可以輻射到某個三角形之複雜度介於 <span>$O(\log N)$</span><!-- Has MathJax --> 到 <span>$O(N)$</span><!-- Has MathJax --> (視Data structure而定)，而計算 Form-Factor的花費可以視為常數 <span>$O(1)$</span><!-- Has MathJax --> ，因此每次迭代的複雜度介於 <span>$O(N \log N)$</span><!-- Has MathJax --> 到 <span>$O(N^2)$</span><!-- Has MathJax -->。</p>
+<p>其中佔據效能的因素是 Form-Factor 估算，因此有像 Hemicube之類的近似逼近，大幅度減少計算量，但投影回到原本物件上會失真。</p>
+<span>$$\begin{align*}
+F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r^2} dA_i dA_j
+\end{align*}$$</span><!-- Has MathJax -->
+<p><img src="http://i.imgur.com/mOMEPZR.gif" alt=""></p>
+<blockquote>
+<p>進入優化主題吧</p>
+</blockquote>
+<h2 id="優化技術-Code-Review-amp-Optimization"><a href="#優化技術-Code-Review-amp-Optimization" class="headerlink" title="優化技術 Code Review &amp; Optimization"></a>優化技術 Code Review &amp; Optimization</h2><p>首先，我們先對助教提供的程式碼加速，分成以下幾個部分討論</p>
+<ul>
+<li>減少光線投射計算量 Strength Reduction for Ray Casting</li>
+<li>減少 Form-Factor計算量 Strength Reduction for Form-Factor</li>
+<li>改善資料局部性 Improve Data Locality</li>
+<li>其他優化 Other Optimization: <ul>
+<li>Improve I-cache Miss</li>
+<li>Short Circuit Design</li>
+<li>Clipping Algorithm</li>
+<li>Strength Reduction for Float-Point</li>
+<li>Shrink the Scope of Variables</li>
+<li>Reduce the Number of Arguments</li>
+<li>Remove Implications of Pointer Aliasing</li>
+<li>Copy Optimization</li>
+</ul>
+</li>
+</ul>
+<h3 id="減少光線投射計算量-Strength-Reduction-for-Ray-Casting"><a href="#減少光線投射計算量-Strength-Reduction-for-Ray-Casting" class="headerlink" title="減少光線投射計算量 Strength Reduction for Ray Casting"></a>減少光線投射計算量 Strength Reduction for Ray Casting</h3><p>判斷射線 (Ray) 是否能打到三角形 <span>$A$</span><!-- Has MathJax --> 上，先用 bounding box 包住 <span>$A$</span><!-- Has MathJax --> ，計算 <span>$p$</span><!-- Has MathJax --> 到 bounding box 的時間 <span>$t$</span><!-- Has MathJax --> ，若 <span>$t$</span><!-- Has MathJax --> 大於目前的最小 <span>$t_{\min}$</span><!-- Has MathJax --> ，則退出。相反地，再計算更精準的 <span>$t$</span><!-- Has MathJax --> 。加入利用已知結果 <span>$v = p + t_{\min} \cdot d, t_{\min} &gt; 0$</span><!-- Has MathJax --></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">TriangleHitted</span><span class="params">(Vector p, Vector d, TrianglePtr tp, <span class="keyword">float</span> *t_min)</span> </span>&#123;</div><div class="line">    <span class="keyword">float</span> t = <span class="comment">/* time t from p to bounding box of Triangle tp */</span>;</div><div class="line">    <span class="keyword">if</span> (t &lt; eps)</div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="keyword">if</span> (t &gt;= *t_min)    <span class="comment">/* important !! */</span></div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">    *t_min = t;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="減少-FF-計算量-Strength-Reduction-for-Form-Factor"><a href="#減少-FF-計算量-Strength-Reduction-for-Form-Factor" class="headerlink" title="減少 FF 計算量 Strength Reduction for Form-Factor"></a>減少 FF 計算量 Strength Reduction for Form-Factor</h3><p>根據公式 <span>$F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r^2} dA_i dA_j$</span><!-- Has MathJax --> ，一般我們的判斷順序會得如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">float</span> <span class="title">computeFormFactor</span><span class="params">(TrianglePtr srcTri, <span class="keyword">int</span> logSrc, TrianglePtr desTri, <span class="keyword">int</span> logDes, Vector p)</span> </span>&#123;</div><div class="line">    Vector dir = srcTri-&gt;c - p;</div><div class="line">    <span class="keyword">float</span> ff = <span class="number">0</span>;</div><div class="line">    <span class="keyword">if</span> (RayHitted(p, dir, logDes) == logDes) &#123;</div><div class="line">        <span class="keyword">float</span> theta1 = CosTheta(dir, srcTri-&gt;normal), theta2 = CosTheta(dir, desTri-&gt;normal);</div><div class="line">        ff = theta1 * theta2 * srcTri-&gt;area / (norm2(dir) * PI);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> max(ff, <span class="number">0.f</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>效能考量的因素：</p>
+<ul>
+<li><code>RayHitted()</code> 需要大量的計算</li>
+<li>Form-Factor 在 <code>float</code> 儲存格式下可能無法得到貢獻，改採優先計算 Form-Factor 的值，再運行 RayHitted 判斷。調整加速了 2 倍多。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">float</span> <span class="title">computeFormFactor</span><span class="params">(TrianglePtr srcTri, <span class="keyword">int</span> logSrc, TrianglePtr desTri, <span class="keyword">int</span> logDes, Vector p)</span></span></div><div class="line"><span class="function">    Vector dir </span>= srcTri-&gt;c - p;</div><div class="line">    <span class="keyword">float</span> theta1 = CosTheta(dir, srcTri-&gt;normal), </div><div class="line">theta2 = CosTheta(dir, desTri-&gt;normal);</div><div class="line">    <span class="keyword">float</span> ff = theta1 * theta2;</div><div class="line">    <span class="keyword">if</span> (ff &lt;= <span class="number">0</span>)    <span class="keyword">return</span> <span class="number">0.f</span>;</div><div class="line">    ff *= srcTri-&gt;area / (norm2(dir) * PI);</div><div class="line">    <span class="keyword">if</span> (ff &lt;= <span class="number">0</span>)    <span class="keyword">return</span> <span class="number">0.f</span>;</div><div class="line">    <span class="keyword">if</span> (RayHitted(p, dir, logDes) == logDes)</div><div class="line">        <span class="keyword">return</span> ff;</div><div class="line">    <span class="keyword">return</span> <span class="number">0.f</span>;</div></pre></td></tr></table></figure>
+<h3 id="改善資料局部性-Improve-Data-Locality"><a href="#改善資料局部性-Improve-Data-Locality" class="headerlink" title="改善資料局部性 Improve Data Locality"></a>改善資料局部性 Improve Data Locality</h3><p>程式碼中使用 3D-DDA Line Algorithm/Bresenham’s Line Algorithm 搭配 Octree，在找尋某個射線與哪個最近三角形相交。</p>
+<ul>
+<li>只需要儲存葉節點代表的立方體中，所有可能相交的三角形編號</li>
+<li>移除掉中間產生的編號，讓每一次 access 的 cache-miss 下降</li>
+</ul>
+<p>在 3D-DDA 中，我們需要反查找空間中一點 p 在哪一個葉節點中，藉由固定的長寬高切割長度，可以在 <span>$O(1)$</span><!-- Has MathJax --> 時間內得知 <code>[i][j][k]</code> 各別的值。若限制大小，則建立陣列 <code>[i][j][k]</code> 查找。若自適應大小，則建立 hash 表查找，但根據實驗結果，效能並沒有改善，因為三角形個數過多導致命中機率過低。</p>
+<p>對於 Static Tree 的 Memory Layout，大致上分成四種DFS Layout、Inorder Layout、BFS Layout、和 van Emde Boas Layout，目前程式使用的是 DFS Layout，這方面會影響到存取的效能。若有更多的時間，我們也可以測試平行處理的細粒度與這些 Memory Layout 的影響。</p>
+<h3 id="其他優化-Other-Optimization"><a href="#其他優化-Other-Optimization" class="headerlink" title="其他優化 Other Optimization"></a>其他優化 Other Optimization</h3><h4 id="Improve-I-cache-Miss"><a href="#Improve-I-cache-Miss" class="headerlink" title="Improve I-cache Miss"></a>Improve I-cache Miss</h4><p>壓縮程式碼長度以改善 I-cache miss，因為大部分的初始化只會運行一次，不應該交錯在時常被呼叫的函數之間，指令載入效能才會提高，同時也要做好 Code Layout，就能改善執行效能。</p>
+<p>原始版本如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">x, y = compute(<span class="number">0</span>)</div><div class="line">buildTree(x, y)</div><div class="line">x, y = compute(<span class="number">1</span>)</div><div class="line">buildTree()</div><div class="line">x, y = compute(<span class="number">2</span>)</div><div class="line">buildTree()</div><div class="line">x, y = compute(<span class="number">3</span>)</div><div class="line">buildTree()</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>壓縮和整理後</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span> i from <span class="number">0</span> to n</div><div class="line">    x, y = compute(i)</div><div class="line">    buildTree()</div></pre></td></tr></table></figure>
+<h4 id="Short-Circuit-Design"><a href="#Short-Circuit-Design" class="headerlink" title="Short Circuit Design"></a>Short Circuit Design</h4><p>判斷三角形與一個正交立方體是否相交，使用投影到二維空間中與一線段的交點是否皆存在。投影方法有 3 種 x-y, y-z, z-x，線段投影共有 2 種，共計 6 種情況。原先程式沒有做好短路設計，只要其中一種不符就應退出。</p>
+<p><img src="http://i.imgur.com/8jcycpG.png" alt=""></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">CrossOver</span><span class="params">(TrianglePtr tri, </span></span></div><div class="line"><span class="function"><span class="params">            Vector g0, Vector g1)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (xyz = <span class="number">0</span>; xyz &lt; <span class="number">3</span>; xyz++) &#123;</div><div class="line">        <span class="comment">// front face project</span></div><div class="line">        <span class="keyword">if</span> (!test())</div><div class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">        <span class="comment">// back face project</span></div><div class="line">        <span class="keyword">if</span> (!test())</div><div class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="Clipping-Algorithm"><a href="#Clipping-Algorithm" class="headerlink" title="Clipping Algorithm"></a>Clipping Algorithm</h4><p>我們實作課程中所描述的 Cohen–Sutherland Algorithm 降低 branch 次數，使用 bitwise 操作引出 SSE (Streaming SIMD Extensions)。儘管 compiler -O2 替我們優化，為減少 stack push/pop 的次數，實作時請不要使用的 procedure call，否則會慢上許多。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri, </span></span></div><div class="line"><span class="function"><span class="params"><span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">char</span> mask1 = (p0[x] &lt; g0[x])&lt;&lt;<span class="number">0</span> |</div><div class="line">        (p0[x] &gt; g1[x])&lt;&lt;<span class="number">1</span> |</div><div class="line">        (p0[y] &lt; g0[y])&lt;&lt;<span class="number">2</span> |</div><div class="line">        (p0[y] &gt; g1[y])&lt;&lt;<span class="number">3</span> ;</div><div class="line">    <span class="keyword">char</span> mask2 = (p1[x] &lt; g0[x])&lt;&lt;<span class="number">0</span> |</div><div class="line">        (p1[x] &gt; g1[x])&lt;&lt;<span class="number">1</span> |</div><div class="line">        (p1[y] &lt; g0[y])&lt;&lt;<span class="number">2</span> |</div><div class="line">        (p1[y] &gt; g1[y])&lt;&lt;<span class="number">3</span> ;</div><div class="line">    <span class="keyword">if</span> (mask1&amp;mask2)    </div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="keyword">if</span> (!(mask1|mask2))</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">    <span class="comment">// ... test</span></div></pre></td></tr></table></figure>
+<h4 id="Strength-Reduction-for-Float-Point"><a href="#Strength-Reduction-for-Float-Point" class="headerlink" title="Strength Reduction for Float-Point"></a>Strength Reduction for Float-Point</h4><p>兩個外積結果相乘小於零，減少 instruction cycle 量，盡量用整數作為運算型態。</p>
+<blockquote>
+<p>在現在的 Intel CPU 中，32-bit 浮點數運算基本上跟整數一樣快</p>
+</blockquote>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">float</span> a = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">float</span> b = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">if</span> (a * b &lt; <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">b = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">if</span> (a * b &lt; <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>事先判斷正負號，同時也防止溢位。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> a = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">int</span> b = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">if</span> (a != b)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">b = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">if</span> (a != b)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">...</div></pre></td></tr></table></figure>
+<h4 id="Shrink-the-Scope-of-Variables"><a href="#Shrink-the-Scope-of-Variables" class="headerlink" title="Shrink the Scope of Variables"></a>Shrink the Scope of Variables</h4><p>減少變數生命週期的長度以增加放入暫存器的機會，而非 stack 上。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++)</div><div class="line">    rgb[f(i)] = g(i);</div><div class="line"><span class="comment">/* ... */</span></div><div class="line"><span class="keyword">if</span> (maybe) &#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</div><div class="line">        rgb[h(i)] = g(i);</div><div class="line">    &#125;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>當邏輯很複雜時，編譯器不太能幫忙做分析，所以自己手動優化的效果會比較好，在 C/C++ 語言中，可以利用大括弧進行區域變數的設定。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++)</div><div class="line">        rgb[f(i)] = g(i);</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">if</span> (maybe) &#123;</div><div class="line">    <span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</div><div class="line">        rgb[h(i)] = g(i);</div><div class="line">    &#125;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="Reduce-the-Number-of-Arguments"><a href="#Reduce-the-Number-of-Arguments" class="headerlink" title="Reduce the Number of Arguments"></a>Reduce the Number of Arguments</h4><p>減少 stack push/pop 次數</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Arg</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> a0, a1;</div><div class="line">&#125;;    <span class="comment">// p1.a1 = p2.a0</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">(Arg p1, Arg p2)</span> </span>&#123;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如何修改合適的參數個數，必須看使用的機率和次數，才能達到最大效益。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Arg</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> a0, a1, a2;</div><div class="line">&#125;;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">(Arg p1p2)</span> </span>&#123;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="Remove-Implications-of-Pointer-Aliasing"><a href="#Remove-Implications-of-Pointer-Aliasing" class="headerlink" title="Remove Implications of Pointer Aliasing"></a>Remove Implications of Pointer Aliasing</h4><p>移除指標 Aliasing，意指可能會指向相同記憶體位址，導致每次計算都要重新載入，不能放進暫存器中。如下述的寫法，編譯器無法判定 <code>srcTri</code> 是否與 <code>desTri</code> 相同，在累加時則重新載入 <code>srcTri-&gt;deltaB[]</code> 的數值，計算上可能會產生數次的 cache miss，隨著迴圈次數不斷突顯效能差異。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri,</span></span></div><div class="line"><span class="function"><span class="params"> <span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; <span class="number">3</span>; v++) &#123;    <span class="comment">// vertex</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">0</span>; c &lt; <span class="number">3</span>; c++) &#123;    <span class="comment">// color RGB</span></div><div class="line">            flaot deltaB = desTri-&gt;Frgb[c]/<span class="number">255.0</span>*RefRatio*srcTri-&gt;deltaB[c]*ff[v]/<span class="number">3</span>;</div><div class="line">            desTri-&gt;deltaB[c] += deltaB; </div><div class="line">            desTri-&gt;accB[v][c] += deltaB; </div><div class="line">            desTri-&gt;deltaAccB[v][c] += deltaB; </div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>方法 1: 加入 <code>if (srcTri != desTri)</code> 判斷，讓編譯器在 Function Pass 階段著手的 Dependency Analysis 更好</li>
+<li>方法 2: 使用 Copy Optimization，同時把重複計算搬到 stack 上，或者使用 Polyhedal 表示法進行 Reordering Accesses for Loop Nest。這裡我們選擇前者，更容易引出 SSE</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri, </span></span></div><div class="line"><span class="function"><span class="params"><span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">const</span> <span class="keyword">float</span> k = RefRatio / <span class="number">255.0</span>;</div><div class="line">    <span class="keyword">float</span> lo[<span class="number">3</span>] = &#123; desTri-&gt;Frgb[<span class="number">0</span>]*k*(srctri-&gt;deltaB[<span class="number">0</span>]), </div><div class="line">                    desTri-&gt;Frgb[<span class="number">1</span>]*k*(srctri-&gt;deltaB[<span class="number">1</span>]), </div><div class="line">                    desTri-&gt;Frgb[<span class="number">2</span>]*k*(srctri-&gt;deltaB[<span class="number">2</span>])&#125;;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; <span class="number">3</span>; v++)    &#123;    <span class="comment">// vertex</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">0</span>; c &lt; <span class="number">3</span>; c++) &#123;    <span class="comment">// color RGB</span></div><div class="line">            <span class="comment">/* calculate the reflectiveness */</span></div><div class="line">            <span class="keyword">float</span> deltaB = lo[c] * ff[v] / <span class="number">3</span>;</div><div class="line">            desTri-&gt;deltaB[c] += deltaB;</div><div class="line">            desTri-&gt;accB[v][c] += deltaB;</div><div class="line">            desTri-&gt;deltaaccB[v][c] = deltaB;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><ul>
+<li>使用洽當的編譯器參數可加速 2 倍</li>
+<li>減少 Form-Factor 計算加速 2 倍</li>
+<li>剩餘優化部份改善 10% ~ 20% 效能。</li>
+</ul>
+<p>至今，我們加速了 4 倍，在下一篇文章中，我們將繼續探討平行處理。</p>
+<h3 id="Experiment"><a href="#Experiment" class="headerlink" title="Experiment"></a>Experiment</h3><table>
+<thead>
+<tr>
+<th style="text-align:center">Model</th>
+<th style="text-align:right">Origin (sec.)</th>
+<th style="text-align:right">Our v0.1 (sec.)</th>
+<th style="text-align:right">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">room.tri</td>
+<td style="text-align:right">10.27</td>
+<td style="text-align:right">4.70</td>
+<td style="text-align:right">2.18</td>
+</tr>
+<tr>
+<td style="text-align:center">hall.tri</td>
+<td style="text-align:right">176.92</td>
+<td style="text-align:right">38.50</td>
+<td style="text-align:right">4.59</td>
+</tr>
+<tr>
+<td style="text-align:center">church.tri</td>
+<td style="text-align:right">72.32</td>
+<td style="text-align:right">42.64</td>
+<td style="text-align:right">1.69</td>
+</tr>
+</tbody>
+</table>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-diary-201701-5" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/20/diary-201701-5/" class="article-date">
+  <time datetime="2017-01-20T12:23:52.000Z" itemprop="datePublished">2017-01-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+<div class="article-gallery">
+  <div class="article-gallery-photos">
+    
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/rxih6Pj.jpg" rel="gallery_ckvd6e82c003k9cvnyb09m0kd">
+        <img src="http://i.imgur.com/rxih6Pj.jpg" itemprop="image">
+      </a>
+    
+  </div>
+</div>
+
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/01/20/diary-201701-5/">那段過往的蠢事</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/01/20/diary-201701-5/" data-id="ckvd6e82c003k9cvnyb09m0kd" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/01/20/diary-201701-5/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <blockquote>
+<p>我一定誤會了什麼，才冒冒失失地進入這個世界，大家所期待的那個人明明不是我－《三月的獅子》</p>
+</blockquote>
+<h2 id="實驗室調侃"><a href="#實驗室調侃" class="headerlink" title="實驗室調侃"></a>實驗室調侃</h2><p>「什麼時候要簽博？」</p>
+<p>學校年底寄了封向碩士一學年修畢、在學成績前 30% 且被教授認可有研究能力的學生，提供 <strong>逕行修讀博士學位</strong> ，從那陣子之後，這句話不斷地從旁人口說出，可想而知是在玩弄我。大概是從某次開會中，老師三番兩次地說誰誰看起來適合簽博，又朝著我說能力怎樣怎樣地很安心，必然是學弟們的光芒尚未展現，目光才莫名其妙地投射在我身上。</p>
+<p>有趣的是隔了幾週後，系上放寬到一學期修畢即可，心想這下子總算能反攻了，但論談話辯論技巧，一時還是贏不了。</p>
+<blockquote>
+<p>「學弟們來簽博吧！」充滿嘲諷的反擊道<br>「可是老師只認同你」學弟緩緩地說道<br>「…」到底是怎麼想到那一塊去的，心中滿滿的困惑</p>
+</blockquote>
+<h2 id="順水推舟"><a href="#順水推舟" class="headerlink" title="順水推舟"></a>順水推舟</h2><p><img src="http://i.imgur.com/sdLbmIR.jpg" alt="「什麼 什麼」－ 《吹響吧！上低音號》"></p>
+<p>年底的事情仍尚未結束，在旁人的催促下，感覺需要紀錄點什麼－那段有趣的誤會。</p>
+<h3 id="跨年那一夜"><a href="#跨年那一夜" class="headerlink" title="跨年那一夜"></a>跨年那一夜</h3><p>在台北的第二次跨年，想去年在生測資完後，回家的路上看著一群攝影愛好者在圖書館後頭拍攝，而自己只能拖著疲累的身軀回家休息。2017 年稍微特別一點，在靠北工程師看到一句話「人家有閃光才叫跨年，我們這群單身狗不跨年，叫熬夜。」尾牙聚餐因學弟一句話衝動發出邀請後，果然還是一個人熬夜吧，這回是學弟們一起在實驗室熬夜，別有樂趣。</p>
+<p>這一夜原本想約著一起寫作業，自己一個人做做還可以，嘗試各種修改，絞盡腦力讓自己無法去想那原本的計劃，差點就在 TLE 下跨年了。</p>
+<p><img src="http://i.imgur.com/pPAN5fd.jpg" alt="「的確 成就感真是活下去所需要的能量啊」－《三月的獅子》"></p>
+<blockquote>
+<p>「楓之谷倒數計時 3, 2, 1, …」<br>「限時販售商店在哪？」</p>
+</blockquote>
+<p>一群肥宅就這麼在楓之谷上跨年。這麼說也許突然，學弟們看我有玩楓之谷，一個個都來跟我一起玩，一次要養這麼多人相當不容易，也因此那陣子完全不能自由活動，一上線就是當工具人。</p>
+<p>那晚走在回租屋處的路上，傳了封訊息說聲「新年快樂」這讓我不禁想起，曾經也做過類似的事情，對著四年沒聯絡的手機號碼，到了那天日子傳了封「祝你生日快樂」這麼說起來，就像動畫《秒速五釐米》心境，平凡地過著日子，卻時時刻刻想著那過往的蠢事。</p>
+<p>跨年那一夜的清晨走回家，平常一起租屋的高中同學們都會在家，而今晚一個都沒有，房裡、客廳裡只有從路燈照來的光，摸著冰冷的樓梯扶手走回房裡，收到封「抱歉，整天沒都沒看訊息，現在在喝酒」</p>
+<p>然而，不只是現實生活中，連遊戲中都感受到一種奇怪的氛圍，難道沒長時間在線上掛網，連網友都和這一夥人都想到一塊去了！素未謀面的網友，傳了些訊息給我。</p>
+<blockquote>
+<p>「吾 你今年會脫魯」遞上作業的截圖說道<br>「吾 你今年X月X日前會脫魯」</p>
+</blockquote>
+<p>心中滿滿地無奈，處處都有人在督促我。</p>
+<h3 id="新年那一日"><a href="#新年那一日" class="headerlink" title="新年那一日"></a>新年那一日</h3><p>三天連假必然要為了平行加速的期末專題奮戰，所以約了小夥伴一起努力。一早八點坐在床頭滑著手機，看看昨夜的廢文有什麼樣的反應，看著未讀訊息中一封也沒有，收拾著包包走到學校，在實驗室等著沒有約定的討論。看著什麼都沒進展的程序，不知不覺就一個人待到中午，心想那傢伙肯定宿醉了。</p>
+<blockquote>
+<p>「抱歉，剛剛才醒。」<br>「宿醉了對吧？」<br>「沒宿！」</p>
+</blockquote>
+<p>比起對於算法分析和優化技術，也許應該從更基本的算法開始講起。腦海中大量的資訊嘗試從平常不怎麼說話的口中說出，一時什麼都講不出來</p>
+<blockquote>
+<p>「沒關係，你慢慢說」<br>「是這個意思吧？」描繪著投影片上的圖示說道<br>「抱歉，這講起來有點枯燥」<br>「沒關係，聽你講著講著，我開始對這個有點興趣。」</p>
+</blockquote>
+<p>小組討論就這麼持續到晚上，學弟們還不跟我吃飯，不知道這群傢伙在想些什麼，你們這樣玩弄學長對嗎？就是要我們倆個一起吃。</p>
+<h3 id="心情複雜"><a href="#心情複雜" class="headerlink" title="心情複雜"></a>心情複雜</h3><p>一想到在自己喜歡的事物面前，思緒總沒辦法順暢且正常地表達出來！覺得自己遜斃了。</p>
+<p><img src="http://i.imgur.com/RyTYjQM.jpg" alt="「遜斃了」－《風夏》"></p>
+<p>趕緊逃進期末專題程式編寫的修改，不再去理會旁人的總總，心想事情根本不是這樣子的，這種事情怎麼會落在我身上呢。</p>
+<blockquote>
+<p>優化計算機圖學浮點數輸出轉文字檔部份，轉換 json 就可以更快，加速 4 倍之多。參考論文說道 16 倍加速，提供的程序 Warning 編譯訊息停不下來，修一修 Bug 送上 pull request，沒想到 Lemire 教授也在貢獻者裡，略感興奮。清晨就收到信，修改部份被 Merge！</p>
+</blockquote>
+<p>一個小小的 CPU 中，突然多了一條程序需要執行，帶著這樣的心情去工作。沒想到這一天是老闆來，一整天全是全英開會，而且還有一場是咱的報告，事前都不知道啊！時間不斷消逝，終於迎來那一刻 … 原來已經沒救了，好丟臉啊。</p>
+<p><img src="http://i.imgur.com/P46COfP.jpg" alt="「太丟臉了」－《風夏》"></p>
+<p>在當下心中不冒出某晚一起討論的閒聊</p>
+<blockquote>
+<p>指著螢幕上一行一行的程序，試圖解釋自己的想法<br>「我改了這裡，好讓整個三角形更加地完整，不會破圖，不過也因此不太能平行 … 這有點麻煩」<br>在腦海中盤算著時程和算法<br>「如果要平行的話，要改成這個樣子，不過要花點時間，再弄個幾天吧」</p>
+<p>「每個人都有自己不擅長的，不會每件事情都做得好，沒・關・係・的」<br>「我們已經做很多了呀，先把這些弄好吧」</p>
+</blockquote>
+<p>我啊，對於自己不擅長的項目太過在意，對於做不好一件可以完成的事覺得相當愧疚，總是投入好幾倍的時間來完成，想想自己這麼疲憊到底是為了什麼？在追求什麼？聽到那段話，有如放下了大石，旁人要不什麼都不說，要不鼓勵盡量往前衝，距離上一次對我傳達「你可以休息一下」又是多麼久遠的事了。</p>
+<blockquote>
+<p>不斷地敲打鍵盤，嘗試將自己的想法加入並進行測試，突然冒出了一句話<br>「欸欸，你爸有缺老婆嗎？」<br>「？」頓時落下手上的工作，腦海中喀喀聲瞬間即逝，『等等，這是什麼話題，現在我們在弄期末專題吧？』<br>「沒啦，我媽離婚一陣子，最近又交了另一半。」<br>「嗯？」對於這話題到底從哪裡來，心中滿滿的困惑<br>「她居然嗆我說『我比妳還有市場耶』，我是不是應該隨便交個男友？」<br>『咦？咦咦咦咦？』現在應該要沉住氣吧，擔心一不小心就要進警局<br>「沒事，你繼續寫吧。」</p>
+</blockquote>
+<p>繼續敲著鍵盤的同時，心想好像錯過了什麼選項。</p>
+<h3 id="角色轉換"><a href="#角色轉換" class="headerlink" title="角色轉換"></a>角色轉換</h3><p><img src="http://i.imgur.com/J2cTZsg.jpg" alt="「只是一味地爬升，爬升，最終抵達的地方沒有回去的路」－《三月的獅子》"></p>
+<blockquote>
+<p>「今天學姊會來嗎？」學弟如此問道<br>「哪個學姊？你想說什麼」不耐煩地詢問</p>
+</blockquote>
+<p>終於來到這一天，跟學弟談話時要把同屆同學用稱謂描述，叫全名也不對勁，只喊名也怪奇特的，若用學長學姊稱呼，一不小心談話又忘了是哪個學長學姊。</p>
+<h3 id="清醒之日"><a href="#清醒之日" class="headerlink" title="清醒之日"></a>清醒之日</h3><blockquote>
+<p>「我在你家，可以借用你房間嗎？」<br>「？」原來是高中同學來訪，如此地閒情逸致 … 到我的房間打電動！<br>「借你桌子打電動」</p>
+</blockquote>
+<p>十一點多離開實驗室，一回到租屋的地方，從沒想過接下來才是那無法描述的黑歷史，為什麼連回家都要被酷刑拷問，這些不是我能決定的啊，學校那樣就算了，連好友都能從動態中發現個什麼，為什麼你們要處處肉搜呢？</p>
+<p>次次日，收到通知要買電池回去弄熱水器，到處敲個房門請求工具支援，才發現自己有多孤單。不僅是電池沒電，連瓦斯都沒有，看來今天是冷水澡的清醒日！</p>
+<p><img src="http://i.imgur.com/1j4BK8O.jpg" alt="「孤單的時候 就可以相互依靠」－《人渣本願》"></p>
+<blockquote>
+<p>根據以往的經驗，想認識的女生都會馬上有男朋友。我想這次也不意外，祝福各位，這個小劇場給大家帶來一陣子的歡笑。</p>
+</blockquote>
+<p>學期的最後，授課老師說研究生只要有幾門課拿到 A+ 就好，研究方向就會比較明確。然而，在這當下把碩士課程八門都修完，回過頭來，發現到擅長的研究領域無法判定，對於研究能力更加迷惘。感謝小夥伴們的協助，全 A+ 成就取得。</p>
+<p><img src="http://i.imgur.com/VvcUwJZ.jpg" alt="「誰能溫暖我 誰能快點溫暖我」－《為美好的世界獻上祝福》"></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-jg-20007" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/01/18/jg-20007/" class="article-date">
@@ -114,7 +420,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/18/jg-20007/" data-id="ckvcbhfgw00946cvnhfn4zzwl" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/18/jg-20007/" data-id="ckvd6e84p009s9cvngjjwam7r" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/18/jg-20007/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -233,7 +539,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/dODwLPn.jpg" rel="gallery_ckvcbhfej002y6cvnl8sv60h9">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/dODwLPn.jpg" rel="gallery_ckvd6e82a003e9cvn5bqacfa9">
         <img src="http://i.imgur.com/dODwLPn.jpg" itemprop="image">
       </a>
     
@@ -252,7 +558,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-4/" data-id="ckvcbhfej002y6cvnl8sv60h9" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-4/" data-id="ckvd6e82a003e9cvn5bqacfa9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -351,7 +657,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/HgNRb8L.jpg" rel="gallery_ckvcbhfee002k6cvn4vgm99ex">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/HgNRb8L.jpg" rel="gallery_ckvd6e829003a9cvnju2or77f">
         <img src="http://i.imgur.com/HgNRb8L.jpg" itemprop="image">
       </a>
     
@@ -370,7 +676,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-3/" data-id="ckvcbhfee002k6cvn4vgm99ex" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-3/" data-id="ckvd6e829003a9cvnju2or77f" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -445,7 +751,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/Eyx2uSD.jpg" rel="gallery_ckvcbhfeh002u6cvn8dmbvk90">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/Eyx2uSD.jpg" rel="gallery_ckvd6e82800389cvn8ifbocy4">
         <img src="http://i.imgur.com/Eyx2uSD.jpg" itemprop="image">
       </a>
     
@@ -464,7 +770,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-2/" data-id="ckvcbhfeh002u6cvn8dmbvk90" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/17/diary-201701-2/" data-id="ckvd6e82800389cvn8ifbocy4" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/17/diary-201701-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -550,7 +856,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KnsUvCG.jpg" rel="gallery_ckvcbhfen003a6cvnpufvws3x">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KnsUvCG.jpg" rel="gallery_ckvd6e82c003h9cvnfbhi69er">
         <img src="http://i.imgur.com/KnsUvCG.jpg" itemprop="image">
       </a>
     
@@ -569,7 +875,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/diary-20170116/" data-id="ckvcbhfen003a6cvnpufvws3x" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/diary-20170116/" data-id="ckvd6e82c003h9cvnfbhi69er" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/diary-20170116/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -641,7 +947,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/" data-id="ckvcbhfec002h6cvnote0bfj8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/" data-id="ckvd6e81a000o9cvnzxmwthkn" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-round-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -719,7 +1025,7 @@ dp[i][j] = \left\{\begin{matrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/" data-id="ckvcbhfdw00186cvna97d7i8k" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/" data-id="ckvd6e81b000p9cvn1rw31vpk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/16/2017-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -800,7 +1106,7 @@ dp[i][j] = \left\{\begin{matrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/12/18/jg-20008/" data-id="ckvcbhfh2009j6cvn3otvt4l5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/12/18/jg-20008/" data-id="ckvd6e84s009z9cvnl54bpjyx" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/12/18/jg-20008/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -871,184 +1177,6 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
 
 
   
-    <article id="post-jg-20005" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/12/18/jg-20005/" class="article-date">
-  <time datetime="2016-12-18T01:13:40.000Z" itemprop="datePublished">2016-12-18</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/出題解題/">出題解題</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/12/18/jg-20005/">淺談背包問題 (0/1 Knapsack Problem) 優化那些事</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/12/18/jg-20005/" data-id="ckvcbhfgu008y6cvneo55df3t" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/12/18/jg-20005/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/DP/">DP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/背包問題/">背包問題</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>收錄於 <a href="https://judgegirl.csie.org/problem/0/20005" target="_blank" rel="external">批改娘 20005. 0/1 Knapsack Problem</a>。之所以有機會談到這個問題，其原因於早期的背包問題，大多都是用 branch-and-bound 算法來完成，也因此學弟課程出了這一份作業，大部分的測資，使用 branch-and-bound 能跑得比一般記憶體化 DP 快上非常多。當然，作為一個 Morris(?) 怎能允許這樣的事情發生。</p>
-<p>現在回顧一下背包問題的模型吧！</p>
-</blockquote>
-<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>每組測資第一行包含兩個正整數，分別代表背包大小 $M$ ($\leq 5×10^6$) 和物品個數 $N$ ($\leq 1000$)，下一行開始每行包含兩個正整數，分別代表物品價值 $P_i$ ($\leq 10^5$)和物品重量 $W_i$ ($ \leq 10^5$)。</p>
-<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每組測資，請輸出最大收益。</p>
-<h2 id="範例輸入-1"><a href="#範例輸入-1" class="headerlink" title="範例輸入 1"></a>範例輸入 1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">50 7</div><div class="line">70 31</div><div class="line">20 10</div><div class="line">39 20</div><div class="line">37 19</div><div class="line">7 4</div><div class="line">5 3</div><div class="line">10 6</div></pre></td></tr></table></figure>
-<h2 id="範例輸出-1"><a href="#範例輸出-1" class="headerlink" title="範例輸出 1"></a>範例輸出 1</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">107</div></pre></td></tr></table></figure>
-<h2 id="範例輸入-2"><a href="#範例輸入-2" class="headerlink" title="範例輸入 2"></a>範例輸入 2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">170 7</div><div class="line">442 41</div><div class="line">525 50</div><div class="line">511 49</div><div class="line">593 59</div><div class="line">546 55</div><div class="line">564 57</div><div class="line">617 60</div></pre></td></tr></table></figure>
-<h2 id="範例輸出-2"><a href="#範例輸出-2" class="headerlink" title="範例輸出 2"></a>範例輸出 2</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">1735</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="Branch-and-bound"><a href="#Branch-and-bound" class="headerlink" title="Branch-and-bound"></a>Branch-and-bound</h3><blockquote>
-<p><a href="http://www.or.deis.unibo.it/kp/Chapter3.pdf" target="_blank" rel="external">bound knapscak problem</a> 古耕竹同學提供</p>
-</blockquote>
-<p>如果物品可以被切割，那麼可以利用物品的 CP 值 (<span>$\textit{cp}_i = p_i/w_i$</span><!-- Has MathJax -->)排序，使用貪心算法在 <span>$O(N \log N)$</span><!-- Has MathJax --> 找到最佳解。然而，背包問題在於物品只能挑或不挑，一旦無法切割物品，那麼貪心算法無法將剩餘的部分填滿，進而可能產生更好的一組解填滿剩餘部分。</p>
-<blockquote>
-<p>想要更快嗎？多看論文且實作它吧！</p>
-</blockquote>
-<p>branch-and-bound 基本核心操作為</p>
-<ul>
-<li>按照 CP 值由大到小排序</li>
-<li>貪心法最佳解 <span>$\textit{bound}$</span><!-- Has MathJax --></li>
-<li>進行深度優先搜索，優先挑 CP 值大的入選<ul>
-<li>當前挑選方案最佳解 <span>$g$</span><!-- Has MathJax --> + 剩餘物品使用貪心法最佳解 <span>$g$</span><!-- Has MathJax --> 小於等於當前最佳解 <span>$\textit{bound}$</span><!-- Has MathJax -->，則退出搜索。</li>
-<li>更新 <span>$\textit{bound} = \max(\textit{bound}, g)$</span><!-- Has MathJax --></li>
-<li>選擇加入 或 不加入 (註：學弟說我的某些測資，通通優先不選可以快個數十倍)</li>
-</ul>
-</li>
-</ul>
-<p>參考代碼</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Item</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> v, w;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">cp</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> (<span class="keyword">double</span>) v / w;</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">cmpCP</span><span class="params">(Item a, Item b)</span> </span>&#123;</div><div class="line">    <span class="keyword">double</span> cpA = a.cp();</div><div class="line">    <span class="keyword">double</span> cpB = b.cp();</div><div class="line">    <span class="keyword">if</span> (cpA == cpB)</div><div class="line">        <span class="keyword">return</span> a.w &gt; b.w;</div><div class="line">    <span class="keyword">return</span> cpA &gt; cpB;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">int</span> n, m;</div><div class="line"><span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">Item items[<span class="number">1005</span>];</div><div class="line"><span class="keyword">int</span> prefixW[<span class="number">1005</span>];</div><div class="line"><span class="keyword">int</span> prefixV[<span class="number">1005</span>];</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">h</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">int</span> w, <span class="keyword">int</span> b, <span class="keyword">int</span> &amp;j, <span class="keyword">int</span> &amp;f)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> fw = i == <span class="number">0</span> ? w : (w + prefixW[i<span class="number">-1</span>]);</div><div class="line">    <span class="keyword">for</span> (j = max(b, i); j &lt; n &amp;&amp; prefixW[j] &lt;= fw; j++);</div><div class="line">    <span class="keyword">if</span> (j &gt;= n) &#123;</div><div class="line">        <span class="keyword">return</span> prefixV[n<span class="number">-1</span>];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">int</span> v = <span class="number">0</span>;</div><div class="line">    f = <span class="number">0</span>;</div><div class="line">    v += prefixV[j<span class="number">-1</span>] - (i == <span class="number">0</span> ? <span class="number">0</span> : prefixV[i<span class="number">-1</span>]);</div><div class="line">    w -= prefixW[j<span class="number">-1</span>] - (i == <span class="number">0</span> ? <span class="number">0</span> : prefixW[i<span class="number">-1</span>]);</div><div class="line">    <span class="keyword">if</span> (w != <span class="number">0</span>) &#123;</div><div class="line">        f = <span class="number">1</span>;</div><div class="line">        <span class="keyword">float</span> k = (<span class="keyword">float</span>) w / items[j].w;</div><div class="line">        w -= k * items[j].w;</div><div class="line">        v += k * items[j].v;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> v;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">greedy</span><span class="params">(<span class="keyword">int</span> w)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> v = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)  &#123;</div><div class="line">        <span class="keyword">if</span> (w &gt;= items[i].w)&#123;</div><div class="line">            w -= items[i].w;</div><div class="line">            v += items[i].v;</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">return</span> v;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> v;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">int</span> w, <span class="keyword">int</span> v, <span class="keyword">int</span> b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (i &gt;= n) &#123;</div><div class="line">        ret = max(ret, v);</div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">int</span> j = n, f;</div><div class="line">    <span class="keyword">int</span> hv = v + h(i, w, b, j, f);</div><div class="line">    <span class="keyword">if</span> (hv &lt;= ret)</div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    <span class="keyword">if</span> (f == <span class="number">0</span>) &#123;</div><div class="line">        ret = max(ret, hv);</div><div class="line">        <span class="keyword">return</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (w &gt;= items[i].w)</div><div class="line">        dfs(i + <span class="number">1</span>, w - items[i].w, v + items[i].v, j);</div><div class="line">    dfs(i + <span class="number">1</span>, w, v, j);</div><div class="line">    <span class="keyword">return</span>;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;m, &amp;n) == <span class="number">2</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;items[i].v, &amp;items[i].w);</div><div class="line">        stable_sort(items, items+n, cmpCP);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, w = <span class="number">0</span>, v = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">            w += items[i].w;</div><div class="line">            v += items[i].v;</div><div class="line">            prefixW[i] = w;</div><div class="line">            prefixV[i] = v;</div><div class="line">        &#125;</div><div class="line">        ret = greedy(m);</div><div class="line">        dfs(<span class="number">0</span>, m, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ret);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h4 id="結論"><a href="#結論" class="headerlink" title="結論"></a>結論</h4><p>branch-and-bound 空間複雜度只跟 <span>$N$</span><!-- Has MathJax --> 有關，使用記憶體空間小，相較於記憶化搜索有較少的 cache miss，速度取決於搜索順序。對於同一 CP 的等價處理薄弱，一遇到這種情況，搜尋時間瞬間指數次方上去，可以等個昏天暗地。</p>
-<h3 id="Dynamic-Programming"><a href="#Dynamic-Programming" class="headerlink" title="Dynamic Programming"></a>Dynamic Programming</h3><h4 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h4><blockquote>
-<p>請不要忘記背包問題屬於 NP-Complete，我們能做的事情只能優化計算，最慘的情況仍要面對，優化常數是可以努力的方向，讓我們嘗試變得更快吧。</p>
-</blockquote>
-<p>基礎寫法解說請參考 <a href="http://www.csie.ntnu.edu.tw/~u91029/KnapsackProblem.html#4" target="_blank" rel="external">DJWS - Bounded Knapsack Problem</a> 的說明。</p>
-<p>從定義上，我們通常會宣告 <code>dp[i][j]</code> 表示放入前 <span>$i$</span><!-- Has MathJax --> 個物品時，總共最多為 <span>$j$</span><!-- Has MathJax --> 的最大價值為何。這樣空間宣告使用 <span>$\mathcal{O}(NW)$</span><!-- Has MathJax -->。在實作上，我們可以藉由運算順序將空間降為 <span>$\mathcal{O}(W)$</span><!-- Has MathJax -->。因此，寫出以下代碼並不難</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> dp[MAXW];</div><div class="line"><span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp));</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = W; j &gt;= w[i]; j--)</div><div class="line">        dp[j] = max(dp[j], dp[j-w[i]]+v[i]);</div></pre></td></tr></table></figure>
-<h4 id="優化初夜"><a href="#優化初夜" class="headerlink" title="優化初夜"></a>優化初夜</h4><p>從實際運行上，我們可以發現每次跑 <span>$\mathcal{\theta}(W)$</span><!-- Has MathJax --> 非常浪費，只需要跑 <span>$\min(W, \sum w_i)$</span><!-- Has MathJax --> 即可。因此，第一份計算量優化如下</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> dp[MAXW];</div><div class="line"><span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp));</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">    sum += w[i];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = min(W, sum); j &gt;= w[i]; j--)</div><div class="line">        dp[j] = max(dp[j], dp[j-w[i]]+v[i]);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<blockquote>
-<p>計算邊界優化通常可以達到 2x 加速</p>
-</blockquote>
-<p>如此一來，在數量多權重小時，剛啟動的效能時可以賺到非常多。然而，不乏第一次就給權重的大的，目標最小化 <span>$\sum \text{sum}_i$</span><!-- Has MathJax -->，從數學觀念很明顯地瞭解，只要一開始將權重 <span>$w_i$</span><!-- Has MathJax --> 由小到大排序即可，這樣能保證最小化計算量！</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> dp[MAXW];</div><div class="line"><span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp));</div><div class="line">sort (w, v) by w</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">    sum += w[i];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = min(W, sum); j &gt;= w[i]; j--)</div><div class="line">        dp[j] = max(dp[j], dp[j-w[i]]+v[i]);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<blockquote>
-<p>數學使得我們更進一步，達到 1.5x 加速</p>
-</blockquote>
-<h4 id="優化二夜"><a href="#優化二夜" class="headerlink" title="優化二夜"></a>優化二夜</h4><p>經由平行的訓練，也許我們可以更往上一層優化。</p>
-<p>接下來，打算把物品拆成兩堆，再利用優化初夜學到的技巧，就能引爆更多計算邊界優化。如果拆成三堆以上，合併操作變得相當複雜，當只有兩堆時，保證合併效能一定在 <span>$\mathcal{\theta}(W)$</span><!-- Has MathJax --> 完成。</p>
-<p>如何合併兩堆的計算結果，假設 <code>dp1[i]</code> 表示其中一堆重量小於等於 <span>$i$</span><!-- Has MathJax --> 的最佳解，同理 <code>dp2[j]</code> 的計算結果。</p>
-<p>當要湊出重量為 <span>$W$</span><!-- Has MathJax --> 的最佳解時，窮舉其中一堆的重量 <span>$i$</span><!-- Has MathJax --> 維護其中一堆的前綴最大值 <span>$j$</span><!-- Has MathJax -->，相當於使用掃描線算法在線性時間內合併。合併操作如下：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = W, mx = <span class="number">0</span>; i &lt;= W; i++, j--) &#123;</div><div class="line">    mx = max(mx, dp2[i]);</div><div class="line">    ret = max(ret, dp1[j] + mx);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<blockquote>
-<p>Divide-and-Conquer，使得我們更快再更快！達到 1.5 加速</p>
-</blockquote>
-<p>然而，優化問題將轉移到最佳分堆策略，好的分堆策略將使得計算量下降更多。目標分兩堆，使得 <span>$\sum \text{sum1}_i + \sum \text{sum2}_i$</span><!-- Has MathJax --> 最小化。明顯地，由小到大排序物品重量，依序將物品放到總和最小的那一堆即可。最後，我們整合每一夜的結果如下：</p>
-<blockquote>
-<p>一個好的分堆，達到 1.2x 加速</p>
-<p>相信在不久之後，還有更好的優化策略，也許不是延伸，而是全新的面貌。</p>
-</blockquote>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">namespace</span> &#123;</div><div class="line"></div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXW = <span class="number">5000005</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1005</span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">(<span class="keyword">int</span> A[][<span class="number">2</span>], <span class="keyword">int</span> dp[], <span class="keyword">int</span> W, <span class="keyword">int</span> N)</span> </span>&#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> w = A[i][<span class="number">0</span>], v = A[i][<span class="number">1</span>];</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = min(W, sum + w); j &gt;= w; j--)</div><div class="line">                dp[j] = max(dp[j], dp[j-w]+v);</div><div class="line">            sum += w;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">knapsack</span><span class="params">(<span class="keyword">int</span> C[][<span class="number">2</span>], <span class="keyword">int</span> N, <span class="keyword">int</span> W)</span> </span>&#123;</div><div class="line">        <span class="built_in">vector</span>&lt; pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; &gt; A;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">            A.push_back(make_pair(C[i][<span class="number">0</span>], C[i][<span class="number">1</span>]));</div><div class="line">        N = A.size();</div><div class="line">        assert(N &lt; MAXN);</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int</span> dp1[MAXW+<span class="number">1</span>], dp2[MAXW+<span class="number">1</span>];</div><div class="line">        <span class="keyword">int</span> Ar[<span class="number">2</span>][MAXN][<span class="number">2</span>], ArN[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="built_in">memset</span>(dp1, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp1[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        <span class="built_in">memset</span>(dp2, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp2[<span class="number">0</span>])*(W+<span class="number">1</span>));</div><div class="line">        sort(A.begin(), A.end());</div><div class="line">        <span class="keyword">int</span> sum[<span class="number">2</span>] = &#123;&#125;;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">            <span class="keyword">int</span> ch = sum[<span class="number">1</span>] &lt; sum[<span class="number">0</span>];</div><div class="line">            Ar[ch][ArN[ch]][<span class="number">0</span>] = A[i].first;</div><div class="line">            Ar[ch][ArN[ch]][<span class="number">1</span>] = A[i].second;</div><div class="line">            ArN[ch]++;</div><div class="line">            sum[ch] += A[i].first;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        run(Ar[<span class="number">0</span>], dp1, W, ArN[<span class="number">0</span>]);</div><div class="line">        run(Ar[<span class="number">1</span>], dp2, W, ArN[<span class="number">1</span>]);</div><div class="line"></div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = W, mx = <span class="number">0</span>; i &lt;= W; i++, j--) &#123;</div><div class="line">            mx = max(mx, dp2[i]);</div><div class="line">            ret = max(ret, dp1[j] + mx);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> W, N, C[MAXN][<span class="number">2</span>];</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;W, &amp;N) == <span class="number">2</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++)</div><div class="line">            assert(<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;C[i][<span class="number">1</span>], &amp;C[i][<span class="number">0</span>]) == <span class="number">2</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, knapsack(C, N, W));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-parallel-opt" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/07/31/parallel-opt/" class="article-date">
-  <time datetime="2016-07-31T12:15:17.000Z" itemprop="datePublished">2016-07-31</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/07/31/parallel-opt/">平行優化技巧－基礎篇</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/07/31/parallel-opt/" data-id="ckvcbhfn700mk6cvnyvnsro49" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/07/31/parallel-opt/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CUDA/">CUDA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenCL/">OpenCL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>在撰寫平行程式時，仍會使用到編譯器的技巧，大幅度地減少指令個數，有時候這些優化甚至會把寫壞的分享記憶體 (shared memory) 存取給移除掉，如果能充分理解這些不好的設計，就不會造成實驗上發生的謬誤，還以為自己跑得很慢，平行根本沒加速到，這樣草草交出的報告，助教也收到煩了 (這裡不討論實驗方法本身就是錯的情況)。</p>
-<h2 id="內存篇"><a href="#內存篇" class="headerlink" title="內存篇"></a>內存篇</h2><p>首先，來談談 cache line 是什麼吧？現在的機器都有著記憶體階層架構 (memory hierarchy)，按照大小排序，其中最小的就是 cache line，接下來才是 L1, L2, L3 cache，最後是最大的主記憶體 (main memory)，但某些超級電腦的設計就不是如此，而有些輔助處理器 (如 intel xeon phi) 缺少 L3 cache，而像 GPU 則沒有 cache 設計，但有提供有 bank 存取資料。這些都跟處理問題的類型有關，才導致有那些特殊設計。</p>
-<h3 id="Multicore"><a href="#Multicore" class="headerlink" title="Multicore"></a>Multicore</h3><h4 id="Cache-Size"><a href="#Cache-Size" class="headerlink" title="Cache Size"></a>Cache Size</h4><p>為什麼 cache line 很重要？因為存取速度最快，但能存放的資料也很小，通常是 64 bytes 或者 32 bytes。在快取設計中，一次把位址連續的資料一起搬靠近 CPU，這樣簡單的設計，導致我們在撰寫程式時，若能將結構定義得好便能讓使用率高，這非常仰賴編成者對於系統架構的了解。例如色彩 RGB，可以宣告成 <code>struct RGB {flaot R, G, B};</code> 或者 <code>float R[], G[], B[]</code>，如果 RGB 三者會共同計算，例如色彩轉換通常是三者交互作用的表達式，因此前者構造方式較為妥當。</p>
-<blockquote>
-<p>例題：批改娘 10087. Sparse Matrix Multiplication (OpenMP) </p>
-</blockquote>
-<h4 id="Cache-Hierarchy"><a href="#Cache-Hierarchy" class="headerlink" title="Cache Hierarchy"></a>Cache Hierarchy</h4><p>然而，有些情況充分使用反而不好，沒錯，就是平行程式，通常平行程式不外乎會有分享記憶體，這時候充分利用反而是一件壞事，因為我們需要讓數個核心 (core) 同時運行，因為每一個 core 都有各自的 cache line，若在不同 core 上同時修改相近的位址時，很容易產生 dirty bit，這導致要掉回 L3 cache (同一個 CPU，但分享在不同的 core 上) 進行同步。通常編譯器能做到 independent 分析，那麼就會利用暫存器配置來避開這問題，如果不行，就要靠自己手動來調整。</p>
-<blockquote>
-<p>例題：批改娘 10085. Parallel Count (debug)</p>
-</blockquote>
-<h3 id="GPU"><a href="#GPU" class="headerlink" title="GPU"></a>GPU</h3><p>GPU 的記憶體設計分成四種，經常分成 on-chip 和 off-chip，差別在於是不是內建焊死，因此 on-chip 內建記憶體有比較好的效能，而 off-chip 則是外接記憶體，存取速度相對於 on-chip 慢個三倍以上。特別注意，有好就有壞，提供越快存取速度的記憶體能存放的容量越小，因此非常不容易配置。</p>
-<p>在編寫 CUDA 或者是 OpenCL 時，提供 shared memory 的設計，如果請求數量過大，將會自動轉入 global memory，這一點沒有明確告知，只有在執行時期才會發現突然變慢。若採用存取速度較快的寫法，有時候不見得比較快，</p>
-<blockquote>
-<p>例題：批改娘 10101. Fast Game of Life (CUDA) </p>
-</blockquote>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/7/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="page-number" href="/page/7/">7</a><span class="page-number current">8</span><a class="page-number" href="/page/9/">9</a><a class="page-number" href="/page/10/">10</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/9/">Next &raquo;</a>
@@ -1064,7 +1192,7 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">49</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1076,7 +1204,23 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
       <ul>
         
           <li>
-            <a class="text" href="/2021/10/29/work/company-ghost-story-14/">
+            <a class="text" href="/2021/10/28/diary-202110-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·序》</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/diary-202110/">
+              
+                <i class="icon-file-o"></i> 
+              
+            好多個 28 在這個時刻</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/work/company-ghost-story-14/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1137,22 +1281,6 @@ dp[i][j] &amp;= \max\left\{dp[i-1][j], dp[i-1][j-w_i]+p_i, \cdots, dp[i-1][j-c_i
                 <i class="icon-file-o"></i> 
               
             疫情下的工作變化</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/06/21/work/company-ghost-story-10/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 10</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/diary-202105/">
-              
-                <i class="icon-file-o"></i> 
-              
-            前思後想 新居落成</a>
           </li>
         
       </ul>

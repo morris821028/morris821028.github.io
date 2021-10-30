@@ -89,6 +89,154 @@
           
           <section id="main">
   
+    <article id="post-zj-b431" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/10/zj-b431/" class="article-date">
+  <time datetime="2015-07-10T11:33:06.000Z" itemprop="datePublished">2015-07-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/07/10/zj-b431/">b431. 中國餘數</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/07/10/zj-b431/" data-id="ckvd6e8gr012c9cvnlbu3nkfe" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/07/10/zj-b431/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/中國餘式定理/">中國餘式定理</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/密碼基礎/">密碼基礎</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數論基礎/">數論基礎</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>中國餘數定理 (Chinese Remainder Theorem，簡稱 CRT) 經常是工程學裡面常用的一種轉換域，很多人不知道當初在大學離散數學中學這個做什麼，但是在不少計算的設計都會運用到 CRT。由於電腦 CPU 架構中的運算單位是 32-bits 或者 64-bits (也許在未來會更長)，但值域高達 128-bits 或者 512-bits 以上模擬運算成了麻煩之處。</p>
+<p>回顧中國餘數定理 CRT</p>
+<span>$$(S): \left\{\begin{matrix}
+x \equiv a_1 \mod m_1 \\
+x \equiv a_2 \mod m_2 \\
+\vdots \\
+x \equiv a_n \mod m_n
+\end{matrix}\right.$$</span><!-- Has MathJax -->
+<ul>
+<li><span>$m_1, m_2, \cdots , m_n$</span><!-- Has MathJax --> 任兩數互質，意即 <span>$\forall i \neq j, gcd(m_i, m_j) = 1$</span><!-- Has MathJax --></li>
+<li>對於任意整數 <span>$a_1, a_2, \cdots , a_n$</span><!-- Has MathJax --> 方程組 <span>$(S)$</span><!-- Has MathJax --> 均有解，意即找得到一個 <span>$x$</span><!-- Has MathJax --> 的參數解。</li>
+</ul>
+<p>構造法解 CRT</p>
+<ol>
+<li>設<span>$M = m_1 \times m_2 \times \cdots \times m_n = \prod_{i=1}^{n} m_i$</span><!-- Has MathJax --></li>
+<li>設<span>$M_i = M / m_i$</span><!-- Has MathJax --></li>
+<li>設<span>$t_i = M_i^{-1} \mod m_i&lt;span&gt;$，意即$&lt;/span&gt;&lt;!-- Has MathJax --&gt;t_i M_i \equiv 1 \mod m_i$</span><!-- Has MathJax --></li>
+<li>方程組 <span>$(S)$</span><!-- Has MathJax --> 的通解形式為：  <span>$x = a_1 t_1 M_1 + a_2 t_2 M_2 + \cdots + a_n t_n M_n + kM = kM + \sum_{i = 1}^{n} a_i t_i M_i, k \in \mathbb{Z}$</span><!-- Has MathJax --></li>
+<li>若限定 <span>$0 \le x &lt; M$</span><!-- Has MathJax -->，則 <span>$x$</span><!-- Has MathJax --> 只有一解。</li>
+</ol>
+<p>很多人會納悶通解為什麼長那樣，原因很簡單，要滿足方程組每一條式子，勢必對於<span>$a_i t_i M_i$</span><!-- Has MathJax --> 要滿足<span>$x \equiv a_i \mod m_i$</span><!-- Has MathJax --> ，因此 <span>$a_i t_i M_i \equiv a_i (t_i M_i) \mod m_i \equiv a_i \mod m_i$</span><!-- Has MathJax --> 成立，但是<span>$\forall i \neq j$</span><!-- Has MathJax -->，滿足<span>$a_i t_i M_i \equiv a_i (t_i M_i) \mod m_j \equiv 0 \mod m_j$</span><!-- Has MathJax --></p>
+<h3 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h3><p>來個簡單運用，來計算簡單的 RSA 加解密，特化其中的數學運算。</p>
+<span>$M \equiv C^d \mod n$</span><!-- Has MathJax -->
+<span>$n = p \times q$</span><!-- Has MathJax -->，其中 <span>$p, q$</span><!-- Has MathJax --> 是兩個不同的質數，已知 <span>$C, d, p, q$</span><!-- Has MathJax -->，請求出 <span>$M$</span><!-- Has MathJax -->。<br><br>## Sample Input ##<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">88 7 17 11</div><div class="line">11 23 17 11</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">11</div><div class="line">88</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>RSA 可以預先處理 </p>
+<ul>
+<li><span>$c_p = q \times (q^{-1} \mod p)$</span><!-- Has MathJax --> </li>
+<li><span>$c_q = p \times (p^{-1} \mod q)$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>還原的算法則是 <span>$M = Mp \times c_p + Mq \times c_q \mod N$</span><!-- Has MathJax --></p>
+<p>由於拆分後的 bit length 少一半，乘法速度快 4 倍，快速冪次方快 2 倍 (次方的 bit length 少一半)，但是要算 2 次，最後共計快 4 倍。CPU 的乘法想必不會用快速傅立葉 FFT 來達到乘法速度為 <span>$O(n \log n)$</span><!-- Has MathJax -->。</p>
+<p>特別小心「<strong> bit length 少一半 </strong>」必須在 <span>$gcd(C, p) = 1$</span><!-- Has MathJax --> 時才成立，互質機率機率非常高，仍然有不成立的時候，這情況下速度不是加快 400%。請參照一般解。</p>
+<p>例如 <code>C = 27522, d = 17132, p = 2, q = 17293</code>，若使用歐拉定理計算 <span>$Mp = C^{d \mod (p-1)} \mod p = 1$</span><!-- Has MathJax --> 事實上 <span>$Mp = C^d \mod p = 0$</span><!-- Has MathJax -->。有一個特性尚未被利用，對於模質數 <span>$p$</span><!-- Has MathJax --> 而言，所有數 <span>$x$</span><!-- Has MathJax --> 在模 <span>$p$</span><!-- Has MathJax --> 下的循環長度 <span>$L | (p-1)$</span><!-- Has MathJax -->，最後可以套用 <span>$Mp = C^{d \mod (p-1) + (p-1)} \mod p$</span><!-- Has MathJax --> 來完成。請參照循環解，如此一來就不必先判斷 <span>$gcd(C, p) = 1$</span><!-- Has MathJax -->。</p>
+<h3 id="番外"><a href="#番外" class="headerlink" title="番外"></a>番外</h3><p>但是利用 CRT 計算容易受到硬體上攻擊，因為會造成 <span>$p, q$</span><!-- Has MathJax --> 在分解過程中獨立出現，當初利用 <span>$N$</span><!-- Has MathJax --> 很難被分解的特性來達到資訊安全，但是卻因為加速把 <span>$p, q$</span><!-- Has MathJax --> 存放道不同時刻的暫存器中。</p>
+<p>其中一種攻擊，計算得到 <span>$M = Mp \times q \times (q^{-1} \mod p) + Mq \times p \times (p^{-1} \mod q) \mod N$</span><!-- Has MathJax --> 當擾亂後面的式子 (提供不穩定的計算結果)。得到 <span>$M&apos; = Mp \times q \times (q^{-1} \mod p) + (Mq + \Delta) \times p \times (p^{-1} \mod q) \mod N$</span><!-- Has MathJax --></p>
+<p>接著 <span>$(M&apos; - M) = (\Delta&apos; \times p) \mod N$</span><!-- Has MathJax -->，若要求 <span>$p$</span><!-- Has MathJax --> 的方法為 <span>$gcd(M&apos; - M, N) = gcd(\Delta&apos; \times p, N) = p$</span><!-- Has MathJax -->，輾轉相除的概念呼之欲出，原來 <span>$p$</span><!-- Has MathJax --> 會被這麼夾出，當得到兩個 <span>$p, q$</span><!-- Has MathJax -->，RSA 算法就會被破解。</p>
+<h3 id="一般解"><a href="#一般解" class="headerlink" title="一般解"></a>一般解</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">mul</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> a, <span class="keyword">long</span> <span class="keyword">long</span> b, <span class="keyword">long</span> <span class="keyword">long</span> mod)</span> </span>&#123; </div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>; </div><div class="line">    <span class="keyword">for</span> (a %= mod, b %= mod; b != <span class="number">0</span>; b&gt;&gt;=<span class="number">1</span>, a &lt;&lt;= <span class="number">1</span>, a = a &gt;= mod ? a - mod : a) &#123; </div><div class="line">        <span class="keyword">if</span> (b&amp;<span class="number">1</span>) &#123;</div><div class="line">            ret += a;</div><div class="line">            <span class="keyword">if</span> (ret &gt;= mod)	ret -= mod;</div><div class="line">        &#125; </div><div class="line">    &#125; </div><div class="line">    <span class="keyword">return</span> ret; </div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">exgcd</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span>  x, <span class="keyword">long</span> <span class="keyword">long</span> y, <span class="keyword">long</span> <span class="keyword">long</span> &amp;g, <span class="keyword">long</span> <span class="keyword">long</span> &amp;a, <span class="keyword">long</span> <span class="keyword">long</span> &amp;b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (y == <span class="number">0</span>)</div><div class="line">        g = x, a = <span class="number">1</span>, b = <span class="number">0</span>;</div><div class="line">    <span class="keyword">else</span></div><div class="line">        exgcd(y, x%y, g, b, a), b -= (x/y) * a;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">llgcd</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> t;</div><div class="line">    <span class="keyword">while</span> (x%y)</div><div class="line">        t = x, x = y, y = t%y;</div><div class="line">    <span class="keyword">return</span> y;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">inverse</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> p)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> g, b, r;</div><div class="line">    exgcd(x, p, g, r, b);</div><div class="line">    <span class="keyword">if</span> (g &lt; <span class="number">0</span>)	r = -r;</div><div class="line">    <span class="keyword">return</span> (r%p + p)%p;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">mpow</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y, <span class="keyword">long</span> <span class="keyword">long</span> mod)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">1</span>;</div><div class="line">    <span class="keyword">while</span> (y) &#123;</div><div class="line">        <span class="keyword">if</span> (y&amp;<span class="number">1</span>) </div><div class="line">            ret = (ret * x)%mod;</div><div class="line">        y &gt;&gt;= <span class="number">1</span>, x = (x * x)%mod;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret % mod;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> C, d, p, q;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> N, M, Cp, Cq, Mp, Mq;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%lld %lld %lld %lld"</span>, &amp;C, &amp;d, &amp;p, &amp;q) == <span class="number">4</span>) &#123;</div><div class="line">        N = p * q;</div><div class="line">        Mp = mpow(C%p, llgcd(C, p) == <span class="number">1</span> ? d%(p<span class="number">-1</span>) : d, p);</div><div class="line">        Mq = mpow(C%q, llgcd(C, q) == <span class="number">1</span> ? d%(q<span class="number">-1</span>) : d, q);</div><div class="line">        Cp = q*inverse(q, p)%N;</div><div class="line">        Cq = p*inverse(p, q)%N;</div><div class="line">        M = (mul(Mp, Cp, N) + mul(Mq, Cq, N))%N;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, M);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="循環解"><a href="#循環解" class="headerlink" title="循環解"></a>循環解</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">long</span> UINT64;</div><div class="line"><span class="function">UINT64 <span class="title">mul</span><span class="params">(UINT64 a, UINT64 b, UINT64 mod)</span> </span>&#123; </div><div class="line">    UINT64 ret = <span class="number">0</span>; </div><div class="line">    <span class="keyword">for</span> (a = a &gt;= mod ? a%mod : a, b = b &gt;= mod ? b%mod : b; b != <span class="number">0</span>; b&gt;&gt;=<span class="number">1</span>, a &lt;&lt;= <span class="number">1</span>, a = a &gt;= mod ? a - mod : a) &#123; </div><div class="line">        <span class="keyword">if</span> (b&amp;<span class="number">1</span>) &#123;</div><div class="line">            ret += a;</div><div class="line">            <span class="keyword">if</span> (ret &gt;= mod) </div><div class="line">                ret -= mod;</div><div class="line">        &#125; </div><div class="line">    &#125; </div><div class="line">    <span class="keyword">return</span> ret; </div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">exgcd</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span>  x, <span class="keyword">long</span> <span class="keyword">long</span> y, <span class="keyword">long</span> <span class="keyword">long</span> &amp;g, <span class="keyword">long</span> <span class="keyword">long</span> &amp;a, <span class="keyword">long</span> <span class="keyword">long</span> &amp;b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (y == <span class="number">0</span>)</div><div class="line">        g = x, a = <span class="number">1</span>, b = <span class="number">0</span>;</div><div class="line">    <span class="keyword">else</span></div><div class="line">        exgcd(y, x%y, g, b, a), b -= (x/y) * a;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">inverse</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> p)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> g, b, r;</div><div class="line">    exgcd(x, p, g, r, b);</div><div class="line">    <span class="keyword">if</span> (g &lt; <span class="number">0</span>)	r = -r;</div><div class="line">    <span class="keyword">return</span> (r%p + p)%p;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">mpow</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">long</span> <span class="keyword">long</span> y, <span class="keyword">long</span> <span class="keyword">long</span> mod)</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">1</span>;</div><div class="line">    <span class="keyword">while</span> (y) &#123;</div><div class="line">        <span class="keyword">if</span> (y&amp;<span class="number">1</span>) </div><div class="line">            ret = (ret * x)%mod;</div><div class="line">        y &gt;&gt;= <span class="number">1</span>, x = (x * x)%mod;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret % mod;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> C, d, p, q;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> N, M, Cp, Cq, Mp, Mq;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%lld %lld %lld %lld"</span>, &amp;C, &amp;d, &amp;p, &amp;q) == <span class="number">4</span>) &#123;</div><div class="line">        N = p * q;</div><div class="line">        Mp = mpow(C%p, d%(p<span class="number">-1</span>) + (p<span class="number">-1</span>), p);</div><div class="line">        Mq = mpow(C%q, d%(q<span class="number">-1</span>) + (q<span class="number">-1</span>), q);</div><div class="line">        Cp = mul(q, inverse(q, p), N);</div><div class="line">        Cq = mul(p, inverse(p, q), N);</div><div class="line">        M = (mul(Mp, Cp, N) + mul(Mq, Cq, N))%N;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, M);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-zj-b430" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/10/zj-b430/" class="article-date">
+  <time datetime="2015-07-10T11:31:05.000Z" itemprop="datePublished">2015-07-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/07/10/zj-b430/">b430. 簡單乘法</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/07/10/zj-b430/" data-id="ckvd6e8gp01299cvnqfa9991i" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/07/10/zj-b430/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數論基礎/">數論基礎</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/模乘法/">模乘法</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在早期密碼世界中， 各種運算都先講求速度，不管是在硬體、軟體利用各種數學定義來設計加密算法就為了加快幾倍的速度，但在近代加密中，加速方法會造成硬體實作攻擊，速度和安全，你選擇哪一個呢。</p>
+<h3 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h3><p>$<span>$a b \equiv x \mod n$</span><!-- Has MathJax -->$</p>
+<p>已知 <span>$a, b, n$</span><!-- Has MathJax -->，求出 <span>$x$</span><!-- Has MathJax -->。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">3 5 7</div><div class="line">2 4 3</div><div class="line">2 0 2</div><div class="line">5 1 4</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">1</div><div class="line">2</div><div class="line">0</div><div class="line">1</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>利用加法代替乘法避免溢位，加法取模換成減法加快速度。</p>
+<p>由於這一題範圍在在 <span>$10^{18}$</span><!-- Has MathJax -->，用 <code>long long</code> 型態沒有問題，若在 <span>$2^{63}$</span><!-- Has MathJax --> 請替換成 <code>unsigned long long</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">long</span> <span class="title">mul</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> a, <span class="keyword">long</span> <span class="keyword">long</span> b, <span class="keyword">long</span> <span class="keyword">long</span> mod)</span> </span>&#123; </div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> ret = <span class="number">0</span>; </div><div class="line">    <span class="keyword">for</span> (a %= mod, b %= mod; b != <span class="number">0</span>; b&gt;&gt;=<span class="number">1</span>, a &lt;&lt;= <span class="number">1</span>, a = a &gt;= mod ? a - mod : a) &#123; </div><div class="line">        <span class="keyword">if</span> (b&amp;<span class="number">1</span>) &#123;</div><div class="line">            ret += a;</div><div class="line">            <span class="keyword">if</span> (ret &gt;= mod) </div><div class="line">                ret -= mod;</div><div class="line">        &#125; </div><div class="line">    &#125; </div><div class="line">    <span class="keyword">return</span> ret; </div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> a, b, n;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%lld %lld %lld"</span>, &amp;a, &amp;b, &amp;n) == <span class="number">3</span>)</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, mul(a, b, n));</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-zj-b429" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/07/10/zj-b429/" class="article-date">
@@ -114,7 +262,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/10/zj-b429/" data-id="ckvcbhfyt01bt6cvn9j6xnesf" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/10/zj-b429/" data-id="ckvd6e8gm01239cvnct0u4mx3" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/10/zj-b429/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -177,7 +325,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/10/zj-b433/" data-id="ckvcbhfz001c76cvng423w2kv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/10/zj-b433/" data-id="ckvd6e8gt012h9cvn99emb65c" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/10/zj-b433/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -255,7 +403,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/10/zj-b428/" data-id="ckvcbhfyr01bq6cvnqpzfjq0a" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/10/zj-b428/" data-id="ckvd6e8go01269cvn2gp3y8l3" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/10/zj-b428/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -319,7 +467,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/08/poj-1811/" data-id="ckvcbhfny00ob6cvnrg7px87y" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/08/poj-1811/" data-id="ckvd6e86400dn9cvnka4q723a" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/08/poj-1811/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -376,7 +524,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/08/zj-a761/" data-id="ckvcbhfxm019j6cvnpiajxu51" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/08/zj-a761/" data-id="ckvd6e8fn01099cvnhkj7wmwq" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/08/zj-a761/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -447,7 +595,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/08/zj-b436/" data-id="ckvcbhfyy01c46cvnuoirdsmk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/08/zj-b436/" data-id="ckvd6e8gw012m9cvnp2hiz9og" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/08/zj-b436/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -503,7 +651,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/07/zj-b434/" data-id="ckvcbhfyo01bj6cvnddrwd7uy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/07/zj-b434/" data-id="ckvd6e8gv012j9cvnfmui8m7h" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/07/zj-b434/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -560,7 +708,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/07/zj-b427/" data-id="ckvcbhfyk01bc6cvnxjtam919" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/07/07/zj-b427/" data-id="ckvd6e8gk01209cvnkutchyz9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/07/07/zj-b427/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -594,121 +742,6 @@
 
 
   
-    <article id="post-zj-b426" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/07/07/zj-b426/" class="article-date">
-  <time datetime="2015-07-06T23:55:27.000Z" itemprop="datePublished">2015-07-07</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/07/07/zj-b426/">b426. 宇宙光明體</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/07/zj-b426/" data-id="ckvcbhfyg01b56cvnsdrka2or" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/07/07/zj-b426/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/影像處理/">影像處理</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>模擬兩張圖片的合成。</p>
-<p>將前景圖片疊在背景圖片之上，按照權重比例來融合重疊部分得像素。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">0 0 0.5</div><div class="line">1 1</div><div class="line">255 255 255</div><div class="line">1 1</div><div class="line">0 0 0</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">1 1</div><div class="line">128 128 128</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><blockquote>
-<p>原來是宇宙光明體，還以為是宇宙大覺者呢。</p>
-</blockquote>
-<p>按照公式純模擬即可。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">0</span>;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">IMAGE</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Pixel</span> &#123;</span></div><div class="line">        <span class="keyword">long</span> <span class="keyword">double</span> r, g, b, a;</div><div class="line">        Pixel(<span class="keyword">long</span> <span class="keyword">double</span> x = <span class="number">0</span>, <span class="keyword">long</span> <span class="keyword">double</span> y = <span class="number">0</span>, <span class="keyword">long</span> <span class="keyword">double</span> z = <span class="number">0</span>, <span class="keyword">long</span> <span class="keyword">double</span> w = <span class="number">0</span>):</div><div class="line">            r(x), g(y), b(z), a(w) &#123;&#125;</div><div class="line">        <span class="function"><span class="keyword">void</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">            <span class="keyword">int</span> p1, p2, p3;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;p1, &amp;p2, &amp;p3);</div><div class="line">            r = p1, g = p2, b = p3;</div><div class="line">        &#125;</div><div class="line">        Pixel <span class="keyword">operator</span>-(<span class="keyword">const</span> Pixel &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r-x.r, g-x.g, b-x.b, a-x.a);</div><div class="line">    	&#125;</div><div class="line">    	Pixel <span class="keyword">operator</span>+(<span class="keyword">const</span> Pixel &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r+x.r, g+x.g, b+x.b, a+x.a);</div><div class="line">    	&#125;</div><div class="line">    	Pixel <span class="keyword">operator</span>*(<span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">double</span> x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r*x, g*x, b*x, a*x);</div><div class="line">    	&#125;</div><div class="line">        Pixel <span class="keyword">operator</span>/(<span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">double</span> x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r/x, g/x, b/x, a/x);</div><div class="line">    	&#125;</div><div class="line">    	<span class="function"><span class="keyword">void</span> <span class="title">print</span><span class="params">()</span> </span>&#123;</div><div class="line">    		<span class="keyword">double</span> p1 = r, p2 = g, p3 = b, p4 = a;</div><div class="line">    		<span class="built_in">printf</span>(<span class="string">"%.0lf %.0lf %.0lf"</span>, p1 + eps, p2 + eps, p3 + eps);</div><div class="line">    	&#125;</div><div class="line">    &#125;;</div><div class="line">    <span class="keyword">int</span> W, H;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">256</span>;</div><div class="line">    Pixel data[MAXN][MAXN];</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;W, &amp;H);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++)</div><div class="line">                data[i][j].read();</div><div class="line">    &#125;	</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(IMAGE &amp;other, <span class="keyword">int</span> X, <span class="keyword">int</span> Y, <span class="keyword">double</span> OPACITY)</span> </span>&#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; other.H &amp;&amp; i+X &lt; H; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; other.W &amp;&amp; j+Y &lt; W; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (i+X &gt;= <span class="number">0</span> &amp;&amp; j+Y &gt;= <span class="number">0</span>)</div><div class="line">                    data[i+X][j+Y] = other.data[i][j] * OPACITY + data[i+X][j+Y] * (<span class="number">1</span> - OPACITY);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">print</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d %d\n"</span>, W, H);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++)</div><div class="line">                data[i][j].print(), <span class="built_in">printf</span>(<span class="string">"%c"</span>, j == W<span class="number">-1</span> ? <span class="string">'\n'</span> : <span class="string">' '</span>);</div><div class="line">    &#125;</div><div class="line">&#125; back, fore;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">double</span> OPACITY;</div><div class="line">    <span class="keyword">int</span> X, Y;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d %lf"</span>, &amp;X, &amp;Y, &amp;OPACITY);</div><div class="line">    fore.read();</div><div class="line">    back.read();</div><div class="line">    back.add(fore, Y, X, OPACITY);</div><div class="line">    back.print();</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-zj-b425" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/07/07/zj-b425/" class="article-date">
-  <time datetime="2015-07-06T23:48:11.000Z" itemprop="datePublished">2015-07-07</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/07/07/zj-b425/">b425. 抽菸動作 請勿模仿</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/07/07/zj-b425/" data-id="ckvcbhfy801ar6cvndvfu49r9" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/07/07/zj-b425/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/影像處理/">影像處理</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>替影像打上馬賽克效果，馬賽克效果是把區域內部的每一個像素改變，改變的方法為從舊的圖像中，搜索以其為中心的 11 x 11 方形內部所有像素的平均。</p>
-<p>這一題要馬賽克區域為圓形，接著找到方形內部的像素平均即可。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">0 1 2</div><div class="line">1 2</div><div class="line">1 2 3</div><div class="line">4 5 6</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">1 2</div><div class="line">3 4 5</div><div class="line">3 4 5</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>馬賽克的方案也許還有其他，從這裡可以知道平均造就出新的像素顏色。那麼可以列出方程式，所謂的解馬賽克估計也是去找線性聯立方程組，利用高斯消去法就能求解，可惜的是會有多組解的情況吧。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt; </span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">IMAGE</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Pixel</span> &#123;</span></div><div class="line">        <span class="keyword">double</span> r, g, b, a;</div><div class="line">        Pixel(<span class="keyword">double</span> x = <span class="number">0</span>, <span class="keyword">double</span> y = <span class="number">0</span>, <span class="keyword">double</span> z = <span class="number">0</span>, <span class="keyword">double</span> w = <span class="number">0</span>):</div><div class="line">            r(x), g(y), b(z), a(w) &#123;&#125;</div><div class="line">        <span class="function"><span class="keyword">void</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%lf %lf %lf"</span>, &amp;r, &amp;g, &amp;b);</div><div class="line">        &#125;</div><div class="line">        Pixel <span class="keyword">operator</span>-(<span class="keyword">const</span> Pixel &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r-x.r, g-x.g, b-x.b, a-x.a);</div><div class="line">    	&#125;</div><div class="line">    	Pixel <span class="keyword">operator</span>+(<span class="keyword">const</span> Pixel &amp;x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r+x.r, g+x.g, b+x.b, a+x.a);</div><div class="line">    	&#125;</div><div class="line">    	Pixel <span class="keyword">operator</span>*(<span class="keyword">const</span> <span class="keyword">double</span> x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r*x, g*x, b*x, a*x);</div><div class="line">    	&#125;</div><div class="line">        Pixel <span class="keyword">operator</span>/(<span class="keyword">const</span> <span class="keyword">double</span> x) <span class="keyword">const</span> &#123;</div><div class="line">        	<span class="keyword">return</span> Pixel(r/x, g/x, b/x, a/x);</div><div class="line">    	&#125;</div><div class="line">    	<span class="function"><span class="keyword">void</span> <span class="title">print</span><span class="params">()</span> </span>&#123;</div><div class="line">    		<span class="built_in">printf</span>(<span class="string">"%d %d %d"</span>, (<span class="keyword">int</span>)round(r), (<span class="keyword">int</span>)round(g), (<span class="keyword">int</span>)round(b));</div><div class="line">    	&#125;</div><div class="line">    &#125;;</div><div class="line">    <span class="keyword">int</span> W, H;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">300</span>;</div><div class="line">    Pixel data[MAXN][MAXN], tmp[MAXN][MAXN];</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;W, &amp;H);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++)</div><div class="line">                data[i][j].read();</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">blur</span><span class="params">(<span class="keyword">long</span> <span class="keyword">long</span> X, <span class="keyword">long</span> <span class="keyword">long</span> Y, <span class="keyword">long</span> <span class="keyword">long</span> R)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (R &lt; <span class="number">0</span>)	<span class="keyword">return</span> ;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++) &#123;</div><div class="line">                <span class="keyword">if</span> ((i-X)*(i-X) + (j-Y)*(j-Y) &lt;= R*R) &#123;</div><div class="line">                    <span class="function">Pixel <span class="title">B</span><span class="params">(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span>;</div><div class="line">                    <span class="keyword">int</span> cnt = <span class="number">0</span>;</div><div class="line">                    <span class="keyword">for</span> (<span class="keyword">int</span> a = <span class="number">-5</span>; a &lt;= <span class="number">5</span>; a++) &#123;</div><div class="line">                        <span class="keyword">for</span> (<span class="keyword">int</span> b = <span class="number">-5</span>; b &lt;= <span class="number">5</span>; b++) &#123;</div><div class="line">                            <span class="keyword">if</span> (i+a &lt; H &amp;&amp; j+b &lt; W &amp;&amp; i+a &gt;= <span class="number">0</span> &amp;&amp; j+b &gt;= <span class="number">0</span>) &#123;</div><div class="line">                                B = B + data[i+a][j+b];</div><div class="line">                                cnt++;</div><div class="line">                            &#125;</div><div class="line">                        &#125;</div><div class="line">                    &#125;</div><div class="line">                    tmp[i][j] = B / cnt;</div><div class="line">                &#125; <span class="keyword">else</span> &#123;</div><div class="line">                    tmp[i][j] = data[i][j];</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        </div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++)</div><div class="line">                data[i][j] = tmp[i][j];</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">print</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d %d\n"</span>, W, H);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; H; i++)</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; W; j++)</div><div class="line">                data[i][j].print(), <span class="built_in">printf</span>(<span class="string">"%c"</span>, j == W<span class="number">-1</span> ? <span class="string">'\n'</span> : <span class="string">' '</span>);</div><div class="line">    &#125;</div><div class="line">&#125; test;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> <span class="keyword">long</span> X, Y, R;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%lld %lld %lld"</span>, &amp;X, &amp;Y, &amp;R);</div><div class="line">    test.read();</div><div class="line">    test.blur(Y, X, R);</div><div class="line">    test.print();</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/21/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/20/">20</a><a class="page-number" href="/page/21/">21</a><span class="page-number current">22</span><a class="page-number" href="/page/23/">23</a><a class="page-number" href="/page/24/">24</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/23/">Next &raquo;</a>
@@ -724,7 +757,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">49</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -736,7 +769,23 @@
       <ul>
         
           <li>
-            <a class="text" href="/2021/10/29/work/company-ghost-story-14/">
+            <a class="text" href="/2021/10/28/diary-202110-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·序》</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/diary-202110/">
+              
+                <i class="icon-file-o"></i> 
+              
+            好多個 28 在這個時刻</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/work/company-ghost-story-14/">
               
                 <i class="icon-file-o"></i> 
               
@@ -797,22 +846,6 @@
                 <i class="icon-file-o"></i> 
               
             疫情下的工作變化</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/06/21/work/company-ghost-story-10/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 10</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/diary-202105/">
-              
-                <i class="icon-file-o"></i> 
-              
-            前思後想 新居落成</a>
           </li>
         
       </ul>

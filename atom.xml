@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://morris821028.github.io/"/>
-  <updated>2021-10-29T12:10:21.494Z</updated>
+  <updated>2021-10-30T03:36:50.249Z</updated>
   <id>http://morris821028.github.io/</id>
   
   <author>
@@ -17,13 +17,56 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Company Ghost Story 公司鬼故事 14</title>
-    <link href="http://morris821028.github.io/2021/10/29/work/company-ghost-story-14/"/>
-    <id>http://morris821028.github.io/2021/10/29/work/company-ghost-story-14/</id>
-    <published>2021-10-29T02:00:00.000Z</published>
-    <updated>2021-10-29T12:10:21.494Z</updated>
+    <title>《批改娘串起得那段經歷·序》</title>
+    <link href="http://morris821028.github.io/2021/10/28/diary-202110-encrypt/"/>
+    <id>http://morris821028.github.io/2021/10/28/diary-202110-encrypt/</id>
+    <published>2021-10-28T14:28:28.000Z</published>
+    <updated>2021-10-30T03:36:50.249Z</updated>
     
-    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Format-vs-Concatenation"><a href="#Format-vs-Concatenation" class="headerlink" title="Format vs. Concatenation"></a>Format vs. Concatenation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">String.format(<span class="string">"format "</span> + a + <span class="string">"%s"</span>, b);</div></pre></td></tr></table></figure><p>大部分情況，很少去生成 format string，<br>混合使用很容易遇到表示錯誤，因為當 <code>a</code> 中出現 <code>%</code> 等特殊字元時，解析上會發生錯誤。最好是統一一種使用規則。</p><h3 id="Comparator-Signum"><a href="#Comparator-Signum" class="headerlink" title="Comparator Signum"></a>Comparator Signum</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">long</span> a = func(x);</div><div class="line"><span class="keyword">long</span> b = func(y);</div><div class="line"><span class="keyword">long</span> dir = mDir;</div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) a - (<span class="keyword">int</span>) b;   <span class="comment">// SHOULD Long.compare(a, b);</span></div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) (a - b) * dir; <span class="comment">// SHOULD Long.compare(a, b) * Long.signum(dir);</span></div></pre></td></tr></table></figure><p>隨意 casting 三不五時就會 arithmetic overflow 搞砸了排序。</p><h3 id="What’s-Not-Equal"><a href="#What’s-Not-Equal" class="headerlink" title="What’s Not-Equal"></a>What’s Not-Equal</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> ((a == <span class="keyword">null</span> &amp;&amp; b != <span class="keyword">null</span>) || </div><div class="line">    (a != <span class="keyword">null</span> &amp;&amp; b == <span class="keyword">null</span>) || </div><div class="line">    !a.equals(b)) &#123;</div><div class="line">&#125;</div><div class="line"><span class="comment">// WAIT, if a == null and b == null ?</span></div><div class="line"><span class="comment">// SHOULD Objects.equals(a, b);</span></div></pre></td></tr></table></figure><p>有內建方便使用的函數，別再這樣寫了。</p><h3 id="Sync-Up"><a href="#Sync-Up" class="headerlink" title="Sync-Up"></a>Sync-Up</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Record</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">merge</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> a.setParent(b.getParent().copy());</div><div class="line">        <span class="comment">// refactor, a.setParent(b.getParent());</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Merger</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(Record r)</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            merge();</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="comment">// nothing here</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>為什麼偷偷搞了一個 Exception 又不給 log message，一不小心就 refactor 到奇怪的東西，曾經把 <code>NullPointerException</code> 視為一個正常邏輯，修掉來自另一個 call path 的 NPE，卻又踩了另一塊的雷。</p><h3 id="Keyboard"><a href="#Keyboard" class="headerlink" title="Keyboard"></a>Keyboard</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">SHIFT + INSERT = CTRL + V</div><div class="line">CTRL + C</div><div class="line">CTRL + Z + ENTER</div><div class="line">HOME/END</div></pre></td></tr></table></figure><p>大家耳熟能詳的 CTRL C+V，都不知道 CTRL+INSERT/SHIFT+INSERT，而在 X Window System 上，選取時會自動複製，不用額外按下複製操作。</p><p>至於問 INSERT/DELTE/HOME/END 是什麼的小夥伴，還是好好看清楚鍵盤吧。</p>]]></content>
+    <content type="html"><![CDATA[<div class="hbe hbe-container" id="hexo-blog-encrypt" data-wpm="Oh, this is an invalid password. Check and try again, please." data-whm="OOPS, these decrypted content may changed, but you can still have a look.">  <script id="hbeData" type="hbeData" data-hmacdigest="3af0d301737d557b33960f95bbd4f8a44f10ce310a13710ea87f747617469be3">921dba8309d8a1e0e274dcd1d8d70b44d67a7511d04b12ed865e1db1166e79cdb4a101e0f02be8e9f0e570adc09f08b6ad3322634e67ae7b1e108106b5f7a56c074486dfa8a339b1f50d84be49039e2b7cd6e47101275cbf16e5c1a99a45a0ace0f4bc7d3a2901aa3d4326b2b82818401d4057ec8da5a8ca2fbb7929a63afd09bf355a209a6f62d2821af7694ecb3c8ceeaa32b3d10208ee5fc4d0c6cbd2768f81c66761a353e9b28fd49ef0207e292838cf2fe851f8a3c5e00503fb67c7b8dc7da6c4ace845e13e525f680664345d2fd0828289394586531e97bfbce4c8318b25690dc7943e0ee222da713ac66cec91e7d64d2471b9d34788a5079baa1d2140e88e2f0841c6a20fe5cb59e0282b9f730549fed6122fa6d0ff5b777b25862a33e4c64f741ac2d5255460cc9d865c9f57c09e041bb8567fe5a9f9435c88b47a8200787e6844a8f9249bb5fa417d402177fa375eb2c120fb6f36eaf4ad6646e8e22649b91c513c07b51eb295c9504847f0902b2a1d89e0d361015534ba716dfe6f1ae2c13523d006e2c65d0ae344084debb32d613bde0d94871c8547739884f9261200cf6e40c6d8df40d81a9ff9e498528a9f96061d0f3efd68d43e9ed20c48e138f690b6350d253212523acc459bce1031772a8feb847902785ceef2d918467462f930d0dfba04f04142b24e355c791385959251f066db99dde131b6e61fa7f0d8afd179d879ea97aedcccf97254503554f75b146d334e67db528fd3fed412b900cd9b84a40054effda0f9463f6d1599935fbd6b947159da3a218bf5703945ffd97154be5446649e9c4e91e73adac837c89b42ffb90e5c4876981eb5c4fd4c137634a12df956a4207a65adeed2bddeabb2bdb99ffbd37f9a028450208a71a42fc65addf537c1e4f2fc281afecec9f18b3864002bd20e99429117cbccc8dacf081b8f9609a28423546a9f638c50fa9d583461cdfeb27ef9a996f19a26bbc14d37cf84585ebb6d0e07b69a699b4f458659fc2d87f63ac9cbcbc28105329a04f025fcd8c9b47a86356478a3afbcd1819dac46e5f595a36a0416c5f09f18c38a4456850d79e3cd5e5ccbf3c5aacc81ced31f0dabb99791156ea2bd2e6115dcd396dd2234604ff04c89f5791dc420c0b14e59fe2b528950a3b6766bc4483ee13a9e223751a66796ba2b50a2a642acf09e2e7ba17cf2f51de896f9f4ac8c9e6a697e7933475a21b8fefe93fe8c89b38c92a8df621844c9d0fe9c0631093bab92b475f811ed54df1acd1d05336a75385ef17475ab55f5295658ad6d31b91ccae8fafb479c467c16fa04b432638910d5472c1237c2e62b319392e9395e915e5128d560243c511e641db08c1e9661493839de6aeeac7c02d4e123a35f378b201fc92b0131af78fbec6a203bdc449d2df8f3fdd64e938c302c4d35699cf04f302aa3dfe5552f57a625d2faac01f85afa0b4685a8143e66e412018d61c8837167da7c1dae45b21a676c22eff9ffb163d06cd6adbe7d5be5972b8d49ec01877ecb0f1c6df241348402f5bba7692c98a41ba50577f8008bed952f8607f40bf5a573ef75f6fe726feafd7e8c33b60d2588aee76fe4c761690da2c593dd2c457764d07e9a20d4b23b593dc8d8fbde53884521d99bdd8ffef69281f8b858bfbfa6d3aabfea0b504d275cada4aa66689619c667c4b48161fb07ddc31cd0cd8f06c56271cbdd48eb731d0fea92623542f7164f03a78b24c379e25a88fecb905dcc6ba9ff6d78bc1ccd17aa200cb7db07300c1a6e7d2f41441231140752c9c229b43b7cfa0221d4965a25548e4443ee519c77d73af53323faaa811afd24386caea5789fed60b3844d95774c65d7127b4caae837bf53f4fd8471aa08a9c5a1f30cc02e860ac724050479f789c9fde71a302f4a659691c140e195eac9eeb7bd703c94cd836ad174905c37a8529dc3e78b3a3e581ff3b72834e87ac83155fb794218010a18d6441bc8ca57650153b9cf3e2ee2c14773d454699244de26c71448fab33a2fbf5627cb150f2f868bae1885c39b3e500599d3ada7484a13d08b0d6dda438562b9cb31d08f11167cb268af084a140e3e24d99ad8bcac8985440d783caaf02ea4821eaebfacafc2b50450e2fa5c3591c4c0040c5d4e95daab55db67e48d21426466eba47a1aeb1a5ebd9365615fcee8435b8bb04cce571582fa760e6e7aaf8f30b37c0216efc01845bf8c5bb723d4ee286958d4a8735a10dc85f60e2e2e8f35e6fb66ca4fc2d2f816b4e3ff0c00193208fce193cc68270b89497a8fce3de7cf85d027364b3d0444085d3d8f486227ce7a74dc6aa5f665d11758e182c6c24da79859b8400b67437c5a8d19d3d2e3c2a61f3bc9fc84c7d8434bf5c16bfd873d82e9a31eea6287efe8a362d907cdad62ae1f7d272a5e248f296a1379b810d98e7cae5913eb51e4f446b56acfd1bf2388cef767e0a0d5d85ae48dec7d9ab4ab4e4a0fe88f5dbba869a1844942ee118533024e54c039464205d511b58adc9cfd426f1e74cd23cec3e32b1f4a7aea16a8f39be1c827ea7cb428e4b119b71715299c3cc36b908736fba40cf5621f618730d61cf4fbcae55f0f30203b692f6c2104ac0d42f4bf1fdece957179e4a2f62cab5aae09f0b54b4d1828fde5cb66e5ab193ee8f86d74ae35fc3ad0e45cf0c2dbefa54968d2258eb129ff63a6545385bde16dc9607c5a302dd9afd9bbce0726fe2b7269b73aca78c1d8c4372a7e86e4e4919ce61f7fef27995a46538c8b385a66b42084665fb2f9eeed489b896b1537b96f30e8d10a88ed7a569fad15dafacc0e3d7428c04e7ce54d6f78cc4e24f049caf74f724d87b49d8abf165078c91be38e5c16afd556f869bc6416a27e461f40693405143c6030b8ecf9c78d4eee6079b2cd183e359d891a502670a005be745110516104974e29b6581c5a5fcf9083a2afeb24216e4a9cfe42010a54c482da0a644badd56204f1b0bf3e70601156cc7f61e121b752336e3618e9014fc563dab0b0fc824869bf632dba10a9964922d79ff6c515680e232af4db8efee94393fac2a381caf3d75eb6bec07fcbe1f06bec4a8dff0e7bae474a1aa2c0e77d8fa3b19c76c5bad59f883613b93fa530a8582a11e53e1ff56b78d89f7ecac69cdd2a4da0ab76b0e1e32df6720a6bcbe32568d63a8f29d0e1237a552976ea28e1f1fbaec4c5441285d1d02e614a644d0c4529badc27d2c116adc35bbfb35d4e1a6d803bf8e1e7d85483f428c14f29a2446eecbe6d2b1ca7e6314648812a96b42c2ea40b312d9cf7efac7c0374cff69c3a282017ef8791aba30cbfb323def3f2f90bc80c1534644d804b8ef9cf67f0599e9871d261859915d7e4e1f297ed14560e4d16063dc8ff5091d4094353dd0c4782adf4aa142aa0fe70e7f4934d821cecbef2875c1649a8412b6e2c4396fa670ffae7ee60ce8e50b32cfe3c8a26ba93eaae53797796d2a8574227c12e54f5e2ec1bf4ab3d7b592c4017474498cbce0775a74b6d1f47c91ffd1851a2c555a08123259323a6e1343c787db033b6d714ffddc75714db2773a540aa608a6562b4d681c3e5f048b0da27d2e158b1b8cafc1d941f580055122f0db721d86119012aaf6f95e05b036839b3ed3efeb76c86cd6bc1b069ea580a6a8ca457d42a740b0abb6f08590623ea4110950dbdcc4db87179e0da669b3c5e60e2720ad4506e2b357acd74037c3827ecd618cfe4fee85aea5cab2a3fc4a0f64d5811f0e79bced07c5df69ee89cf8376a736d5c7abefd4b456a043f581f2347a984bb98824883e0b502ac5c097448afdda03fcbab2f9c6442bd91d6088ed527cbcc25eadc57f01c03afafb0ab83c95ed57e79acda6f74d825eb69290d90578bcb3d0d55f234a8a65080b942341ec899ba2da4784f594e0c1d4cc06b2d05d06e78b3ea33d0dc21f8842e59c054451085d8c7b7fa6022d678fed0e89e4e0f16da988a673171d4467903a2988a918f21bd3f00ecf231bceaed9d04c42b8b9de87f333ce2e6aaecc0223682502c17eedfa70c587ccf6b84c6be45d6fc2180fe2b8f19b0e4a4bbbfa53bbf0e422884a0db147cd816ac17e5001249508144a6343ee4e72339d0edab8652b7a3128d4e6abf97c1ae78a39d3588f6a0ee16269b60965a938c1b6f290e3abf506f9c6e708697cb7460001465038199c656cf5426da666522dec4414e16a549791242ff4cc9dfd742190d4ab685ba72caa79d53102d637df0314f6cda6582be1e5b34581440c23c2858a8f24b2fbb243da4cb0bed03acaa4fa57411a91abf8550d825ac6ac8081adbdd7025a215ddccfc58a3804598c2d68b4d8dcf4c5ce0ded735de52857ce870693df7f0bcfe41323b6dc8b209a53689a8bbf0d08b2aeb85982ad8efe311ac3d7e5a3cb8235b94a33cf0ac4d1b9b6c0ccc3e5a6298ffd4a3e4520ca06f8daa5ef279654c710bc57a6f5a09861b90103db204b11f0710d65d5db06881173d9cbe21cfc4bbfff333e82066909664cabcbdca11a32c432c99b593907e3339c8614eeed41e1ebe8c89219b80227c92c42c81a96dd132b9b71df9b805f30da6ef6f9331f8b2668bc2e7a806c27172afb54bf2e5063a6f6a56bc3159a2c65999efb800f3049638e5b9371f13c2ab1b653575d210c8d003d660bfd5ff72eb44d617aaaa90212edb63abcb352f1399ed24c82bd8b3ce0d42884c5d592b2ec2db56822819860b0a00785de28755eeaeb5a6aa06e6e51e4073069e5cf573bf21691dc247cff703bdab2f9f3880e001fbde20769c0a7a1a12e1613d94e51e4bab95e8890a9f07626eb10531f00e8fceb02c4e70143ab899ba1538d73baeb09aafd4391d08c141a6f10f85da3833b4c91b46f422d89c0b32b0892e9b30de3c78b30cb87f3cece4faf210a7e08478f30135b698e9d31f36462c698457d7521e7841cf3f185695e8c998629f72eb6c167137046be63a7939f297a7a904cac3d06bf7c6e81f2f53e46a9016efb8322d020d3809f721c3c9aff67eb0a0f37fdd180eca42262a6a4a4305b7c80864bc0b14a00f66a5f03873dd9421b9a65945ec5e30febaf0b7aff4a19298665e9b2b82ead5957f7c9356dcf54341aeecd8482421835c5abf698226e9307a55f765e855624703d55750f445f16eda22e484f2115cb55a8afafba44cffa261000e3b0f0abd68798f9d88bc4b10fca4caa7ce5552f0959260ec205fed3be9652829cf109715756fa96b2b59689a673de8b0fc22edf1a60d17dd09c48695da3620f785f7eca144b3606bde635ae09cb1a48eb87a676c79ecef47bec93ed9dac01d7a7534ab29c51297e2840678cbd491e2091906a1512cd14c069da91fcb9b2d82414ceb09ae65e1bcf447004325a0a8bc5f5de8e0a338e4b2748b2653785cf861854f8145839901240b89f06eea3eda01d06ffeee117bcb10f864020eaba871a3ac08b864dca8cf8c7e420fee58b7480d5c62364c47d13dd6589984d4ff516b74d27f2716477a4a67257f12f7f1c2051e63895ff00b6bb7fffc39c2445900d30fb1be184b1dd72aa55fdbe715a87b76942a9266cb42751488fc0a1b0f60a7ff32c271316d667fb645d106a12184a203633b984958605c51b2cd8ed12564d3436bdd6f54fba39d1ca453608f1520bb1686313a5a285775abc1d1e92dfc2e4f2a3b1af85471f96562f6c5088d30c7e1a0788de7cab8a2eb3d4a861b8d9e1bad7d4de2dbba07585414314cfde85b1e9a84a49f2a97d8026e7f6795437cdcc48b3047fbcbb5f4dbca029cf5855d84d4822505678d42299a2d050fe5095d306a6fbba157459f7aeb9b3243026f42401615c7d7094f63a1238790d868017f54f5196213142a515e9c931b4cadc26ee8e68629aa241b9dabd872071c757cdb85d09913f92b1759b3648a48b93e2f792d0081e8d7d1b873bbc2130bc7d330dae44000dc36f182bd36678952757c692314df7b285308ece50c10220fa5697f433fd9415176cfc826f0472dbe5e8095b22dd033e7df574becc9293d9e7b15c727399ab52e27800a58d86b42f001c606a6a3f74ce8de721a9a359f8e1dcc3e2129723945900cde96de4be12d015d0606446899fe3b796e74ccaaba9e44b406a16fab8a0f03a4d2d8dc2773601b93fdb1e7f64a65d40ae5e568dc6356a5fd8c522eaae66ff667f13316633b1e93d0796fc1e6b506d240dce453c0f4d3aab29eb515d7fe9600c8cf4ebdfa0b38d5940b1013694100e01a7bf656f1b9bdae040ed6dd00f09db65cbfbfd40a7b36338223fd9da43d6a30a17d42ba46d4657aea9acd88b6beef9b4b5ebefc13391d9c9b82c8f34447803ba81677eb1c3a3ee739ad1e52cad24fe0614bb82843dcf9b3f0dfc3a60e8282f4743bfcdf84f279ae3958c4308cdf6fd4c6884f7e3d315ffaa1787d351d747254fb42b9a0e4591a56db</script>  <div class="hbe hbe-content">    <div class="hbe hbe-input hbe-input-default">      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">        <span class="hbe hbe-input-label-content hbe-input-label-content-default">請輸入您的 ptt 使用者 ID</span>      </label>    </div>  </div></div><script data-pjax src="/lib/hbe.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">]]></content>
+    
+    <summary type="html">
+    
+      您必須輸入密碼，才能查閱此文章
+    
+    </summary>
+    
+      <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>好多個 28 在這個時刻</title>
+    <link href="http://morris821028.github.io/2021/10/28/diary-202110/"/>
+    <id>http://morris821028.github.io/2021/10/28/diary-202110/</id>
+    <published>2021-10-28T14:28:00.000Z</published>
+    <updated>2021-10-30T03:52:59.113Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="工作近況"><a href="#工作近況" class="headerlink" title="工作近況"></a>工作近況</h2><h3 id="整合"><a href="#整合" class="headerlink" title="整合"></a>整合</h3><p>整合產品就麻煩的環境問題，尤其是大型程式開發，現在又同時有併發、平行等需求，其他產品的優化方式非常特別，各自測試都沒有問題，一整合就出事，接著就是一陣暴打如發生以下幾種狀況，不外乎就是連繫到我身上。</p><ol><li>噴了一排錯誤，但第一個警告訊息來自你負責的功能</li><li>許多執行緒的 stackstrace 錯誤，列表第一個的你負責</li><li>負責整體監控系統，註冊了所有錯誤訊號處理，你回報了錯誤</li><li>噴了一個錯誤，stackstrace 貫穿了好幾個函數，而你是最後一個</li></ol><p>滿滿地無奈，在這如此大型的程式開發下，沒有多少人能釐清問題所在。分工之細，只能四處找人通靈。</p><p>十月過後，工作就滿四年。在這四年間，代碼的提交次數也逼近七千次，登上了第一位。一部分的原因也在於修改的技術面比較通用，只要出現一則鬼故事，就得去調整整體的使用方法，再透過正規表達式去修正所有關聯代碼。但不是那一種單檔修改就一個 commit，數量之多會拖累前測的工作量，再來是 revert 操作可能過於複雜。的確看起來很不軟體工程，無疑是有點特殊狀況。個人佔有如此大的修改比例，很容易引火自焚，瑣碎的小錯誤都只能交付到自己。在緊急狀況下，與其用講的交代下去，不如一肩扛起，工作量便越來越不樂觀。</p><h3 id="測試"><a href="#測試" class="headerlink" title="測試"></a>測試</h3><p>拖了一年的規劃，總算把 JDI (Java Debug Interface) 掛上了覆蓋率測試，不同於單元測試的覆蓋率。原先的單機框架中，動態分散測試點到不同的 JVM 平行測試，盡可能地達到負載平衡，因此就不知道怎麼搭覆蓋率的套件，最後不得不讚嘆原生的 java agent 和 reflection 機制，偷偷用了一些黑技術才完成。覆蓋率終於由 16% 提升至 36%，以後就更方便知道哪些檔案有測試。</p><h3 id="待續"><a href="#待續" class="headerlink" title="待續"></a>待續</h3><p>忙了好一陣子的 tcl interface，上層下指令要有些做好 3D Viewer，兩年前規劃的 3D Viewer 恰好派上用場給個交代，那時嘗試做了一個小原型，也未能滿足所有需求。實際做起來問題之多，就像玩了十年的《楓之谷 Maplestory》，突然要求做個 3D 版本一樣，如何操控角色、過場動畫、使用模型、載入模組等問題逐漸浮出，一個人恐怕做不好。跨平台環境的戰爭，肯定在等著我。</p><h2 id="生活雜事"><a href="#生活雜事" class="headerlink" title="生活雜事"></a>生活雜事</h2><h3 id="Serendipity"><a href="#Serendipity" class="headerlink" title="Serendipity"></a>Serendipity</h3><p>交友方式千奇百種，曾經讓朋友在我忙著 coding/論文的時候替我回覆訊息，結果幾年後湊了一對基友。9/15 那日，ptt 上收到來自一個多月前的文章回信，自述「受朋友委託，幫忙在 github 看我曾寫的 source code，感興趣便跑去看部落格文章，追了幾篇文章，其中提到 ptt 文章 … 然後就送信了。」那時我心想是哪一個 source code？卻看到「批改娘」，第一個反應是「學弟是不是用美人計想騙我回實驗室」。</p><p><img src="https://i.imgur.com/TJjX7YL.jpg" alt="「他們是打算讓我們工作到死啊」《異世界迷宮黑心企業》"></p><h3 id="某日夜晚"><a href="#某日夜晚" class="headerlink" title="某日夜晚"></a>某日夜晚</h3><p>一般來說，在路邊看到漂亮小姊姊能閃則閃，因為十之八九都是推銷，一旦下起雨來，也只能硬著頭皮上了。果真還是被纏上了，甚至跟著撐傘走一大段路</p><p>「你們哪間公司的？」正想著甩掉<br>『O O O O』<br>「這個我知道，之前有告過你們公司耶」<br>『那沒事了，謝謝』<br>朋友普遍表示：「都沒被搭話過，我看起來又窮又宅 … 我不在她的考慮範圍內 …」</p><p><img src="https://i.imgur.com/9xItDlJ.jpg" alt="「我不在他的考慮範圍內嗎？」《加油吧同期酱 》"></p><h3 id="某日清晨"><a href="#某日清晨" class="headerlink" title="某日清晨"></a>某日清晨</h3><p><img src="https://i.imgur.com/VZjuw6v.jpg" alt=""></p><p>朋友普遍可以做到「還沒睡著，天就亮了」、異常的我則是「醒來，天還沒亮」，深刻體會到自己老了。從小就被訓練得很早睡，隨太陽而起。嘗試的那幾次熬夜，隔天都不太像自己。而飛往美國出差的那幾次，調時差的自己就像廢人。</p><h3 id="某日正午"><a href="#某日正午" class="headerlink" title="某日正午"></a>某日正午</h3><p>高中資訊老師打了通電話聯繫我，這不是第一次，仍然能讓老師們記得，備感榮幸。大學畢業前詢問我要不要回去當老師，那時的我正苦惱無法通過畢業門檻。現在被感覺好像步入正軌，實際上在職場上卻感到力有未逮。這一次，被交付指導小學弟一些程式問題，而那是曾經我出的題目，那時的技術力也不夠成熟，老是被說測試資料不夠好，被指出標準答案的一些漏洞，想起來就是滿滿的黑歷史。</p><p>老師隨口一句「現在在哪工作？ … 結婚了沒？」不經淚下，在公司合作的老同事，也聊著聊著問道「聽說升了主管，不錯哦。 … 這麼快就吃完飯，在家工作？有結婚？老婆了嗎？」已經回不去那個幼稚的我，也得開始面對人生課題。</p><h3 id="二十八"><a href="#二十八" class="headerlink" title="二十八"></a>二十八</h3><p>恭喜 morris821028 抵達了 28 歲，老是想小小地抱怨，要是 11 月生，整串就是可以迴文了。海外的小夥伴總是覺得 1982 年生的老傢伙，怎麼這麼活躍。</p><p><img src="https://i.imgur.com/1ULQmlI.jpg" alt="生日"></p><p>住址上滿滿的 28 號碼，近期稅單上也正好著 1028，繳費單上也也有不少的 28，就像著「巴德爾邁因霍夫現象 Baader Meinhof Phenomenon」 其中的證實性偏見，巧合般的重複，不斷地在意著。</p><p><img src="https://i.imgur.com/1DJ8bKG.jpg" alt="xpark"></p><p>不同過往的日子，難得在生日那一日，走出房門，體驗著好多沒想過的事。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;工作近況&quot;&gt;&lt;a href=&quot;#工作近況&quot; class=&quot;headerlink&quot; title=&quot;工作近況&quot;&gt;&lt;/a&gt;工作近況&lt;/h2&gt;&lt;h3 id=&quot;整合&quot;&gt;&lt;a href=&quot;#整合&quot; class=&quot;headerlink&quot; title=&quot;整合&quot;&gt;&lt;/a&gt;整合&lt;/h
+      
+    
+    </summary>
+    
+      <category term="手札日記" scheme="http://morris821028.github.io/categories/%E6%89%8B%E6%9C%AD%E6%97%A5%E8%A8%98/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Company Ghost Story 公司鬼故事 14</title>
+    <link href="http://morris821028.github.io/2021/10/28/work/company-ghost-story-14/"/>
+    <id>http://morris821028.github.io/2021/10/28/work/company-ghost-story-14/</id>
+    <published>2021-10-28T02:00:00.000Z</published>
+    <updated>2021-10-30T02:44:28.624Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="Java"><a href="#Java" class="headerlink" title="Java"></a>Java</h2><h3 id="Format-vs-Concatenation"><a href="#Format-vs-Concatenation" class="headerlink" title="Format vs. Concatenation"></a>Format vs. Concatenation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">String.format(<span class="string">"format "</span> + a + <span class="string">"%s"</span>, b);</div></pre></td></tr></table></figure><p>大部分情況，很少去生成 format string，<br>混合使用很容易遇到表示錯誤，因為當 <code>a</code> 中出現 <code>%</code> 等特殊字元時，解析上會發生錯誤。最好是統一一種使用規則。</p><h3 id="Comparator-Signum"><a href="#Comparator-Signum" class="headerlink" title="Comparator Signum"></a>Comparator Signum</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">long</span> a = func(x);</div><div class="line"><span class="keyword">long</span> b = func(y);</div><div class="line"><span class="keyword">long</span> dir = mDir;</div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) a - (<span class="keyword">int</span>) b;   <span class="comment">// SHOULD Long.compare(a, b);</span></div><div class="line"><span class="keyword">return</span> (<span class="keyword">int</span>) (a - b) * dir; <span class="comment">// SHOULD Long.compare(a, b) * Long.signum(dir);</span></div></pre></td></tr></table></figure><p>隨意 casting 三不五時就會 arithmetic overflow 搞砸了排序。</p><h3 id="What’s-Not-Equal"><a href="#What’s-Not-Equal" class="headerlink" title="What’s Not-Equal"></a>What’s Not-Equal</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> ((a == <span class="keyword">null</span> &amp;&amp; b != <span class="keyword">null</span>) || </div><div class="line">    (a != <span class="keyword">null</span> &amp;&amp; b == <span class="keyword">null</span>) || </div><div class="line">    !a.equals(b)) &#123;</div><div class="line">&#125;</div><div class="line"><span class="comment">// WAIT, if a == null and b == null ?</span></div><div class="line"><span class="comment">// SHOULD Objects.equals(a, b);</span></div></pre></td></tr></table></figure><p>有內建方便使用的函數，別再這樣寫了。</p><h3 id="Sync-Up"><a href="#Sync-Up" class="headerlink" title="Sync-Up"></a>Sync-Up</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Record</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">merge</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> a.setParent(b.getParent().copy());</div><div class="line">        <span class="comment">// refactor, a.setParent(b.getParent());</span></div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Merger</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(Record r)</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            merge();</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="comment">// nothing here</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>為什麼偷偷搞了一個 Exception 又不給 log message，一不小心就 refactor 到奇怪的東西，曾經把 <code>NullPointerException</code> 視為一個正常邏輯，修掉來自另一個 call path 的 NPE，卻又踩了另一塊的雷。</p><h3 id="Keyboard"><a href="#Keyboard" class="headerlink" title="Keyboard"></a>Keyboard</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">SHIFT + INSERT = CTRL + V</div><div class="line">CTRL + C</div><div class="line">CTRL + Z + ENTER</div><div class="line">HOME/END</div></pre></td></tr></table></figure><p>大家耳熟能詳的 CTRL C+V，都不知道 CTRL+INSERT/SHIFT+INSERT，而在 X Window System 上，選取時會自動複製，不用額外按下複製操作。</p><p>至於問 INSERT/DELETE/HOME/END 是什麼的小夥伴，還是好好看清楚鍵盤吧。</p>]]></content>
     
     <summary type="html">
     
@@ -306,15 +349,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
-    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -345,15 +388,15 @@
     
       <category term="Java" scheme="http://morris821028.github.io/tags/Java/"/>
     
-      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
-    
-      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
-    
       <category term="內存" scheme="http://morris821028.github.io/tags/%E5%85%A7%E5%AD%98/"/>
     
       <category term="記憶體" scheme="http://morris821028.github.io/tags/%E8%A8%98%E6%86%B6%E9%AB%94/"/>
     
       <category term="memory" scheme="http://morris821028.github.io/tags/memory/"/>
+    
+      <category term="performance" scheme="http://morris821028.github.io/tags/performance/"/>
+    
+      <category term="效能" scheme="http://morris821028.github.io/tags/%E6%95%88%E8%83%BD/"/>
     
   </entry>
   
@@ -381,19 +424,20 @@
   </entry>
   
   <entry>
-    <title>Handover</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
+    <title>File Extension</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:39:01.704Z</updated>
+    <updated>2021-01-31T03:11:29.235Z</updated>
     
-    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
+    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
+        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
+&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
 
       
     
@@ -439,20 +483,19 @@
   </entry>
   
   <entry>
-    <title>File Extension</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-file-extension/</id>
+    <title>Handover</title>
+    <link href="http://morris821028.github.io/2021/01/31/work/meme-handover/"/>
+    <id>http://morris821028.github.io/2021/01/31/work/meme-handover/</id>
     <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:11:29.235Z</updated>
+    <updated>2021-01-31T03:39:01.704Z</updated>
     
-    <content type="html"><![CDATA[<p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p><p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>]]></content>
+    <content type="html"><![CDATA[<p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。&lt;/p&gt;
-&lt;p&gt;然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？&lt;/p&gt;
+        &lt;p&gt;交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。&lt;/p&gt;
 
       
     
@@ -512,62 +555,6 @@
 &lt;p&gt;Disconnected to server. Not enough quota is available.&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;通常我們會在 CI 過程中，保留每一次的 log 和運行結果的報表，也會週期性地去刪除過時資料。
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Machine Learning for Newbie</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:33:45.182Z</updated>
-    
-    <content type="html"><![CDATA[<p>最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。</p><p>然後，得知這一年的台灣大學資訊工程學系，大一課程不學 C，直接 python，越來越接近西方的美式教育。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。&lt;/p&gt;
-&lt;p&gt;然後，得知這一年的台灣大學資訊工
-      
-    
-    </summary>
-    
-      <category term="工作應用" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/"/>
-    
-      <category term="Meme" scheme="http://morris821028.github.io/categories/%E5%B7%A5%E4%BD%9C%E6%87%89%E7%94%A8/Meme/"/>
-    
-    
-      <category term="Meme" scheme="http://morris821028.github.io/tags/Meme/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Parallel &amp; Garbage Collection</title>
-    <link href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/"/>
-    <id>http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/</id>
-    <published>2021-01-31T05:00:00.000Z</published>
-    <updated>2021-01-31T03:25:34.110Z</updated>
-    
-    <content type="html"><![CDATA[<p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。&lt;/p&gt;
-
       
     
     </summary>

@@ -89,6 +89,157 @@
           
           <section id="main">
   
+    <article id="post-jg-20021" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/07/01/jg-20021/" class="article-date">
+  <time datetime="2017-07-01T07:38:49.000Z" itemprop="datePublished">2017-07-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/07/01/jg-20021/">批改娘 20021. Dynamic Range Sum</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/07/01/jg-20021/" data-id="ckvd6e84v00aa9cvndff3rmsk" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/07/01/jg-20021/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SIMD/">SIMD</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>在二維平面上有 <span>$N$</span><!-- Has MathJax --> 個點，每一個點 <span>$p_i(x_i, y_i)$</span><!-- Has MathJax -->各自帶權重 <span>$w_i$</span><!-- Has MathJax -->，這些點不時會移動和改變權重。</p>
+<p>現在 Morris 希望你幫忙撰寫線性搜索的函數，好讓他專注數據結構上的調整。函數詢問包含 </p>
+<ul>
+<li><span>$N$</span><!-- Has MathJax --> 個點的資訊 (以 SoA (Structure of Array) 的方式儲存，以達到最好的快取使用率) </li>
+<li>詢問的矩形 <span>$\text{Rect}$</span><!-- Has MathJax --> (正交於兩軸)</li>
+</ul>
+<p>函數必須回傳在矩形內部的點權重和。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int32_t</span> search_range(Rect rect, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], <span class="keyword">int32_t</span> w[], <span class="keyword">int32_t</span> n);</div></pre></td></tr></table></figure>
+<h3 id="main-c-測試用"><a href="#main-c-測試用" class="headerlink" title="main.c (測試用)"></a>main.c (測試用)</h3><ul>
+<li>一開始，在二維空間 <span>$[0, R) \times [0, R)$</span><!-- Has MathJax --> 之間產生 <span>$N$</span><!-- Has MathJax --> 個點的資訊</li>
+<li>接著，模擬 <span>$M$</span><!-- Has MathJax --> 次點的變化，並且呼叫 <code>search_range</code> </li>
+<li>最後，將所有答案 HASH 輸出一個值</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"DRS.h"</span></span></div><div class="line"></div><div class="line"><span class="keyword">static</span> <span class="keyword">uint32_t</span> seed = <span class="number">0</span>;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">p_srand</span><span class="params">(<span class="keyword">uint32_t</span> x)</span> </span>&#123; seed = x;&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">p_rand</span><span class="params">()</span> </span>&#123;<span class="keyword">return</span> seed = (seed*<span class="number">9301</span> + <span class="number">49297</span>);&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">swap</span><span class="params">(<span class="keyword">int</span> *x, <span class="keyword">int</span> *y)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> tmp = *x;</div><div class="line">    *x = *y;</div><div class="line">    *y = tmp;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> Rect <span class="title">rand_rect</span><span class="params">(<span class="keyword">int</span> R)</span> </span>&#123;</div><div class="line">    Rect r;</div><div class="line">    r.lx = p_rand()%R;</div><div class="line">    r.ly = p_rand()%R;</div><div class="line">    r.rx = p_rand()%R;</div><div class="line">    r.ry = p_rand()%R;</div><div class="line">    <span class="keyword">if</span> (r.lx &gt; r.rx)	swap(&amp;r.lx, &amp;r.rx);</div><div class="line">    <span class="keyword">if</span> (r.ly &gt; r.ry)	swap(&amp;r.ly, &amp;r.ry);</div><div class="line">    <span class="keyword">return</span> r;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> R, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], <span class="keyword">int32_t</span> w[])</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">        x[i] = p_rand()%R;</div><div class="line">        y[i] = p_rand()%R;</div><div class="line">        w[i] = p_rand()%R;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">tick</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> R, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], <span class="keyword">int32_t</span> w[])</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++)	&#123;</div><div class="line">        <span class="keyword">int</span> idx = p_rand()%N;</div><div class="line">        x[idx] = p_rand()%R;</div><div class="line">        y[idx] = p_rand()%R;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++)	&#123;</div><div class="line">        <span class="keyword">int</span> idx = p_rand()%N;</div><div class="line">        w[idx] = p_rand()%R;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    p_srand(<span class="number">0</span>);</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int32_t</span> x[MAXN], y[MAXN], w[MAXN];</div><div class="line">    <span class="keyword">int</span> N = <span class="number">1000</span>, M = <span class="number">10000</span>, R = <span class="number">100</span>;</div><div class="line">    </div><div class="line">    init(N, R, x, y, w);</div><div class="line"></div><div class="line">    <span class="keyword">int32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; M; it++) &#123;</div><div class="line">        Rect rect = rand_rect(R);</div><div class="line">        <span class="keyword">int32_t</span> ret = search_range(rect, x, y, w, N);</div><div class="line">        hash ^= ret;</div><div class="line">        tick(N, R, x, y, w);</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%"</span> PRIi32 <span class="string">"\n"</span>, hash);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="DRS-h"><a href="#DRS-h" class="headerlink" title="DRS.h"></a>DRS.h</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __DRS_H</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __DRS_H</span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">Rect</span> &#123;</span></div><div class="line">    <span class="keyword">int32_t</span> lx, ly, rx, ry;</div><div class="line">&#125; Rect;</div><div class="line"></div><div class="line"><span class="keyword">int32_t</span> search_range(Rect rect, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], </div><div class="line">        <span class="keyword">int32_t</span> w[], <span class="keyword">int32_t</span> n);</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div></pre></td></tr></table></figure>
+<h3 id="DRS-c"><a href="#DRS-c" class="headerlink" title="DRS.c"></a>DRS.c</h3><p>你的目標是要加速下述函數的計算，通過最低要求加速 2 倍以上。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"DRS.h"</span></span></div><div class="line"></div><div class="line"><span class="keyword">int32_t</span> search_range(Rect rect, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], </div><div class="line">        <span class="keyword">int32_t</span> w[], <span class="keyword">int32_t</span> n) &#123;</div><div class="line">    <span class="keyword">int32_t</span> ret = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (rect.lx &lt;= x[i] &amp;&amp; x[i] &lt;= rect.rx &amp;&amp;</div><div class="line">            rect.ly &lt;= y[i] &amp;&amp; y[i] &lt;= rect.ry) &#123;</div><div class="line">            ret += w[i];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="測資限制"><a href="#測資限制" class="headerlink" title="測資限制"></a>測資限制</h2><ul>
+<li>$N \le 131072$</li>
+<li>$R \le 32768$</li>
+</ul>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><p><strong><em>no input</em></strong></p>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">8967</div></pre></td></tr></table></figure>
+<h2 id="編譯參數"><a href="#編譯參數" class="headerlink" title="編譯參數"></a>編譯參數</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">all: main</div><div class="line"></div><div class="line">main: main.c</div><div class="line">    gcc -std=c99 -Ofast -march=native DRS.c -c -o DRS.o</div><div class="line">    gcc -std=c99 -Ofast -march=native main.c DRS.o -o main</div></pre></td></tr></table></figure>
+<ul>
+<li>當前測試機器 Intel CPU E5-2620v3</li>
+<li><a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#" target="_blank" rel="external">Intel Intrinsics Guide</a></li>
+</ul>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>一般的線性作法，透過 <code>rect.lx &lt;= x[i] &amp;&amp; x[i] &lt;= rect.rx &amp;&amp; rect.ly &lt;= y[i] &amp;&amp; y[i] &lt;= rect.ry</code> 操作，翻譯成組合語言時，四次的 branch &amp; jump，在管線處理上的效能易受到影響。為了使這種 branch 減少而不使管線處理的效能下降，通常會使用查表法來完成，藉由并行的數值計算，在最後一步才進行 load/store 完成指定區塊的指令。</p>
+<p>在這一題中，唯有條件式皆成立才執行，由於分枝操作上只有一種情況，故查表法就不適用於此。我們仍可以并行數個矩形判斷，並且存在至少一個矩形成立再運行 load 加總所需的資料，將會給予效能上的大幅提升。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"DRS.h"</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;x86intrin.h&gt;</span></span></div><div class="line"><span class="comment">/*</span></div><div class="line"><span class="comment">int32_t search_range(Rect rect, int32_t x[], int32_t y[], </span></div><div class="line"><span class="comment">		int32_t w[], int32_t n) &#123;</span></div><div class="line"><span class="comment">	int32_t ret = 0;</span></div><div class="line"><span class="comment">	for (int i = 0; i &lt; n; i++) &#123;</span></div><div class="line"><span class="comment">		if (rect.lx &lt;= x[i] &amp;&amp; x[i] &lt;= rect.rx &amp;&amp;</span></div><div class="line"><span class="comment">			rect.ly &lt;= y[i] &amp;&amp; y[i] &lt;= rect.ry) &#123;</span></div><div class="line"><span class="comment">			ret += w[i];</span></div><div class="line"><span class="comment">		&#125;</span></div><div class="line"><span class="comment">	&#125;</span></div><div class="line"><span class="comment">	return ret;</span></div><div class="line"><span class="comment">&#125;</span></div><div class="line"><span class="comment">*/</span></div><div class="line"><span class="keyword">int32_t</span> search_range(Rect rect, <span class="keyword">int32_t</span> x[], <span class="keyword">int32_t</span> y[], <span class="keyword">int32_t</span> w[], <span class="keyword">int32_t</span> n) &#123;</div><div class="line">    __m128i ret = _mm_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    rect.lx--, rect.ly--;</div><div class="line">    rect.rx++, rect.ry++;</div><div class="line">    __m128i lx = _mm_broadcastd_epi32(*((__m128i *) &amp;rect.lx));</div><div class="line">    __m128i ly = _mm_broadcastd_epi32(*((__m128i *) &amp;rect.ly));</div><div class="line">    __m128i rx = _mm_broadcastd_epi32(*((__m128i *) &amp;rect.rx));</div><div class="line">    __m128i ry = _mm_broadcastd_epi32(*((__m128i *) &amp;rect.ry));</div><div class="line">    __m128i zo = _mm_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    __m128i ic = _mm_set_epi32(<span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i+<span class="number">4</span> &lt;= n; i += <span class="number">4</span>) &#123;</div><div class="line">        __m128i sx = _mm_load_si128((__m128i *) (x+i));</div><div class="line">        __m128i sy = _mm_load_si128((__m128i *) (y+i));</div><div class="line">        __m128i c1 = _mm_and_si128(_mm_cmplt_epi32(lx, sx), _mm_cmplt_epi32(sx, rx));</div><div class="line">        __m128i c2 = _mm_and_si128(_mm_cmplt_epi32(ly, sy), _mm_cmplt_epi32(sy, ry));</div><div class="line">        <span class="keyword">if</span> (_mm_testz_si128(c1, c2) == <span class="number">0</span>) &#123;</div><div class="line">            __m128i cc = _mm_and_si128(c1, c2);</div><div class="line">            __m128i vi = _mm_add_epi32(ic, _mm_set_epi32(i, i, i, i));</div><div class="line">            __m128i rs = _mm_mask_i32gather_epi32(zo, w+i, ic, cc, <span class="number">4</span>);</div><div class="line">            ret = _mm_add_epi32(ret, rs);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">int32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = (n&gt;&gt;<span class="number">2</span>)&lt;&lt;<span class="number">2</span>; i &lt; n; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (rect.lx &lt;= x[i] &amp;&amp; x[i] &lt;= rect.rx &amp;&amp;</div><div class="line">            rect.ly &lt;= y[i] &amp;&amp; y[i] &lt;= rect.ry) &#123;</div><div class="line">            sum += w[i];</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int32_t</span> tmp[<span class="number">4</span>] __attribute__ ((aligned (<span class="number">16</span>)));</div><div class="line">    _mm_store_si128((__m128i*) &amp;tmp[<span class="number">0</span>], ret);</div><div class="line">    sum += tmp[<span class="number">0</span>] + tmp[<span class="number">1</span>] + tmp[<span class="number">2</span>] + tmp[<span class="number">3</span>];</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-jg-20020" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/07/01/jg-20020/" class="article-date">
+  <time datetime="2017-07-01T05:47:41.000Z" itemprop="datePublished">2017-07-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/07/01/jg-20020/">批改娘 20020. Dot Product</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2017/07/01/jg-20020/" data-id="ckvd6e84t00a39cvnkm0iy56m" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2017/07/01/jg-20020/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SIMD/">SIMD</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>請嘗試使用 SIMD 技術 AVX/SSE/MMX 來加速以下的純數值計算。</p>
+<h3 id="main-c"><a href="#main-c" class="headerlink" title="main.c"></a>main.c</h3><p>最低需求加速兩倍快</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">f</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, j = off; i &lt; N; i++, j++)</div><div class="line">        sum += encrypt(j, key1) * encrypt(j, key2), i++, j++;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = f(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>有多組測資，每組一行包含三個整數 <span>$N, \; \text{key1}, \; \text{key2}$</span><!-- Has MathJax -->，表示向量長度 <span>$N$</span><!-- Has MathJax -->、向量 <span>$\vec{A}$</span><!-- Has MathJax --> 由亂數種子 <span>$\text{key1}$</span><!-- Has MathJax --> 產生、向量 <span>$\vec{B}$</span><!-- Has MathJax --> 由亂數種子 <span>$\text{key2}$</span><!-- Has MathJax --> 產生。</p>
+<ul>
+<li>$1 \le N \le 16777216$</li>
+</ul>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>對於每組測資輸出一行整數，為 <span>$\vec{A} \cdot \vec{B}$</span><!-- Has MathJax --> 的 unsigned 32-bit integer 結果。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">16777216 1 2</div><div class="line">16777216 3 5</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">2885681152</div><div class="line">2147483648</div></pre></td></tr></table></figure>
+<h2 id="編譯參數"><a href="#編譯參數" class="headerlink" title="編譯參數"></a>編譯參數</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">gcc -std=c99 -O3 -march=native main.c -lm</div></pre></td></tr></table></figure>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><ul>
+<li>當前測試機器 Intel CPU E5-2620v3</li>
+<li><a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#" target="_blank" rel="external">Intel Intrinsics Guide</a></li>
+</ul>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>對於數值計算時，SIMD 能充分地加速程序，每一個元素皆經過一連串的數學函數計算，那麼把一連串的數學式拆分，化成最簡的邏輯計算，並且找出常數向量存放到暫存器中。如在影像處理的程序，即使沒有 GPU 幫忙，搭配 SIMD 也是個不錯的選擇，可以加速 2~4 倍之多。</p>
+<p>為了凸顯效能差異，題目設計時必須在計算單一元素結果上複雜些，防止大部分的加速效果是來自於減少 branch 操作 (loop unrolling)。</p>
+<h3 id="AVX"><a href="#AVX" class="headerlink" title="AVX"></a>AVX</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;x86intrin.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">SSE</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = (N&gt;&gt;<span class="number">3</span>)&lt;&lt;<span class="number">3</span>; i &lt; N; i++)</div><div class="line">        sum += encrypt(i+off, key1) * encrypt(i+off, key2);</div><div class="line">    __m256i s_i = _mm256_set_epi32(off, off+<span class="number">1</span>, off+<span class="number">2</span>, off+<span class="number">3</span>, off+<span class="number">4</span>, off+<span class="number">5</span>, off+<span class="number">6</span>, off+<span class="number">7</span>);</div><div class="line">    __m256i s_4 = _mm256_set_epi32(<span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>);</div><div class="line">    __m256i s_k1 = _mm256_set_epi32(key1, key1, key1, key1, key1, key1, key1, key1);</div><div class="line">    __m256i s_k2 = _mm256_set_epi32(key2, key2, key2, key2, key2, key2, key2, key2);</div><div class="line">    <span class="keyword">uint32_t</span> modk1 = key1&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> modk2 = key2&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk1 = <span class="number">32</span> - modk1;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk2 = <span class="number">32</span> - modk2;</div><div class="line">    __m256i s_ret = _mm256_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    N &gt;&gt;= <span class="number">3</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; N; it++) &#123;</div><div class="line">        __m256i r_1 = _mm256_or_si256(_mm256_slli_epi32(s_i, modk1), _mm256_srli_epi32(s_i, cmodk1));</div><div class="line">        r_1 = _mm256_xor_si256(_mm256_add_epi32(r_1, s_k1), s_k1);</div><div class="line">        __m256i r_2 = _mm256_or_si256(_mm256_slli_epi32(s_i, modk2), _mm256_srli_epi32(s_i, cmodk2));</div><div class="line">        r_2 = _mm256_xor_si256(_mm256_add_epi32(r_2, s_k2), s_k2);</div><div class="line">        __m256i r_m = _mm256_mullo_epi32(r_1, r_2);</div><div class="line">        s_ret = _mm256_add_epi32(s_ret, r_m);</div><div class="line">        s_i = _mm256_add_epi32(s_i, s_4);</div><div class="line">    &#125;</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int32_t</span> tmp[<span class="number">8</span>] __attribute__ ((aligned (<span class="number">32</span>)));</div><div class="line">        _mm256_store_si256((__m256i*) &amp;tmp[<span class="number">0</span>], s_ret);</div><div class="line">        sum += tmp[<span class="number">0</span>] + tmp[<span class="number">1</span>] + tmp[<span class="number">2</span>] + tmp[<span class="number">3</span>];</div><div class="line">        sum += tmp[<span class="number">4</span>] + tmp[<span class="number">5</span>] + tmp[<span class="number">6</span>] + tmp[<span class="number">7</span>];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = SSE(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="SSE"><a href="#SSE" class="headerlink" title="SSE"></a>SSE</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;inttypes.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;x86intrin.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> uint32_t <span class="title">SSE</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> off, <span class="keyword">uint32_t</span> key1, <span class="keyword">uint32_t</span> key2)</span> </span>&#123;</div><div class="line">    <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = N/<span class="number">4</span>*<span class="number">4</span>; i &lt; N; i++)</div><div class="line">        sum += encrypt(i+off, key1) * encrypt(i+off, key2);</div><div class="line">    __m128i s_i = _mm_set_epi32(off, off+<span class="number">1</span>, off+<span class="number">2</span>, off+<span class="number">3</span>);</div><div class="line">    __m128i s_4 = _mm_set_epi32(<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>);</div><div class="line">    __m128i s_k1 = _mm_set_epi32(key1, key1, key1, key1);</div><div class="line">    __m128i s_k2 = _mm_set_epi32(key2, key2, key2, key2);</div><div class="line">    <span class="keyword">uint32_t</span> modk1 = key1&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> modk2 = key2&amp;<span class="number">31</span>;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk1 = <span class="number">32</span> - modk1;</div><div class="line">    <span class="keyword">uint32_t</span> cmodk2 = <span class="number">32</span> - modk2;</div><div class="line">    __m128i s_ret = _mm_set_epi32(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    N &gt;&gt;= <span class="number">2</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; N; it++) &#123;</div><div class="line">        __m128i r_1 = _mm_or_si128(_mm_slli_epi32(s_i, modk1), _mm_srli_epi32(s_i, cmodk1));</div><div class="line">        r_1 = _mm_xor_si128(_mm_add_epi32(r_1, s_k1), s_k1);</div><div class="line">        __m128i r_2 = _mm_or_si128(_mm_slli_epi32(s_i, modk2), _mm_srli_epi32(s_i, cmodk2));</div><div class="line">        r_2 = _mm_xor_si128(_mm_add_epi32(r_2, s_k2), s_k2);</div><div class="line">        __m128i r_m = _mm_mullo_epi32(r_1, r_2);</div><div class="line">        s_ret = _mm_add_epi32(s_ret, r_m);</div><div class="line">        s_i = _mm_add_epi32(s_i, s_4);</div><div class="line">    &#125;</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">static</span> <span class="keyword">int32_t</span> tmp[<span class="number">4</span>] __attribute__ ((aligned (<span class="number">16</span>)));</div><div class="line">        _mm_store_si128((__m128i*) &amp;tmp[<span class="number">0</span>], s_ret);</div><div class="line">        sum += tmp[<span class="number">0</span>] + tmp[<span class="number">1</span>] + tmp[<span class="number">2</span>] + tmp[<span class="number">3</span>];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N;</div><div class="line">    <span class="keyword">uint32_t</span> key1, key2;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %"</span> PRIu32 <span class="string">" %"</span> PRIu32, &amp;N, &amp;key1, &amp;key2) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="keyword">uint32_t</span> sum = SSE(N, <span class="number">0</span>, key1, key2);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%"</span> PRIu32 <span class="string">"\n"</span>, sum);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-jg-20018" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/07/01/jg-20018/" class="article-date">
@@ -114,7 +265,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/07/01/jg-20018/" data-id="ckvcbhfh1009g6cvnrhonvpfd" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/07/01/jg-20018/" data-id="ckvd6e84u00a69cvnloyo84l0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/07/01/jg-20018/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -172,7 +323,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/W9PD2EB.jpg" rel="gallery_ckvcbhfnb00mu6cvn2y4crr4v">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/W9PD2EB.jpg" rel="gallery_ckvd6e86000db9cvn8msid99q">
         <img src="http://i.imgur.com/W9PD2EB.jpg" itemprop="image">
       </a>
     
@@ -191,7 +342,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/07/01/parallel-TA/" data-id="ckvcbhfnb00mu6cvn2y4crr4v" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/07/01/parallel-TA/" data-id="ckvd6e86000db9cvn8msid99q" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/07/01/parallel-TA/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -248,7 +399,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BsbOqhH.jpg" rel="gallery_ckvcbhfeq003f6cvnafnfs88f">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BsbOqhH.jpg" rel="gallery_ckvd6e82e003o9cvnw0j7h0sl">
         <img src="http://i.imgur.com/BsbOqhH.jpg" itemprop="image">
       </a>
     
@@ -267,7 +418,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/05/04/diary-201705-2/" data-id="ckvcbhfeq003f6cvnafnfs88f" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/05/04/diary-201705-2/" data-id="ckvd6e82e003o9cvnw0j7h0sl" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/05/04/diary-201705-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -344,7 +495,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/QfgFMVC.jpg" rel="gallery_ckvcbhfem00366cvnalrpb6vy">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/QfgFMVC.jpg" rel="gallery_ckvd6e82f003q9cvnz9rdxjpw">
         <img src="http://i.imgur.com/QfgFMVC.jpg" itemprop="image">
       </a>
     
@@ -363,7 +514,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/05/03/diary-201705/" data-id="ckvcbhfem00366cvnalrpb6vy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/05/03/diary-201705/" data-id="ckvd6e82f003q9cvnz9rdxjpw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/05/03/diary-201705/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -466,7 +617,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/28/uva-13154/" data-id="ckvcbhfug012y6cvnm7vkqznx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/28/uva-13154/" data-id="ckvd6e8cq00u09cvnl4pgimdq" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/28/uva-13154/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -541,7 +692,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BuPUpad.jpg" rel="gallery_ckvcbhfdn000m6cvn3u2697v9">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/BuPUpad.jpg" rel="gallery_ckvd6e81f00119cvnet0net6y">
         <img src="http://i.imgur.com/BuPUpad.jpg" itemprop="image">
       </a>
     
@@ -560,7 +711,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/09/big-integer-division/" data-id="ckvcbhfdn000m6cvn3u2697v9" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/09/big-integer-division/" data-id="ckvd6e81f00119cvnet0net6y" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/09/big-integer-division/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -647,7 +798,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KrHRAeT.jpg" rel="gallery_ckvcbhfdp000q6cvnbm4q1ud5">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/KrHRAeT.jpg" rel="gallery_ckvd6e81c000t9cvnj8ub3rh6">
         <img src="http://i.imgur.com/KrHRAeT.jpg" itemprop="image">
       </a>
     
@@ -666,7 +817,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/" data-id="ckvcbhfdp000q6cvnbm4q1ud5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/" data-id="ckvd6e81c000t9cvnj8ub3rh6" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/04/09/2017-google-code-jam-qr/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -752,7 +903,7 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckvcbhffb004y6cvnfv968m4l" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/" data-id="ckvd6e834005l9cvnr95t1c05" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2017/01/24/icg-final-project-radiosity-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -860,312 +1011,6 @@ x_{n+1} &amp;= x_n - \frac{f(x_n)}{f&apos;(x_n)} \\
 
 
   
-    <article id="post-icg-final-project-radiosity" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/01/22/icg-final-project-radiosity/" class="article-date">
-  <time datetime="2017-01-22T03:40:03.000Z" itemprop="datePublished">2017-01-22</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/01/22/icg-final-project-radiosity/">探討平行與優化技術於熱輻射法 (上)</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/" data-id="ckvcbhffh005c6cvnmmwqjkp6" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2017/01/22/icg-final-project-radiosity/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計算機圖學/">計算機圖學</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>此為計算機圖學課程中的一環，自由挑選主題。而這個 Radiosity 有好幾年前的原始碼，程式碼部分由老師提供。看到幾處寫得不是很好的地方，於是就拿來加速。在 tracing code 耗費了相當大的力氣，雖然才幾千行的 C 程序，完全不熟的領域，慢慢做起來也別有一番風趣。<a href="https://github.com/morris821028/hw-radiosity" target="_blank" rel="external">morris821028/hw-radiosity</a></p>
-</blockquote>
-<h2 id="Parallel-Computing-and-Optimization-Skills-for-Radiosity"><a href="#Parallel-Computing-and-Optimization-Skills-for-Radiosity" class="headerlink" title="Parallel Computing and Optimization Skills for Radiosity"></a>Parallel Computing and Optimization Skills for Radiosity</h2><ul>
-<li>R04922067 楊翔雲、R04922133 古君葳</li>
-</ul>
-<h2 id="介紹-Introduction"><a href="#介紹-Introduction" class="headerlink" title="介紹 Introduction"></a>介紹 Introduction</h2><p>熱輻射法 (Radiosity) 是一種渲染的技術。相較於光線追蹤法 (Ray Tracing)，熱輻射法可以產生更接近於現實場景中光亮的變化。當場景使用光線追蹤法時，物體的陰影的邊緣相對銳利，但在現實情況下，物體陰影漸層呈現，因此使用熱輻射法可以更貼近我們想要的。</p>
-<span>$$\begin{align*}
-B_i dA_i = E_i dA_i + R_i \int_j B_j F_{ji} dA_j
-\end{align*}$$</span><!-- Has MathJax -->
-<ul>
-<li><span>$A_i$</span><!-- Has MathJax --> : Area of element i (computable)</li>
-<li><span>$B_i$</span><!-- Has MathJax --> : Radiosity of element i (unknown)</li>
-<li><span>$E_i$</span><!-- Has MathJax --> : Radient emitted flux density of element i (given)</li>
-<li><span>$R_i$</span><!-- Has MathJax --> : Refletance of element i (given)</li>
-<li><span>$F_{ji}$</span><!-- Has MathJax --> : Form Factor from j to i (computable)</li>
-</ul>
-<p>假設整個場景中有 <span>$N$</span><!-- Has MathJax --> 個三角形，每一次迭代選擇一個最亮的三角形當作光源，由這個光源計算與場景中其他三角形的 Radiosity 之值。其中，判斷光源是否可以輻射到某個三角形之複雜度介於 <span>$O(\log N)$</span><!-- Has MathJax --> 到 <span>$O(N)$</span><!-- Has MathJax --> (視Data structure而定)，而計算 Form-Factor的花費可以視為常數 <span>$O(1)$</span><!-- Has MathJax --> ，因此每次迭代的複雜度介於 <span>$O(N \log N)$</span><!-- Has MathJax --> 到 <span>$O(N^2)$</span><!-- Has MathJax -->。</p>
-<p>其中佔據效能的因素是 Form-Factor 估算，因此有像 Hemicube之類的近似逼近，大幅度減少計算量，但投影回到原本物件上會失真。</p>
-<span>$$\begin{align*}
-F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r^2} dA_i dA_j
-\end{align*}$$</span><!-- Has MathJax -->
-<p><img src="http://i.imgur.com/mOMEPZR.gif" alt=""></p>
-<blockquote>
-<p>進入優化主題吧</p>
-</blockquote>
-<h2 id="優化技術-Code-Review-amp-Optimization"><a href="#優化技術-Code-Review-amp-Optimization" class="headerlink" title="優化技術 Code Review &amp; Optimization"></a>優化技術 Code Review &amp; Optimization</h2><p>首先，我們先對助教提供的程式碼加速，分成以下幾個部分討論</p>
-<ul>
-<li>減少光線投射計算量 Strength Reduction for Ray Casting</li>
-<li>減少 Form-Factor計算量 Strength Reduction for Form-Factor</li>
-<li>改善資料局部性 Improve Data Locality</li>
-<li>其他優化 Other Optimization: <ul>
-<li>Improve I-cache Miss</li>
-<li>Short Circuit Design</li>
-<li>Clipping Algorithm</li>
-<li>Strength Reduction for Float-Point</li>
-<li>Shrink the Scope of Variables</li>
-<li>Reduce the Number of Arguments</li>
-<li>Remove Implications of Pointer Aliasing</li>
-<li>Copy Optimization</li>
-</ul>
-</li>
-</ul>
-<h3 id="減少光線投射計算量-Strength-Reduction-for-Ray-Casting"><a href="#減少光線投射計算量-Strength-Reduction-for-Ray-Casting" class="headerlink" title="減少光線投射計算量 Strength Reduction for Ray Casting"></a>減少光線投射計算量 Strength Reduction for Ray Casting</h3><p>判斷射線 (Ray) 是否能打到三角形 <span>$A$</span><!-- Has MathJax --> 上，先用 bounding box 包住 <span>$A$</span><!-- Has MathJax --> ，計算 <span>$p$</span><!-- Has MathJax --> 到 bounding box 的時間 <span>$t$</span><!-- Has MathJax --> ，若 <span>$t$</span><!-- Has MathJax --> 大於目前的最小 <span>$t_{\min}$</span><!-- Has MathJax --> ，則退出。相反地，再計算更精準的 <span>$t$</span><!-- Has MathJax --> 。加入利用已知結果 <span>$v = p + t_{\min} \cdot d, t_{\min} &gt; 0$</span><!-- Has MathJax --></p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">TriangleHitted</span><span class="params">(Vector p, Vector d, TrianglePtr tp, <span class="keyword">float</span> *t_min)</span> </span>&#123;</div><div class="line">    <span class="keyword">float</span> t = <span class="comment">/* time t from p to bounding box of Triangle tp */</span>;</div><div class="line">    <span class="keyword">if</span> (t &lt; eps)</div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="keyword">if</span> (t &gt;= *t_min)    <span class="comment">/* important !! */</span></div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">    *t_min = t;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="減少-FF-計算量-Strength-Reduction-for-Form-Factor"><a href="#減少-FF-計算量-Strength-Reduction-for-Form-Factor" class="headerlink" title="減少 FF 計算量 Strength Reduction for Form-Factor"></a>減少 FF 計算量 Strength Reduction for Form-Factor</h3><p>根據公式 <span>$F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r^2} dA_i dA_j$</span><!-- Has MathJax --> ，一般我們的判斷順序會得如下：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">float</span> <span class="title">computeFormFactor</span><span class="params">(TrianglePtr srcTri, <span class="keyword">int</span> logSrc, TrianglePtr desTri, <span class="keyword">int</span> logDes, Vector p)</span> </span>&#123;</div><div class="line">    Vector dir = srcTri-&gt;c - p;</div><div class="line">    <span class="keyword">float</span> ff = <span class="number">0</span>;</div><div class="line">    <span class="keyword">if</span> (RayHitted(p, dir, logDes) == logDes) &#123;</div><div class="line">        <span class="keyword">float</span> theta1 = CosTheta(dir, srcTri-&gt;normal), theta2 = CosTheta(dir, desTri-&gt;normal);</div><div class="line">        ff = theta1 * theta2 * srcTri-&gt;area / (norm2(dir) * PI);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> max(ff, <span class="number">0.f</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>效能考量的因素：</p>
-<ul>
-<li><code>RayHitted()</code> 需要大量的計算</li>
-<li>Form-Factor 在 <code>float</code> 儲存格式下可能無法得到貢獻，改採優先計算 Form-Factor 的值，再運行 RayHitted 判斷。調整加速了 2 倍多。</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">float</span> <span class="title">computeFormFactor</span><span class="params">(TrianglePtr srcTri, <span class="keyword">int</span> logSrc, TrianglePtr desTri, <span class="keyword">int</span> logDes, Vector p)</span></span></div><div class="line"><span class="function">    Vector dir </span>= srcTri-&gt;c - p;</div><div class="line">    <span class="keyword">float</span> theta1 = CosTheta(dir, srcTri-&gt;normal), </div><div class="line">theta2 = CosTheta(dir, desTri-&gt;normal);</div><div class="line">    <span class="keyword">float</span> ff = theta1 * theta2;</div><div class="line">    <span class="keyword">if</span> (ff &lt;= <span class="number">0</span>)    <span class="keyword">return</span> <span class="number">0.f</span>;</div><div class="line">    ff *= srcTri-&gt;area / (norm2(dir) * PI);</div><div class="line">    <span class="keyword">if</span> (ff &lt;= <span class="number">0</span>)    <span class="keyword">return</span> <span class="number">0.f</span>;</div><div class="line">    <span class="keyword">if</span> (RayHitted(p, dir, logDes) == logDes)</div><div class="line">        <span class="keyword">return</span> ff;</div><div class="line">    <span class="keyword">return</span> <span class="number">0.f</span>;</div></pre></td></tr></table></figure>
-<h3 id="改善資料局部性-Improve-Data-Locality"><a href="#改善資料局部性-Improve-Data-Locality" class="headerlink" title="改善資料局部性 Improve Data Locality"></a>改善資料局部性 Improve Data Locality</h3><p>程式碼中使用 3D-DDA Line Algorithm/Bresenham’s Line Algorithm 搭配 Octree，在找尋某個射線與哪個最近三角形相交。</p>
-<ul>
-<li>只需要儲存葉節點代表的立方體中，所有可能相交的三角形編號</li>
-<li>移除掉中間產生的編號，讓每一次 access 的 cache-miss 下降</li>
-</ul>
-<p>在 3D-DDA 中，我們需要反查找空間中一點 p 在哪一個葉節點中，藉由固定的長寬高切割長度，可以在 <span>$O(1)$</span><!-- Has MathJax --> 時間內得知 <code>[i][j][k]</code> 各別的值。若限制大小，則建立陣列 <code>[i][j][k]</code> 查找。若自適應大小，則建立 hash 表查找，但根據實驗結果，效能並沒有改善，因為三角形個數過多導致命中機率過低。</p>
-<p>對於 Static Tree 的 Memory Layout，大致上分成四種DFS Layout、Inorder Layout、BFS Layout、和 van Emde Boas Layout，目前程式使用的是 DFS Layout，這方面會影響到存取的效能。若有更多的時間，我們也可以測試平行處理的細粒度與這些 Memory Layout 的影響。</p>
-<h3 id="其他優化-Other-Optimization"><a href="#其他優化-Other-Optimization" class="headerlink" title="其他優化 Other Optimization"></a>其他優化 Other Optimization</h3><h4 id="Improve-I-cache-Miss"><a href="#Improve-I-cache-Miss" class="headerlink" title="Improve I-cache Miss"></a>Improve I-cache Miss</h4><p>壓縮程式碼長度以改善 I-cache miss，因為大部分的初始化只會運行一次，不應該交錯在時常被呼叫的函數之間，指令載入效能才會提高，同時也要做好 Code Layout，就能改善執行效能。</p>
-<p>原始版本如下：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">x, y = compute(<span class="number">0</span>)</div><div class="line">buildTree(x, y)</div><div class="line">x, y = compute(<span class="number">1</span>)</div><div class="line">buildTree()</div><div class="line">x, y = compute(<span class="number">2</span>)</div><div class="line">buildTree()</div><div class="line">x, y = compute(<span class="number">3</span>)</div><div class="line">buildTree()</div><div class="line">...</div></pre></td></tr></table></figure>
-<p>壓縮和整理後</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">for</span> i from <span class="number">0</span> to n</div><div class="line">    x, y = compute(i)</div><div class="line">    buildTree()</div></pre></td></tr></table></figure>
-<h4 id="Short-Circuit-Design"><a href="#Short-Circuit-Design" class="headerlink" title="Short Circuit Design"></a>Short Circuit Design</h4><p>判斷三角形與一個正交立方體是否相交，使用投影到二維空間中與一線段的交點是否皆存在。投影方法有 3 種 x-y, y-z, z-x，線段投影共有 2 種，共計 6 種情況。原先程式沒有做好短路設計，只要其中一種不符就應退出。</p>
-<p><img src="http://i.imgur.com/8jcycpG.png" alt=""></p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">CrossOver</span><span class="params">(TrianglePtr tri, </span></span></div><div class="line"><span class="function"><span class="params">            Vector g0, Vector g1)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (xyz = <span class="number">0</span>; xyz &lt; <span class="number">3</span>; xyz++) &#123;</div><div class="line">        <span class="comment">// front face project</span></div><div class="line">        <span class="keyword">if</span> (!test())</div><div class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">        <span class="comment">// back face project</span></div><div class="line">        <span class="keyword">if</span> (!test())</div><div class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h4 id="Clipping-Algorithm"><a href="#Clipping-Algorithm" class="headerlink" title="Clipping Algorithm"></a>Clipping Algorithm</h4><p>我們實作課程中所描述的 Cohen–Sutherland Algorithm 降低 branch 次數，使用 bitwise 操作引出 SSE (Streaming SIMD Extensions)。儘管 compiler -O2 替我們優化，為減少 stack push/pop 的次數，實作時請不要使用的 procedure call，否則會慢上許多。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri, </span></span></div><div class="line"><span class="function"><span class="params"><span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">char</span> mask1 = (p0[x] &lt; g0[x])&lt;&lt;<span class="number">0</span> |</div><div class="line">        (p0[x] &gt; g1[x])&lt;&lt;<span class="number">1</span> |</div><div class="line">        (p0[y] &lt; g0[y])&lt;&lt;<span class="number">2</span> |</div><div class="line">        (p0[y] &gt; g1[y])&lt;&lt;<span class="number">3</span> ;</div><div class="line">    <span class="keyword">char</span> mask2 = (p1[x] &lt; g0[x])&lt;&lt;<span class="number">0</span> |</div><div class="line">        (p1[x] &gt; g1[x])&lt;&lt;<span class="number">1</span> |</div><div class="line">        (p1[y] &lt; g0[y])&lt;&lt;<span class="number">2</span> |</div><div class="line">        (p1[y] &gt; g1[y])&lt;&lt;<span class="number">3</span> ;</div><div class="line">    <span class="keyword">if</span> (mask1&amp;mask2)    </div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    <span class="keyword">if</span> (!(mask1|mask2))</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">    <span class="comment">// ... test</span></div></pre></td></tr></table></figure>
-<h4 id="Strength-Reduction-for-Float-Point"><a href="#Strength-Reduction-for-Float-Point" class="headerlink" title="Strength Reduction for Float-Point"></a>Strength Reduction for Float-Point</h4><p>兩個外積結果相乘小於零，減少 instruction cycle 量，盡量用整數作為運算型態。</p>
-<blockquote>
-<p>在現在的 Intel CPU 中，32-bit 浮點數運算基本上跟整數一樣快</p>
-</blockquote>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">float</span> a = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">float</span> b = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">if</span> (a * b &lt; <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">b = cross(<span class="comment">/* */</span>);</div><div class="line"><span class="keyword">if</span> (a * b &lt; <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">...</div></pre></td></tr></table></figure>
-<p>事先判斷正負號，同時也防止溢位。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> a = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">int</span> b = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">if</span> (a != b)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">b = cross(<span class="comment">/* */</span>) &lt; <span class="number">0</span>;</div><div class="line"><span class="keyword">if</span> (a != b)</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">...</div></pre></td></tr></table></figure>
-<h4 id="Shrink-the-Scope-of-Variables"><a href="#Shrink-the-Scope-of-Variables" class="headerlink" title="Shrink the Scope of Variables"></a>Shrink the Scope of Variables</h4><p>減少變數生命週期的長度以增加放入暫存器的機會，而非 stack 上。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++)</div><div class="line">    rgb[f(i)] = g(i);</div><div class="line"><span class="comment">/* ... */</span></div><div class="line"><span class="keyword">if</span> (maybe) &#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</div><div class="line">        rgb[h(i)] = g(i);</div><div class="line">    &#125;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>當邏輯很複雜時，編譯器不太能幫忙做分析，所以自己手動優化的效果會比較好，在 C/C++ 語言中，可以利用大括弧進行區域變數的設定。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++)</div><div class="line">        rgb[f(i)] = g(i);</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">if</span> (maybe) &#123;</div><div class="line">    <span class="keyword">float</span> rgb[<span class="number">3</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</div><div class="line">        rgb[h(i)] = g(i);</div><div class="line">    &#125;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h4 id="Reduce-the-Number-of-Arguments"><a href="#Reduce-the-Number-of-Arguments" class="headerlink" title="Reduce the Number of Arguments"></a>Reduce the Number of Arguments</h4><p>減少 stack push/pop 次數</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Arg</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> a0, a1;</div><div class="line">&#125;;    <span class="comment">// p1.a1 = p2.a0</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">(Arg p1, Arg p2)</span> </span>&#123;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>如何修改合適的參數個數，必須看使用的機率和次數，才能達到最大效益。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Arg</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> a0, a1, a2;</div><div class="line">&#125;;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">f</span><span class="params">(Arg p1p2)</span> </span>&#123;</div><div class="line">    <span class="comment">/* ... */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h4 id="Remove-Implications-of-Pointer-Aliasing"><a href="#Remove-Implications-of-Pointer-Aliasing" class="headerlink" title="Remove Implications of Pointer Aliasing"></a>Remove Implications of Pointer Aliasing</h4><p>移除指標 Aliasing，意指可能會指向相同記憶體位址，導致每次計算都要重新載入，不能放進暫存器中。如下述的寫法，編譯器無法判定 <code>srcTri</code> 是否與 <code>desTri</code> 相同，在累加時則重新載入 <code>srcTri-&gt;deltaB[]</code> 的數值，計算上可能會產生數次的 cache miss，隨著迴圈次數不斷突顯效能差異。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri,</span></span></div><div class="line"><span class="function"><span class="params"> <span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; <span class="number">3</span>; v++) &#123;    <span class="comment">// vertex</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">0</span>; c &lt; <span class="number">3</span>; c++) &#123;    <span class="comment">// color RGB</span></div><div class="line">            flaot deltaB = desTri-&gt;Frgb[c]/<span class="number">255.0</span>*RefRatio*srcTri-&gt;deltaB[c]*ff[v]/<span class="number">3</span>;</div><div class="line">            desTri-&gt;deltaB[c] += deltaB; </div><div class="line">            desTri-&gt;accB[v][c] += deltaB; </div><div class="line">            desTri-&gt;deltaAccB[v][c] += deltaB; </div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<ul>
-<li>方法 1: 加入 <code>if (srcTri != desTri)</code> 判斷，讓編譯器在 Function Pass 階段著手的 Dependency Analysis 更好</li>
-<li>方法 2: 使用 Copy Optimization，同時把重複計算搬到 stack 上，或者使用 Polyhedal 表示法進行 Reordering Accesses for Loop Nest。這裡我們選擇前者，更容易引出 SSE</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">computeRadiosity</span><span class="params">(TrianglePtr srcTri, TrianglePtr desTri, </span></span></div><div class="line"><span class="function"><span class="params"><span class="keyword">float</span> ff[<span class="number">3</span>])</span> </span>&#123;</div><div class="line">    <span class="keyword">const</span> <span class="keyword">float</span> k = RefRatio / <span class="number">255.0</span>;</div><div class="line">    <span class="keyword">float</span> lo[<span class="number">3</span>] = &#123; desTri-&gt;Frgb[<span class="number">0</span>]*k*(srctri-&gt;deltaB[<span class="number">0</span>]), </div><div class="line">                    desTri-&gt;Frgb[<span class="number">1</span>]*k*(srctri-&gt;deltaB[<span class="number">1</span>]), </div><div class="line">                    desTri-&gt;Frgb[<span class="number">2</span>]*k*(srctri-&gt;deltaB[<span class="number">2</span>])&#125;;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; <span class="number">3</span>; v++)    &#123;    <span class="comment">// vertex</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">0</span>; c &lt; <span class="number">3</span>; c++) &#123;    <span class="comment">// color RGB</span></div><div class="line">            <span class="comment">/* calculate the reflectiveness */</span></div><div class="line">            <span class="keyword">float</span> deltaB = lo[c] * ff[v] / <span class="number">3</span>;</div><div class="line">            desTri-&gt;deltaB[c] += deltaB;</div><div class="line">            desTri-&gt;accB[v][c] += deltaB;</div><div class="line">            desTri-&gt;deltaaccB[v][c] = deltaB;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><ul>
-<li>使用洽當的編譯器參數可加速 2 倍</li>
-<li>減少 Form-Factor 計算加速 2 倍</li>
-<li>剩餘優化部份改善 10% ~ 20% 效能。</li>
-</ul>
-<p>至今，我們加速了 4 倍，在下一篇文章中，我們將繼續探討平行處理。</p>
-<h3 id="Experiment"><a href="#Experiment" class="headerlink" title="Experiment"></a>Experiment</h3><table>
-<thead>
-<tr>
-<th style="text-align:center">Model</th>
-<th style="text-align:right">Origin (sec.)</th>
-<th style="text-align:right">Our v0.1 (sec.)</th>
-<th style="text-align:right">Speedup</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:center">room.tri</td>
-<td style="text-align:right">10.27</td>
-<td style="text-align:right">4.70</td>
-<td style="text-align:right">2.18</td>
-</tr>
-<tr>
-<td style="text-align:center">hall.tri</td>
-<td style="text-align:right">176.92</td>
-<td style="text-align:right">38.50</td>
-<td style="text-align:right">4.59</td>
-</tr>
-<tr>
-<td style="text-align:center">church.tri</td>
-<td style="text-align:right">72.32</td>
-<td style="text-align:right">42.64</td>
-<td style="text-align:right">1.69</td>
-</tr>
-</tbody>
-</table>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-diary-201701-5" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2017/01/20/diary-201701-5/" class="article-date">
-  <time datetime="2017-01-20T12:23:52.000Z" itemprop="datePublished">2017-01-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/rxih6Pj.jpg" rel="gallery_ckvcbhfeo003d6cvnn4d09axp">
-        <img src="http://i.imgur.com/rxih6Pj.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/01/20/diary-201701-5/">那段過往的蠢事</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2017/01/20/diary-201701-5/" data-id="ckvcbhfeo003d6cvnn4d09axp" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2017/01/20/diary-201701-5/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>我一定誤會了什麼，才冒冒失失地進入這個世界，大家所期待的那個人明明不是我－《三月的獅子》</p>
-</blockquote>
-<h2 id="實驗室調侃"><a href="#實驗室調侃" class="headerlink" title="實驗室調侃"></a>實驗室調侃</h2><p>「什麼時候要簽博？」</p>
-<p>學校年底寄了封向碩士一學年修畢、在學成績前 30% 且被教授認可有研究能力的學生，提供 <strong>逕行修讀博士學位</strong> ，從那陣子之後，這句話不斷地從旁人口說出，可想而知是在玩弄我。大概是從某次開會中，老師三番兩次地說誰誰看起來適合簽博，又朝著我說能力怎樣怎樣地很安心，必然是學弟們的光芒尚未展現，目光才莫名其妙地投射在我身上。</p>
-<p>有趣的是隔了幾週後，系上放寬到一學期修畢即可，心想這下子總算能反攻了，但論談話辯論技巧，一時還是贏不了。</p>
-<blockquote>
-<p>「學弟們來簽博吧！」充滿嘲諷的反擊道<br>「可是老師只認同你」學弟緩緩地說道<br>「…」到底是怎麼想到那一塊去的，心中滿滿的困惑</p>
-</blockquote>
-<h2 id="順水推舟"><a href="#順水推舟" class="headerlink" title="順水推舟"></a>順水推舟</h2><p><img src="http://i.imgur.com/sdLbmIR.jpg" alt="「什麼 什麼」－ 《吹響吧！上低音號》"></p>
-<p>年底的事情仍尚未結束，在旁人的催促下，感覺需要紀錄點什麼－那段有趣的誤會。</p>
-<h3 id="跨年那一夜"><a href="#跨年那一夜" class="headerlink" title="跨年那一夜"></a>跨年那一夜</h3><p>在台北的第二次跨年，想去年在生測資完後，回家的路上看著一群攝影愛好者在圖書館後頭拍攝，而自己只能拖著疲累的身軀回家休息。2017 年稍微特別一點，在靠北工程師看到一句話「人家有閃光才叫跨年，我們這群單身狗不跨年，叫熬夜。」尾牙聚餐因學弟一句話衝動發出邀請後，果然還是一個人熬夜吧，這回是學弟們一起在實驗室熬夜，別有樂趣。</p>
-<p>這一夜原本想約著一起寫作業，自己一個人做做還可以，嘗試各種修改，絞盡腦力讓自己無法去想那原本的計劃，差點就在 TLE 下跨年了。</p>
-<p><img src="http://i.imgur.com/pPAN5fd.jpg" alt="「的確 成就感真是活下去所需要的能量啊」－《三月的獅子》"></p>
-<blockquote>
-<p>「楓之谷倒數計時 3, 2, 1, …」<br>「限時販售商店在哪？」</p>
-</blockquote>
-<p>一群肥宅就這麼在楓之谷上跨年。這麼說也許突然，學弟們看我有玩楓之谷，一個個都來跟我一起玩，一次要養這麼多人相當不容易，也因此那陣子完全不能自由活動，一上線就是當工具人。</p>
-<p>那晚走在回租屋處的路上，傳了封訊息說聲「新年快樂」這讓我不禁想起，曾經也做過類似的事情，對著四年沒聯絡的手機號碼，到了那天日子傳了封「祝你生日快樂」這麼說起來，就像動畫《秒速五釐米》心境，平凡地過著日子，卻時時刻刻想著那過往的蠢事。</p>
-<p>跨年那一夜的清晨走回家，平常一起租屋的高中同學們都會在家，而今晚一個都沒有，房裡、客廳裡只有從路燈照來的光，摸著冰冷的樓梯扶手走回房裡，收到封「抱歉，整天沒都沒看訊息，現在在喝酒」</p>
-<p>然而，不只是現實生活中，連遊戲中都感受到一種奇怪的氛圍，難道沒長時間在線上掛網，連網友都和這一夥人都想到一塊去了！素未謀面的網友，傳了些訊息給我。</p>
-<blockquote>
-<p>「吾 你今年會脫魯」遞上作業的截圖說道<br>「吾 你今年X月X日前會脫魯」</p>
-</blockquote>
-<p>心中滿滿地無奈，處處都有人在督促我。</p>
-<h3 id="新年那一日"><a href="#新年那一日" class="headerlink" title="新年那一日"></a>新年那一日</h3><p>三天連假必然要為了平行加速的期末專題奮戰，所以約了小夥伴一起努力。一早八點坐在床頭滑著手機，看看昨夜的廢文有什麼樣的反應，看著未讀訊息中一封也沒有，收拾著包包走到學校，在實驗室等著沒有約定的討論。看著什麼都沒進展的程序，不知不覺就一個人待到中午，心想那傢伙肯定宿醉了。</p>
-<blockquote>
-<p>「抱歉，剛剛才醒。」<br>「宿醉了對吧？」<br>「沒宿！」</p>
-</blockquote>
-<p>比起對於算法分析和優化技術，也許應該從更基本的算法開始講起。腦海中大量的資訊嘗試從平常不怎麼說話的口中說出，一時什麼都講不出來</p>
-<blockquote>
-<p>「沒關係，你慢慢說」<br>「是這個意思吧？」描繪著投影片上的圖示說道<br>「抱歉，這講起來有點枯燥」<br>「沒關係，聽你講著講著，我開始對這個有點興趣。」</p>
-</blockquote>
-<p>小組討論就這麼持續到晚上，學弟們還不跟我吃飯，不知道這群傢伙在想些什麼，你們這樣玩弄學長對嗎？就是要我們倆個一起吃。</p>
-<h3 id="心情複雜"><a href="#心情複雜" class="headerlink" title="心情複雜"></a>心情複雜</h3><p>一想到在自己喜歡的事物面前，思緒總沒辦法順暢且正常地表達出來！覺得自己遜斃了。</p>
-<p><img src="http://i.imgur.com/RyTYjQM.jpg" alt="「遜斃了」－《風夏》"></p>
-<p>趕緊逃進期末專題程式編寫的修改，不再去理會旁人的總總，心想事情根本不是這樣子的，這種事情怎麼會落在我身上呢。</p>
-<blockquote>
-<p>優化計算機圖學浮點數輸出轉文字檔部份，轉換 json 就可以更快，加速 4 倍之多。參考論文說道 16 倍加速，提供的程序 Warning 編譯訊息停不下來，修一修 Bug 送上 pull request，沒想到 Lemire 教授也在貢獻者裡，略感興奮。清晨就收到信，修改部份被 Merge！</p>
-</blockquote>
-<p>一個小小的 CPU 中，突然多了一條程序需要執行，帶著這樣的心情去工作。沒想到這一天是老闆來，一整天全是全英開會，而且還有一場是咱的報告，事前都不知道啊！時間不斷消逝，終於迎來那一刻 … 原來已經沒救了，好丟臉啊。</p>
-<p><img src="http://i.imgur.com/P46COfP.jpg" alt="「太丟臉了」－《風夏》"></p>
-<p>在當下心中不冒出某晚一起討論的閒聊</p>
-<blockquote>
-<p>指著螢幕上一行一行的程序，試圖解釋自己的想法<br>「我改了這裡，好讓整個三角形更加地完整，不會破圖，不過也因此不太能平行 … 這有點麻煩」<br>在腦海中盤算著時程和算法<br>「如果要平行的話，要改成這個樣子，不過要花點時間，再弄個幾天吧」</p>
-<p>「每個人都有自己不擅長的，不會每件事情都做得好，沒・關・係・的」<br>「我們已經做很多了呀，先把這些弄好吧」</p>
-</blockquote>
-<p>我啊，對於自己不擅長的項目太過在意，對於做不好一件可以完成的事覺得相當愧疚，總是投入好幾倍的時間來完成，想想自己這麼疲憊到底是為了什麼？在追求什麼？聽到那段話，有如放下了大石，旁人要不什麼都不說，要不鼓勵盡量往前衝，距離上一次對我傳達「你可以休息一下」又是多麼久遠的事了。</p>
-<blockquote>
-<p>不斷地敲打鍵盤，嘗試將自己的想法加入並進行測試，突然冒出了一句話<br>「欸欸，你爸有缺老婆嗎？」<br>「？」頓時落下手上的工作，腦海中喀喀聲瞬間即逝，『等等，這是什麼話題，現在我們在弄期末專題吧？』<br>「沒啦，我媽離婚一陣子，最近又交了另一半。」<br>「嗯？」對於這話題到底從哪裡來，心中滿滿的困惑<br>「她居然嗆我說『我比妳還有市場耶』，我是不是應該隨便交個男友？」<br>『咦？咦咦咦咦？』現在應該要沉住氣吧，擔心一不小心就要進警局<br>「沒事，你繼續寫吧。」</p>
-</blockquote>
-<p>繼續敲著鍵盤的同時，心想好像錯過了什麼選項。</p>
-<h3 id="角色轉換"><a href="#角色轉換" class="headerlink" title="角色轉換"></a>角色轉換</h3><p><img src="http://i.imgur.com/J2cTZsg.jpg" alt="「只是一味地爬升，爬升，最終抵達的地方沒有回去的路」－《三月的獅子》"></p>
-<blockquote>
-<p>「今天學姊會來嗎？」學弟如此問道<br>「哪個學姊？你想說什麼」不耐煩地詢問</p>
-</blockquote>
-<p>終於來到這一天，跟學弟談話時要把同屆同學用稱謂描述，叫全名也不對勁，只喊名也怪奇特的，若用學長學姊稱呼，一不小心談話又忘了是哪個學長學姊。</p>
-<h3 id="清醒之日"><a href="#清醒之日" class="headerlink" title="清醒之日"></a>清醒之日</h3><blockquote>
-<p>「我在你家，可以借用你房間嗎？」<br>「？」原來是高中同學來訪，如此地閒情逸致 … 到我的房間打電動！<br>「借你桌子打電動」</p>
-</blockquote>
-<p>十一點多離開實驗室，一回到租屋的地方，從沒想過接下來才是那無法描述的黑歷史，為什麼連回家都要被酷刑拷問，這些不是我能決定的啊，學校那樣就算了，連好友都能從動態中發現個什麼，為什麼你們要處處肉搜呢？</p>
-<p>次次日，收到通知要買電池回去弄熱水器，到處敲個房門請求工具支援，才發現自己有多孤單。不僅是電池沒電，連瓦斯都沒有，看來今天是冷水澡的清醒日！</p>
-<p><img src="http://i.imgur.com/1j4BK8O.jpg" alt="「孤單的時候 就可以相互依靠」－《人渣本願》"></p>
-<blockquote>
-<p>根據以往的經驗，想認識的女生都會馬上有男朋友。我想這次也不意外，祝福各位，這個小劇場給大家帶來一陣子的歡笑。</p>
-</blockquote>
-<p>學期的最後，授課老師說研究生只要有幾門課拿到 A+ 就好，研究方向就會比較明確。然而，在這當下把碩士課程八門都修完，回過頭來，發現到擅長的研究領域無法判定，對於研究能力更加迷惘。感謝小夥伴們的協助，全 A+ 成就取得。</p>
-<p><img src="http://i.imgur.com/VvcUwJZ.jpg" alt="「誰能溫暖我 誰能快點溫暖我」－《為美好的世界獻上祝福》"></p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/6/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><a class="page-number" href="/page/9/">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/8/">Next &raquo;</a>
@@ -1181,7 +1026,7 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">49</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1193,7 +1038,23 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
       <ul>
         
           <li>
-            <a class="text" href="/2021/10/29/work/company-ghost-story-14/">
+            <a class="text" href="/2021/10/28/diary-202110-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·序》</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/diary-202110/">
+              
+                <i class="icon-file-o"></i> 
+              
+            好多個 28 在這個時刻</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/10/28/work/company-ghost-story-14/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1254,22 +1115,6 @@ F_{ij} = \frac{1}{A_i} \int_{A_i}\int_{A_j} \frac{\cos \phi_2 \cos \phi_1}{\pi r
                 <i class="icon-file-o"></i> 
               
             疫情下的工作變化</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/06/21/work/company-ghost-story-10/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 10</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/05/30/diary-202105/">
-              
-                <i class="icon-file-o"></i> 
-              
-            前思後想 新居落成</a>
           </li>
         
       </ul>
