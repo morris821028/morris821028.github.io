@@ -89,6 +89,179 @@
           
           <section id="main">
   
+    <article id="post-lesson/hw-computational-intelligence" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/05/19/lesson/hw-computational-intelligence/" class="article-date">
+  <time datetime="2014-05-19T11:47:28.000Z" itemprop="datePublished">2014-05-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/05/19/lesson/hw-computational-intelligence/">計算型智慧 程式作業</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/05/19/lesson/hw-computational-intelligence/" data-id="ckvexv50002edqwvnoolravl0" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/05/19/lesson/hw-computational-intelligence/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Fuzzy-System/">Fuzzy System</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/GA/">GA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/PSO/">PSO</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h1 id="Computational-Intelligence-計算型智慧"><a href="#Computational-Intelligence-計算型智慧" class="headerlink" title="Computational Intelligence 計算型智慧"></a>Computational Intelligence 計算型智慧</h1><p>本課程將會有三階段程式，將三個算法依序加入程式中，為了要實作這些算法，必須先作出模擬器。</p>
+<h2 id="Lv-0-模擬器"><a href="#Lv-0-模擬器" class="headerlink" title="Lv. 0 模擬器"></a>Lv. 0 模擬器</h2><p>在一個 2D 平面中，以一個圓形當作車子，道路為線段的方式進行描述。為了在隨後的擴充，將地圖內容物分成可行區域多邊形和障礙物多邊形。</p>
+<ul>
+<li>要支持車子下一秒的擺角，並且按下推動鍵會根據方程式進行移動。</li>
+<li>可以將車子兩側的感測器進行角度調整，並且可以根據感測器角度進行距離計算。</li>
+<li>並且在呈現 2D 平面時，附加顯示座標軸的比例。</li>
+</ul>
+<p><img src="/img/hw-ci-0.PNG" alt="完成圖"></p>
+<p>由於私心，有一些額外產物。</p>
+<ul>
+<li>完成可以自動置中的設定</li>
+<li>提供地圖縮放和讀取操作</li>
+<li>製作地圖產生器 (other project)</li>
+<li>模擬器的彈木遊戲番外篇 (other project)</li>
+<li>提供運行欄位的縮起</li>
+</ul>
+<h2 id="Lv-1-模糊系統"><a href="#Lv-1-模糊系統" class="headerlink" title="Lv. 1 模糊系統"></a>Lv. 1 模糊系統</h2><p>車子運行公式</p>
+<p><img src="/img/hw-ci-1.PNG" alt="運行公式"></p>
+<p>其中 Φ(t) 是模型車與水平軸的角度，b 是模型車的長度，x 與 y 是模型車的座標位置， Θ(t) 是模型車方向盤所打的角度，我們對模擬的輸入輸出變數限制如下：</p>
+<p><code>-40 deg &lt;= Θ(t) &lt;= 40 deg</code></p>
+<p>寫一個程式使用模糊系統、理論模擬車子行徑，並且想辦法最佳化。</p>
+<ul>
+<li>考慮擴充性，以後車子的運行公式可能會替換，因此建造一個 <code>Engine class</code>。</li>
+<li>模糊系統的幾個特性拆分成數個 method，並且使用不同的數學計算採用繼承關係。</li>
+<li>最困難得地方在於計算函數交集，採用離散取點是最後的手段</li>
+</ul>
+<h3 id="函數實驗"><a href="#函數實驗" class="headerlink" title="函數實驗"></a>函數實驗</h3><ol>
+<li>經過實驗，三個感測器分別坐落於前方 (90度)、左右各偏轉 50 度左右的夾角比左右 90 度更好。用以應付多變的轉角彎度，防止模稜兩可的擺動。</li>
+<li>不管哪裡種去模糊化系統，由於題目限制擺角於 [-40, 40] 度之間，因此很容易在加權平均、質心、離散化而導致邊界擺角的機率甚低，當越多函數則稀釋程度越高。因此函數定義可以超過限制擺角，只需要在去模糊化時，約束至條件內即可。</li>
+<li>設計函數時，要討論向其中一個方向偏轉，也就是不能設計過於對稱的圖形，否則將會在死胡同裡打轉。</li>
+</ol>
+<h3 id="函數設計"><a href="#函數設計" class="headerlink" title="函數設計"></a>函數設計</h3><p>d1 為前方感測器，d2 為右方感測器，d3 為左方感測器。</p>
+<ol>
+<li>d1 歸屬函數為<br><img src="/img/hw-ci-2.PNG" alt="d1 歸屬函數"><br>d2, d3 歸屬函數為<br><img src="/img/hw-ci-3.PNG" alt="d2, d3 歸屬函數">    </li>
+<li>函數式加權平均<pre><code>If d3 large, θ = 55
+If d2 large, θ = -55
+If d2 medium, θ = -40
+If d3 medium, θ = 40
+If d1 large and d2 small, θ = -30
+If d1 large and d3 small, θ = 30
+If d1 small, θ = -60
+</code></pre>規則如上述七條，以最簡單的常數關係。測試結果還算不錯。<br><code>if condition, then statement</code>，statement 中的變數不存在於 condition 去做調整，後來發現由於太複雜去討論而一直失敗。</li>
+<li><p>重心法、最大平均法、修正型最大平均法、中心平均法<br>為了方便計算連續函數，採用離散取點，間隔 0.1 抓取 [-60, 60] 之間的點座標。對於以下四種方法討論於簡單彎道的過程記錄：<br><code>If d3 large</code><br><img src="/img/hw-ci-4.png" alt="If d3 large"><br>If d2 large<br><img src="/img/hw-ci-5.png" alt="If d2 large"><br>If d2 medium<br><img src="/img/hw-ci-6.png" alt="If d2 medium"><br>If d3 medium<br><img src="/img/hw-ci-7.png" alt="If d3 medium"><br>If d1 large and d2 small<br><img src="/img/hw-ci-8.png" alt="If d1 large and d2 small"><br>If d1 large and d3 small<br><img src="/img/hw-ci-9.png" alt="If d1 large and d3 small"><br>If d1 small, θ = -60<br><img src="/img/hw-ci-10.png" alt="If d1 small"></p>
+<ul>
+<li>重心法<br>當中表現最為穩健，而且路徑平滑。</li>
+<li>最大平均法<br>由於定義的函數較為簡單，而且大多都是以梯形的方式存在，雖然能在機率高的情況下走完全程，路徑中會呈現左右擺盪情況。並且大多都已極值的方式出現。</li>
+<li>修正型最大平均法<br>情況會稍微好一些，但是對於並沒有向重心法一樣的圓滑曲線，仍是因為原先的函數設計所惹的問題。</li>
+</ul>
+<p>對於某一種方法而去定義相關的函數進行測較好，而在最大平均法的部分，必須使用較具有變化性的曲線，否則很容易在極值狀況下擺動。</p>
+</li>
+</ol>
+<hr>
+<h2 id="Lv-2-GA"><a href="#Lv-2-GA" class="headerlink" title="Lv 2. GA"></a>Lv 2. GA</h2><p><img src="/img/hw-ci-RBF.PNG" alt="RBF"></p>
+<p>「放射狀基底函數網路 RBF」，基本上，其網路架構如圖1所示，為兩層的網路；假設輸入維度是p ，以及隱藏層類神經元的數目是J ，那麼網路的輸入可以表示成：<br><img src="/img/hw-ci-RBF-f1.PNG" alt=""><br>其中選用高斯型基底函數：<br><img src="/img/hw-ci-RBF-f2.PNG" alt=""><br>其中 x = (x1,x2,…,xp) 、mj = (mj1,mj2,…,mjp) 、||  || 代表向量絕對值<br>適應函數為：<br><img src="/img/hw-ci-RBF-f3.PNG" alt=""></p>
+<p>請用實數型基因演算法，找出wj , mj , σj，在不同的數字J下，最好的基因向量 (例如J為9、輸入x為3維向量，則表示基因向量是1+9+3x9+9=46維度的向量，請注意這裡不是指族群數；又例如J為7、輸入x為3維向量，則表示基因向量是1+7+3x7+7=36維度的向量)下，評估函數E(式1)為越小越好。其中基因向量維度公式為 1+J + p<em>J+J = (p+2)</em>J+1維向量( ,w1 , w2 ,.., wJ , m11, m12,.., m1p, m21, m22,.., m2p,.., mJ1, mJ2,…, mJp, σ1, σ2, …, σJ)。</p>
+<p>參數說明 : </p>
+<ul>
+<li>N 作業1產生的N筆成功到達目的訓練資料(換不同起始點)</li>
+<li>y<sub>n</sub> 表示訓練資料的方向盤期望輸出值 P.s.如果配合wj值的範圍為0~1之間，在此則必須把yn由-40~+40度正規化到 0~1之間；如果不想正規化  就必須把 wj的值範圍調整到 -40~40之間 範圍為0~1之間</li>
+<li>W<sub>j</sub> 範圍為 0~1 (或是-40~40)之間 P.s.此需配合訓練集的yn跟F(n)值範圍，所以皆需正規化到0~1之間；若不正規化，wj的值範圍為 -40~40之間</li>
+<li>m<sub>j</sub> 範圍跟X範圍一樣，如以提供的範例檔則為 0~30</li>
+<li>σ<sub>j</sub> 範圍為0~10之間；也可以設定更大的範圍做探討。</li>
+</ul>
+<blockquote>
+<p><strong> 實作概要 </strong>：<br>把參數編碼成 DNA，使用 GA 算法改變 DNA，然後用之前的模糊系統的結果，讓 RBF 接近之前定義的模糊系統。需要拿模糊系統的一些測資當作訓練資料，收集之後餵給 GA 做訓練。</p>
+</blockquote>
+<h3 id="實驗方法"><a href="#實驗方法" class="headerlink" title="實驗方法"></a>實驗方法</h3><ol>
+<li>核心代碼，對於每次迭代，著手適應、選擇、交配、突變。</li>
+<li>細部 “交配” 代碼，採用實數型的分離和聚集兩種情況。</li>
+<li>細部 “突變” 代碼，採用微量雜訊，唯一不同的地方在於，這個微量雜訊會根據當前數值的比例有關，為了避免大數字對於微量雜訊的干擾不夠強烈。</li>
+</ol>
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><ol>
+<li>運行結果 J = 3, p = 3<br>( ,w1 , w2 ,.., wJ , m11, m12,.., m1p, m21, m22,.., m2p,.., mJ1, mJ2,…, mJp, σ1, σ2, …, σJ) = (0.163568 0.851471 1.594151 1.379580 13.092824 0.000505 12.611789 30.000000 0.000368 18.715240 0.000850 2.708967 30.000000 6.307677 7.584529 10.000000)</li>
+<li>訓練數據為 “map2” 走一圈的訓練資訊，約為 500 筆。因為 “map0” (即本次作業給的地圖) 的複雜度不夠以至於無法充分表達原本設計的模糊系統。也就是根據當初模糊系統設計，收集的數據的多樣性和連續性不足。</li>
+</ol>
+<h3 id="實驗分析"><a href="#實驗分析" class="headerlink" title="實驗分析"></a>實驗分析</h3><p>根據 RBF 的神經元，這裡可以越少越好，在程式中，神經元個數(J) 設置 3 個。運行時採用輪盤式選擇，讓適應能力好的，具有較高的機會繁殖，採用一個隨機變數去挑選。而在基因方面使用實數型基因的形式。</p>
+<ol>
+<li>運行時，突變機率和突變比例相當重要，由於相同適應能力好的物種量很多，只保留其中一部分即可，因此可以將突變機率0.5 左右，太低則會造成進化速度太慢，太高則容易失去原本適應好的物種，導致整體適應度的震盪。</li>
+<li>另外設置突變的比例，也就是該段實數值上下調整的比例。<br><code>g.getDNA()[i] = g.getDNA()[i] + ratio * Math.random() * g.getDNA()[i];</code><br>藉由上述的式子，將 ratio 設置成一個調變比例，來製造爆炸效應的規模。而在運行時，突變效果還能接受。</li>
+<li>原本運行時，只將 DNA 片段的值任意放置，並且約束在不會超出函數的定義域，在收斂速度上有明顯加速。但為了符合作業需求，將每個參數約束在指定範圍內，在收斂速度慢了一截，在預期結果並沒有很好。</li>
+<li>在不同地圖收集的預期資訊，會針對不同車子感測器的角度有所差異，因此不能拿不同型的感測數據，訓練出來的 RBF 不能給另外一台車子來使用，除非使用的感測器角度相當接近。</li>
+<li>對於死路的轉彎，在神經元個數(J) 等於 2 的時候，運行結果較為不佳，但是在本次作業中，並不會有這種數據的出現，也不用考慮這種情況。但是當神經元個數少時，GA 算法的運行速度是相當快的。</li>
+</ol>
+<hr>
+<h2 id="Lv-3-PSO"><a href="#Lv-3-PSO" class="headerlink" title="Lv. 3 PSO"></a>Lv. 3 PSO</h2><p>請利用Particle swarm optimization替換掉 GA 部分。</p>
+<ul>
+<li>AgentNum(粒子數)</li>
+<li>IterationNum(疊代數),</li>
+<li>MaxV(最大速度),</li>
+<li>MaxX(最大值範圍),</li>
+<li>Weights(兩個權重),</li>
+<li>Convergent_Error(停止條件)</li>
+<li>並畫出 fitness function 曲線變化 (每一次疊代的最佳fitness值)，最後訓練完成的F(x)當作規則 請跑出車子軌跡。</li>
+</ul>
+<h3 id="實驗分析-1"><a href="#實驗分析-1" class="headerlink" title="實驗分析"></a>實驗分析</h3><p>一開始參數為<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">int</span> sandSize = <span class="number">512</span>;</div><div class="line"><span class="keyword">public</span> <span class="keyword">double</span> maxVelocity = <span class="number">0.5</span>;</div><div class="line"><span class="keyword">public</span> <span class="keyword">double</span> maxXposition = <span class="number">0.5</span>;</div><div class="line"><span class="keyword">public</span> <span class="keyword">double</span> weightOfCognition = <span class="number">0.5</span>;</div><div class="line"><span class="keyword">public</span> <span class="keyword">double</span> weightOfSocial = <span class="number">0.5</span>;</div><div class="line"><span class="keyword">public</span> <span class="keyword">double</span> nearRatio = <span class="number">0.5</span>;</div></pre></td></tr></table></figure></p>
+<p><img src="/img/hw-ci-11.png" alt="PSO 1"></p>
+<p><img src="/img/hw-ci-12.png" alt="PSO 2"></p>
+<ul>
+<li><p>基本上 <code>maxXposition</code> 沒有用到，調整其他比例可以發現端倪。</p>
+</li>
+<li><p>從圖 <code>PSO 2</code> 中可以發現到，PSO 與 GA 最大的不同在於，如果 GA 調用部分突變的情況下，很高的機率會發現適應曲線是嚴格遞減的，但是在 PSO 由於會飛來飛去，有可能會來回震盪。</p>
+</li>
+<li><p>當所有粒子逼近最佳解時，仍會以原本的速度繼續飛行，而原本屬於最佳位置的點也會開始模仿其他粒子飛行，如此一來就會造成震盪。</p>
+</li>
+</ul>
+<p><img src="/img/hw-ci-14.png" alt="PSO 3"></p>
+<ul>
+<li><p>其震盪的高低決定於鄰近模仿的權重，如果鄰近的粒子效果不好，模仿的權重高的時候，會導致整個最佳解有嚴重的偏離。由 <code>PSO 3</code> 中可以驗證這個震盪問題。</p>
+</li>
+<li><p>如果對於全局模仿權重調高，很容易造成處於群聚粒子不容易分離，也就是很難在早到其他的區域最佳解，會在很快的時間內進入某一個區域最佳解，從這一點中可以發現 PSO 真的具有快速收斂的性質。</p>
+</li>
+<li><p>設定 <code>maxVelocity</code> 是將整個向量長度 (歐幾里得距離) 壓縮，這將可以控制查找的精密度，如果設定太小會導致收斂速度明顯下降。將 <code>maxVelocity = 10</code> 時，適應函數看起來會有比較高的進展，由於會將每個參數約束，只要速度不是太小影響就不大。</p>
+</li>
+<li><p>當速度上限增加時，粒子碰到牆的機會也會上升，由於搜索範圍的可能性涵蓋邊界的情況增加，如果最佳解在邊界，在這樣的情況就會更好。</p>
+</li>
+<li><p>在代碼中，鄰近的定義為最近粒子中排名前 20% 的最佳解。如果採用對於常數長度，這種情況上不容易觀察，也就是說不能直接找到鄰近模仿的規模該定義在何處。</p>
+</li>
+<li><p>運行結果 J = 3, p = 3<br>( ,w1 , w2 ,.., wJ , m11, m12,.., m1p, m21, m22,.., m2p,.., mJ1, mJ2,…, mJp, σ1, σ2, …, σJ) = (0.117271 1.270048 0.000000 0.805823 15.845525 0.000000 21.613452 13.509075 0.000000 0.000000 30.000000 0.000000 10.505934 10.000000 10.000000 5.238101)</p>
+</li>
+</ul>
+<h1 id="Github-Download"><a href="#Github-Download" class="headerlink" title="Github Download"></a>Github Download</h1><p><a href="https://github.com/morris821028/hw-FuzzySystem" target="_blank" rel="external">Download</a></p>
+<p><a href="http://morris821028.github.io/2014/05/19/hw-computational-intelligence/">Blog</a></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-oj/uva/uva-12717" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/05/19/oj/uva/uva-12717/" class="article-date">
@@ -114,7 +287,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/" data-id="ckvdaxbhg037ucsvnzsxpctmz" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/" data-id="ckvexv5u003gbqwvn907xkols" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/19/oj/uva/uva-12717/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -185,7 +358,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/" data-id="ckvdaxbhd037rcsvnizwfaw60" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/" data-id="ckvexv5tw03g8qwvnt8atqdfb" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/19/oj/uva/uva-12716/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -241,11 +414,11 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://github.com/github.png" rel="gallery_ckvdaxasi02gpcsvndgw8bds5">
+      <a class="article-gallery-img fancybox" href="http://github.com/github.png" rel="gallery_ckvexv54a02k5qwvnabc2q8bs">
         <img src="http://github.com/github.png" itemprop="image">
       </a>
     
-      <a class="article-gallery-img fancybox" href="http://github.com/unicorn.png" rel="gallery_ckvdaxasi02gpcsvndgw8bds5">
+      <a class="article-gallery-img fancybox" href="http://github.com/unicorn.png" rel="gallery_ckvexv54a02k5qwvnabc2q8bs">
         <img src="http://github.com/unicorn.png" itemprop="image">
       </a>
     
@@ -264,7 +437,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/18/web/md-file-format/" data-id="ckvdaxasi02gpcsvndgw8bds5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/18/web/md-file-format/" data-id="ckvexv54a02k5qwvnabc2q8bs" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/18/web/md-file-format/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -315,7 +488,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/18/lesson/operating-system-hw-thread/" data-id="ckvdaxaqm02e2csvnait6ntzy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/18/lesson/operating-system-hw-thread/" data-id="ckvexv50e02ewqwvnpdzg24vi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/18/lesson/operating-system-hw-thread/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -394,7 +567,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="/img/1399146778408.gif" rel="gallery_ckvdaxapz02d8csvnqo6zjwwx">
+      <a class="article-gallery-img fancybox" href="/img/1399146778408.gif" rel="gallery_ckvexv4zu02e6qwvnwho8p5ad">
         <img src="/img/1399146778408.gif" itemprop="image">
       </a>
     
@@ -413,7 +586,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/14/lesson/hw-agile-paper/" data-id="ckvdaxapz02d8csvnqo6zjwwx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/14/lesson/hw-agile-paper/" data-id="ckvexv4zu02e6qwvnwho8p5ad" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/14/lesson/hw-agile-paper/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -578,7 +751,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-11291-with-yacc/" data-id="ckvdaxb5402vycsvnqybfmhox" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-11291-with-yacc/" data-id="ckvexv5fs02xkqwvnwd8m6tdx" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/12/oj/uva/uva-11291-with-yacc/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -657,7 +830,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-1636/" data-id="ckvdaxbnu03drcsvntmk8h2iv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-1636/" data-id="ckvexv60o03lzqwvnf1zsc7nd" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/12/oj/uva/uva-1636/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -728,7 +901,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-1644/" data-id="ckvdaxbo103dxcsvnxd5pj1lh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/12/oj/uva/uva-1644/" data-id="ckvexv61303mbqwvnndb07lng" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/12/oj/uva/uva-1644/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -790,7 +963,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/11/lesson/compiler-clg-ll(1)/" data-id="ckvdaxaou02bscsvnedut6b5n" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/05/11/lesson/compiler-clg-ll(1)/" data-id="ckvexv4yn02cpqwvnjqfimdj1" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/05/11/lesson/compiler-clg-ll(1)/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -914,73 +1087,6 @@
 
 
   
-    <article id="post-oj/uva/uva-10378" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/05/10/oj/uva/uva-10378/" class="article-date">
-  <time datetime="2014-05-10T06:28:27.000Z" itemprop="datePublished">2014-05-10</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/05/10/oj/uva/uva-10378/">UVa 10378 - Complex Numbers</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/05/10/oj/uva/uva-10378/" data-id="ckvdaxb1q02sfcsvn9f1yjdap" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2014/05/10/oj/uva/uva-10378/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/複數/">複數</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>Numbers of the form a±bi are called complex numbers (Where i = √(-1)). In this problem you will have to find all the values of (a±bi)<sup>1/n</sup>. </p>
-<h2 id="Input"><a href="#Input" class="headerlink" title="Input"></a>Input</h2><p>The input file contains several lines of input. Each line has two parts. The first part will contain a complex number of the form a±bi and the second part will contain an integer n (0 &lt; n &lt;=100). Here a and b are integer numbers and 0 &lt;= |a|, |b|&lt;100. Input is terminated by end of file.</p>
-<h2 id="Output"><a href="#Output" class="headerlink" title="Output"></a>Output</h2><p>For each line of input you should produce n+2 lines of output. The description of output for each line of input is given in the next paragraph:</p>
-<p>First line contains the case number as shown in the sample output. Next n lines should contain the n-th roots of the input complex number. The printed complex numbers should be of the form x±yi, where x and y are floating point numbers rounded upto three digits after the decimal point. Note that there is no space between the operators and operands. The roots are sorted according to descending order of their real part and then according to the descending order of their imaginary part. When the printed value of x or y is 0.000, it should be interpreted as positive zero. So you should never print something like “-0.000”. After all these outputs print a blank line. </p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">3+4i 2</div><div class="line">5-4i 3</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Case 1:</div><div class="line">2.000+1.000i</div><div class="line">-2.000-1.000i</div><div class="line"></div><div class="line">Case 2:</div><div class="line">1.810-0.414i</div><div class="line">-0.546+1.775i</div><div class="line">-1.264-1.361i</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p><strong> 題目描述： </strong></p>
-<p>問虛數 <code>a+bi</code> 的 n 次根號的結果，並且根據實數由大至小、虛數由大至小的字典順序輸出。</p>
-<p><strong> 題目解法： </strong></p>
-<p>先算出 <code>a+bi</code> 所占有的角度 <code>theta</code>，得到 <code>(theta + 2 * pi * i / n)</code> 是每一個根的角度，因為根據角度疊加原理得到 <code>(theta + 2 * pi * i / n) ^ n = theta + 2 * pi * i ＝ theta</code>，但是這題的困難是在於 如何避免 <code>-0.000</code> 的輸出。</p>
-<p>原本錯誤排序的寫法</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">bool cmp(Point a, Point b) &#123;</div><div class="line">    if(fabs(a.x - b.x) &gt; eps)</div><div class="line">        return a.x &lt; b.x;</div><div class="line">    return a.y &lt; b.y;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>應更正為如下代碼，如果要問我為什麼，現在還沒有仔細地理解，照理來說應該是差不多的。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">bool cmp(Point a, Point b) &#123;</div><div class="line">    if(fabs(a.x - b.x) &gt; eps)</div><div class="line">        return a.x &lt; b.x;</div><div class="line">    if(fabs(a.y - b.y) &gt; eps)</div><div class="line">        return a.y &lt; b.y;</div><div class="line">    return false;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>之前是想利用 <code>sprintf(buffer, &quot;%+.3lf%+.3lf&quot;, a, b);</code> 去檢查 <code>+0.000</code> 和 <code>-0.000</code>，這種寫法有點太過了，不過應該也是可行的。</p>
-<figure class="highlight plain"><figcaption><span>lang: cpp</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line">#include &lt;stdio.h&gt;</div><div class="line">#include &lt;stdlib.h&gt;</div><div class="line">#include &lt;math.h&gt;</div><div class="line">#include &lt;algorithm&gt;</div><div class="line">using namespace std;</div><div class="line">#define eps 1e-6</div><div class="line">bool cmp(pair&lt;double, double&gt; a, pair&lt;double, double&gt; b) &#123;</div><div class="line">    if(fabs(a.first - b.first) &gt; eps)</div><div class="line">        return a.first &gt; b.first;</div><div class="line">    if(fabs(a.second - b.second) &lt; eps)</div><div class="line">        return false;</div><div class="line">    return a.second &gt; b.second;</div><div class="line">&#125;</div><div class="line">int main() &#123;</div><div class="line">    char s[50];</div><div class="line">    const double pi = acos(-1);</div><div class="line">    int n, i, cases = 0;</div><div class="line">    double a, b;</div><div class="line">    while(scanf(&quot;%s %d&quot;, s, &amp;n) == 2) &#123;</div><div class="line">        if(sscanf(s, &quot;%lf+%lfi&quot;, &amp;a, &amp;b) == 2)</div><div class="line">            &#123;&#125;</div><div class="line">        else</div><div class="line">            sscanf(s, &quot;%lf-%lfi&quot;, &amp;a, &amp;b), b = -b;</div><div class="line">        double theta = atan2(b, a);</div><div class="line">        double k = pow(sqrt(a*a+b*b), 1.0/n);</div><div class="line">        double px, py;</div><div class="line">        pair&lt;double, double&gt; D[128];</div><div class="line">        for(i = 0; i &lt; n; i++) &#123;</div><div class="line">            px = k*cos((theta + i*2*pi)/n);</div><div class="line">            py = k*sin((theta + i*2*pi)/n);</div><div class="line">            D[i] = make_pair(px, py);</div><div class="line">        &#125;</div><div class="line">        sort(D, D+n, cmp);</div><div class="line">        printf(&quot;Case %d:\n&quot;, ++cases);</div><div class="line">        for(i = 0; i &lt; n; i++) &#123;</div><div class="line">        	if(fabs(D[i].first) &lt; 0.0005)	D[i].first = 0;</div><div class="line">        	if(fabs(D[i].second) &lt; 0.0005)	D[i].second = 0;</div><div class="line">        	printf(&quot;%.3lf%+.3lfi\n&quot;, D[i].first, D[i].second);</div><div class="line">        &#125;</div><div class="line">        puts(&quot;&quot;);</div><div class="line">    &#125;</div><div class="line">    return 0;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/80/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/79/">79</a><a class="page-number" href="/page/80/">80</a><span class="page-number current">81</span><a class="page-number" href="/page/82/">82</a><a class="page-number" href="/page/83/">83</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/82/">Next &raquo;</a>
@@ -996,7 +1102,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">49</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1006,6 +1112,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/10/31/diary-20211031-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·貳》</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/10/28/diary-202110-encrypt/">
@@ -1077,14 +1191,6 @@
                 <i class="icon-file-o"></i> 
               
             Company Ghost Story 公司鬼故事 11</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/06/21/diary-202106/">
-              
-                <i class="icon-file-o"></i> 
-              
-            疫情下的工作變化</a>
           </li>
         
       </ul>

@@ -89,6 +89,75 @@
           
           <section id="main">
   
+    <article id="post-jg-10085" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/03/16/jg-10085/" class="article-date">
+  <time datetime="2016-03-16T01:52:03.000Z" itemprop="datePublished">2016-03-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/03/16/jg-10085/">批改娘 10085. Parallel Count (debug)</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/03/16/jg-10085/" data-id="ckvexv44h006tqwvn3bgdluab" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/03/16/jg-10085/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/thread/">thread</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>這有一份由 pthread 撰寫的序列總和計算，假設不開任何的優化參數，在快取處理會有嚴重缺失。</p>
+<h3 id="main-c"><a href="#main-c" class="headerlink" title="main.c"></a>main.c</h3><p>輸入序列長度 <span>$n$</span><!-- Has MathJax -->，計算 <span>$m$</span><!-- Has MathJax --> 次經由 <span>$\text{key}, \; \text{key} + 1, \; \text{key} + 2, \; \cdots, \; \text{key} + m-1$</span><!-- Has MathJax --> 加密的序列總和。這部份將不提供修改。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"utils.h"</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> cases = <span class="number">0</span>;</div><div class="line">    <span class="keyword">int</span> n, m, key;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;n, &amp;m, &amp;key);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; m; it++) &#123;</div><div class="line">        <span class="keyword">int</span> ret = run(n, key);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Case #%d: %d\n"</span>, ++cases, ret);</div><div class="line">        key++;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="utils-h"><a href="#utils-h" class="headerlink" title="utils.h"></a>utils.h</h3><p>計算工作交由 <code>void f(int n, int key, int *p1, int *p2, int *p3, int *p4);</code> 完成最後四個參數，將會由 4 個 thread 計算分別儲存在位址 <code>p1</code>, <code>p2</code>, <code>p3</code>, <code>p4</code> 中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __UTILS_H</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __UTILS_H</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> key, <span class="keyword">int</span> *p1, <span class="keyword">int</span> *p2, <span class="keyword">int</span> *p3, <span class="keyword">int</span> *p4)</span></span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">run</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> key)</span></span>;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div></pre></td></tr></table></figure>
+<h3 id="sum-c"><a href="#sum-c" class="headerlink" title="sum.c"></a>sum.c</h3><p>平行計算序列總和，特別注意到 <code>void* subtask(void* argu)</code> 中存取的記憶體位置。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"utils.h"</span></span></div><div class="line"></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">Argu</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> *result;</div><div class="line">    <span class="keyword">int</span> L, R, key;</div><div class="line">&#125; Argu;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span>* <span class="title">subtask</span><span class="params">(<span class="keyword">void</span>* argu)</span> </span>&#123;</div><div class="line">    Argu *ptr = (Argu *) argu;</div><div class="line">    *(ptr-&gt;result) = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = ptr-&gt;L; i &lt;= ptr-&gt;R; i++)</div><div class="line">        *(ptr-&gt;result) += encrypt(i, ptr-&gt;key);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> key, <span class="keyword">int</span> *p1, <span class="keyword">int</span> *p2, <span class="keyword">int</span> *p3, <span class="keyword">int</span> *p4)</span> </span>&#123;</div><div class="line">    <span class="keyword">pthread_t</span> threads[<span class="number">4</span>];</div><div class="line">    <span class="keyword">int</span> *output[<span class="number">4</span>] = &#123;p1, p2, p3, p4&#125;;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++) &#123;</div><div class="line">            Argu *argu = (Argu *) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(Argu));</div><div class="line">            argu-&gt;result = output[i];</div><div class="line">            argu-&gt;L = i * (n / <span class="number">4</span>) + <span class="number">1</span>;</div><div class="line">            argu-&gt;R = argu-&gt;L + n / <span class="number">4</span> - <span class="number">1</span>;</div><div class="line">            argu-&gt;key = key;</div><div class="line">            <span class="keyword">if</span> (i == <span class="number">3</span>) argu-&gt;R = n;</div><div class="line">            pthread_create(&amp;threads[i], <span class="literal">NULL</span>, subtask, argu);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++)</div><div class="line">        pthread_join(threads[i], <span class="literal">NULL</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="job-c"><a href="#job-c" class="headerlink" title="job.c"></a>job.c</h3><p>你的工作要改善下方代碼的效能。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"utils.h"</span></span></div><div class="line"></div><div class="line"><span class="keyword">int</span> ret[<span class="number">128</span>];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">run</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>;</div><div class="line">    f(n, key, ret, ret+<span class="number">1</span>, ret+<span class="number">2</span>, ret+<span class="number">3</span>);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++)</div><div class="line">        sum += ret[i];</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>輸入只有一行三個整數 <span>$n, \; m, \; \text{key}$</span><!-- Has MathJax -->。</p>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>輸出 <span>$m$</span><!-- Has MathJax --> 序列總和結果 (無視 overflow)。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">10000000 10 514</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">Case #1: 1397862656</div><div class="line">Case #2: 1970821632</div><div class="line">Case #3: -1178356736</div><div class="line">Case #4: 1113221120</div><div class="line">Case #5: 1401409536</div><div class="line">Case #6: 1977786368</div><div class="line">Case #7: -1164427264</div><div class="line">Case #8: 1145914243</div><div class="line">Case #9: 645957382</div><div class="line">Case #10: 1308383748</div></pre></td></tr></table></figure>
+<h2 id="編譯環境"><a href="#編譯環境" class="headerlink" title="編譯環境"></a>編譯環境</h2><h3 id="Makefile"><a href="#Makefile" class="headerlink" title="Makefile"></a>Makefile</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">CFLAG=-std=c99 -pthread</div><div class="line"></div><div class="line">all: main.c sum.c job.c</div><div class="line">    gcc $(CFLAG) main.c -c</div><div class="line">    gcc $(CFLAG) sum.c -c</div><div class="line">    gcc $(CFLAG) main.o sum.o job.c -o job</div></pre></td></tr></table></figure>
+<p><a href="https://github.com/joaquintides/usingstdcpp2015/blob/master/Mind%20the%20cache.pdf" target="_blank" rel="external">reference</a></p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>由於茵可大神給予我參考的簡報 <a href="https://github.com/joaquintides/usingstdcpp2015/blob/master/Mind%20the%20cache.pdf" target="_blank" rel="external">Mind Cache</a> 中提到不少的快取實驗，其中一部份就是在 thread 使用上，於是就拿來出題測試測試一番。</p>
+<p>通常講到數據局部性 (Data Locality) 都希望資料盡量集中，但一不小心會犯下錯誤，就是在多個 thread 儲存答案時，雖然不會共用同一個位址，但相鄰的位址在另一個核 (core) 使用，由於彼此之間相互修改，兩個相鄰位址若放在同一個 cache line，dirty bit 勢必要讓他們從 cache line 掉到 L1 -&gt; L2 -&gt; L3，進行資料同步。</p>
+<p>目前 cache line 普遍上設計大小為 64 Bytes，相當於間隔 16 個 4 bytes Integer 的差距，所以儲存答案間隔遠一點會比近一點好。當然，編譯器優化參數開到 O2 以上時，似乎就直接先存放到暫存器裡頭，不會不斷地存取 global memory 部份，如此一來，就不會發生 cache miss 問題。實驗結果效能可以差到四倍左右。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"utils.h"</span></span></div><div class="line"> </div><div class="line"><span class="keyword">int</span> ret[<span class="number">128</span>];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">run</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>;</div><div class="line">    f(n, key, ret+<span class="number">0</span>, ret+<span class="number">16</span>, ret+<span class="number">32</span>, ret+<span class="number">48</span>);</div><div class="line">    sum = ret[<span class="number">0</span>] + ret[<span class="number">16</span>] + ret[<span class="number">32</span>] + ret[<span class="number">48</span>];</div><div class="line">    <span class="keyword">return</span> sum;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-jg-10084" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/03/16/jg-10084/" class="article-date">
@@ -114,7 +183,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/03/16/jg-10084/" data-id="ckvdax9ud0070csvn38unoy8x" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/03/16/jg-10084/" data-id="ckvexv44l0076qwvnwp3t6eqv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/03/16/jg-10084/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -196,7 +265,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/29/uva-13006/" data-id="ckvdaxa2n00s5csvnf15s9zty" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/29/uva-13006/" data-id="ckvexv4dr00t3qwvnb1x64qml" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/29/uva-13006/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -252,7 +321,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/29/uva-13010/" data-id="ckvdaxa2q00sccsvnp0gi3ofi" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/29/uva-13010/" data-id="ckvexv4du00tbqwvn1lry61qf" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/29/uva-13010/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -308,7 +377,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/29/uva-13014/" data-id="ckvdaxa2r00sgcsvn8e2yxaal" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/29/uva-13014/" data-id="ckvexv4e000tmqwvnqt5tl88m" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/29/uva-13014/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -364,7 +433,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/08/uva-13054/" data-id="ckvdaxa3400t8csvna2oq07sa" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/08/uva-13054/" data-id="ckvexv4e700u1qwvnmlphgg4k" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/08/uva-13054/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -420,7 +489,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/08/uva-13032/" data-id="ckvdaxa2y00svcsvnx9xf2ovq" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/08/uva-13032/" data-id="ckvexv4e300tuqwvnv6gz3icp" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/08/uva-13032/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -477,7 +546,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/02/uva-13038/" data-id="ckvdaxa3100t2csvnyt3ae9qe" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/02/uva-13038/" data-id="ckvexv4ee00ujqwvna3xq0pbm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/02/uva-13038/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -532,7 +601,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/02/02/uva-13005/" data-id="ckvdaxa2m00s2csvntyyp8lzv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/02/02/uva-13005/" data-id="ckvexv4dp00szqwvnwougfkby" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/02/02/uva-13005/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -588,7 +657,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/" data-id="ckvdax9rv000gcsvnfhgtu0hd" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/" data-id="ckvexv424000lqwvnkb06wmmc" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/27/2016-facebook-hacker-cup-round-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -634,63 +703,6 @@
 
 
   
-    <article id="post-zj-b685" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/01/24/zj-b685/" class="article-date">
-  <time datetime="2016-01-24T02:06:24.000Z" itemprop="datePublished">2016-01-24</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/01/24/zj-b685/">b685. 高中組第五題-課堂抽籤</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/24/zj-b685/" data-id="ckvdaxa8u0150csvnrt9z4drl" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/01/24/zj-b685/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dp/">dp</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數學/">數學</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><span>$N$</span><!-- Has MathJax --> 個人抽籤決定跟誰同一組，請問在某些籤已經決定好的情況下，求恰好分成 <span>$M$</span><!-- Has MathJax --> 組的抽籤方法數。<br><br>轉換成 <span>$N$</span><!-- Has MathJax --> 個節點，恰好形成 <span>$M$</span><!-- Has MathJax --> 個環的方法數。<br><br>## Sample Input ##<br><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line">5 1</div><div class="line">2 3 1 5 4</div><div class="line">5 2</div><div class="line">2 3 1 5 4</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">0</div><div class="line">1</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>在此特別感謝 lwc (Wei Chen Liao) 提供思路。</p>
-<p>手動暴力打表後，上網蒐到 <a href="https://oeis.org/A125714" target="_blank" rel="external">A125714 Alfred Moessner’s factorial triangle.</a> 恰好是這個數列的答案。</p>
-<p>由於每一個人的籤不重複，若把他抽到的籤當作指向出去的邊，那麼保證這一個點恰好一個出邊和一個入邊。當所有籤抽滿後，圖看起來是好幾個環。</p>
-<p>遞迴定義 <code>dp[i][j]</code> 表示有 <span>$i$</span><!-- Has MathJax --> 個節點和 <span>$j$</span><!-- Has MathJax --> 個環。考慮新加入得點要抽到哪一個籤，加入到 <span>$j$</span><!-- Has MathJax --> 個環的情況，則是把某一個環的某一個位置打開加入，或者自身形成一個環，最後得到 <code>dp[i][j] = dp[i-1][j-1] + (i-1)*dp[i-1][j]</code></p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1024</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> MOD = <span class="number">1000007</span>;</div><div class="line"><span class="keyword">long</span> <span class="keyword">long</span> dp[MAXN][MAXN];</div><div class="line"><span class="keyword">int</span> A[MAXN], used[MAXN];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    dp[<span class="number">0</span>][<span class="number">0</span>] = dp[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt; MAXN; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= i; j++)</div><div class="line">            dp[i][j] = (dp[i<span class="number">-1</span>][j<span class="number">-1</span>] + dp[i<span class="number">-1</span>][j] * (i<span class="number">-1</span>))%MOD;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">int</span> testcase, n, m;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;n, &amp;m);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;A[i]);</div><div class="line">        <span class="keyword">int</span> a = n, b = <span class="number">0</span>;</div><div class="line">        <span class="built_in">memset</span>(used, <span class="number">0</span>, <span class="keyword">sizeof</span>(used));</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (used[i])</div><div class="line">                <span class="keyword">continue</span>;</div><div class="line">            <span class="keyword">int</span> x = i, cnt = <span class="number">0</span>;</div><div class="line">            <span class="keyword">while</span> (x &amp;&amp; used[x] == <span class="number">0</span>)</div><div class="line">                used[x] = <span class="number">1</span>, x = A[x], cnt++;</div><div class="line">            a -= cnt<span class="number">-1</span>;</div><div class="line">            <span class="keyword">if</span> (x == i)	m--;</div><div class="line">            <span class="keyword">if</span> (x == <span class="number">0</span>)	b++;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (m &lt; <span class="number">0</span>)</div><div class="line">            <span class="built_in">puts</span>(<span class="string">"0"</span>);</div><div class="line">        <span class="keyword">else</span></div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, dp[b][m]);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/14/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><a class="page-number" href="/page/14/">14</a><span class="page-number current">15</span><a class="page-number" href="/page/16/">16</a><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/16/">Next &raquo;</a>
@@ -706,7 +718,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">49</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -716,6 +728,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/10/31/diary-20211031-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·貳》</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/10/28/diary-202110-encrypt/">
@@ -787,14 +807,6 @@
                 <i class="icon-file-o"></i> 
               
             Company Ghost Story 公司鬼故事 11</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/06/21/diary-202106/">
-              
-                <i class="icon-file-o"></i> 
-              
-            疫情下的工作變化</a>
           </li>
         
       </ul>
