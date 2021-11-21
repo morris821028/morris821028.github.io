@@ -89,6 +89,71 @@
           
           <section id="main">
   
+    <article id="post-java/java-jni-tls-error-2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/07/29/java/java-jni-tls-error-2/" class="article-date">
+  <time datetime="2021-07-29T04:00:00.000Z" itemprop="datePublished">2021-07-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Java/">Java</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/07/29/java/java-jni-tls-error-2/">Java JNI GC Thread Error (EINVAL)</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/07/29/java/java-jni-tls-error-2/" data-id="ckw8q9gjq029mqwvnq40z086a" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/07/29/java/java-jni-tls-error-2/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JNI/">JNI</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TLS/">TLS</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <p>Keywords: JNI, Java, GC Thread, add_workers, static library, Thread Error</p>
+<p>Solution: <code>-XX:+AdjustStackSizeForTLS</code> from JDK 14</p>
+<h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>We cannot launch GC thread of JVM from JNI. And, it shows</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[os,thread] Failed to start thread - pthread_create failed (EINVAL) <span class="keyword">for</span> attributes: stacksize: 1024k, guardsize: 0k, detached.</div></pre></td></tr></table></figure>
+<p>The main reason is the glibc bugs for native C code issues. For example, we allocate thread-local variables by static library linking.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">__thread <span class="keyword">int</span> buf[<span class="number">1048576</span>];</div><div class="line"><span class="keyword">thread_local</span> <span class="keyword">int</span> buf[<span class="number">1048576</span>];</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp threadprive(buf);</span></div></pre></td></tr></table></figure>
+<p>And then, glibc 2.12 will move them on stack, and require minimum stack size at least 1024k bytes. But, the default configuration JVM of JDK11 will minimum stacksize to be 1024k bytes as default in Linux OS. Therefore, the <code>pthread_create</code> throws the error <code>EINVAL</code> for specific stacksize setting.</p>
+<h2 id="Options"><a href="#Options" class="headerlink" title="Options"></a>Options</h2><p><a href="https://www.oracle.com/java/technologies/javase/14all-relnotes.html" target="_blank" rel="external">https://www.oracle.com/java/technologies/javase/14all-relnotes.html</a></p>
+<p>The glibc library allocates some thread-local storage (TLS) in the stack of a newly created thread, leaving less stack than requested for the thread to do its work. This is particularly a problem for threads with small stack sizes. It is an inherited issue from a well-known glibc problem, ‘Program with large TLS segments fail’ [0] and has been observed in Java applications. In one of the reported JVM failure instances, the issue manifests as a StackOverflowError on the process reaper thread, which has a small stack size. The java.lang.Thread constructor enables users to specify the stack size for a new thread. The created thread may encounter the TLS problem when the specified size is too small to accommodate the on-stack TLS blocks.</p>
+<p>In JDK 8, a system property, <code>jdk.lang.processReaperUseDefaultStackSize</code>, was introduced to address the TLS issue only for reaper threads. Setting the property gives a bigger stack size to the reaper threads.</p>
+<p>To address the issue for all threads, a general purpose workaround was implemented in Java which adjusts thread stack size for TLS. It can be enabled by using the <code>AdjustStackSizeForTLS</code> command-line option:</p>
+<p>When creating a new thread, if <code>AdjustStackSizeForTLS</code> is true, the static TLS area size is added to the user requested stack size. <code>AdjustStackSizeForTLS</code> is disabled by default.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>整合進大型程式時，要多觀察靜態編譯的部分，如果有一些 TLS 的宣告，則會增加其他預設執行緒的最小使用堆疊大小。而 JVM 又傾向使用最少資源去完成，則很容易在計算最小資源時發生問題。</p>
+<p>如果去查閱 JDK15 的 <a href="https://github.com/openjdk/jdk15/blob/master/src/hotspot/os/linux/os_linux.cpp" target="_blank" rel="external">代碼  os_linux.cpp</a>  時，有一段到動態鏈結函數庫 glibc 的詢問最低需求來解決此問題。這一段牽涉到 hack 技巧，偷偷利用 symbol 爬出私有函數，不算正常操作行為。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// On Linux, glibc places static TLS blocks (for __thread variables) on</span></div><div class="line"><span class="comment">// the thread stack. This decreases the stack size actually available</span></div><div class="line"><span class="comment">// to threads.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// For large static TLS sizes, this may cause threads to malfunction due</span></div><div class="line"><span class="comment">// to insufficient stack space. This is a well-known issue in glibc:</span></div><div class="line"><span class="comment">// http://sourceware.org/bugzilla/show_bug.cgi?id=11787.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// As a workaround, we call a private but assumed-stable glibc function,</span></div><div class="line"><span class="comment">// __pthread_get_minstack() to obtain the minstack size and derive the</span></div><div class="line"><span class="comment">// static TLS size from it. We then increase the user requested stack</span></div><div class="line"><span class="comment">// size by this TLS size.</span></div><div class="line"><span class="comment">//</span></div><div class="line"><span class="comment">// Due to compatibility concerns, this size adjustment is opt-in and</span></div><div class="line"><span class="comment">// controlled via AdjustStackSizeForTLS.</span></div><div class="line"><span class="function"><span class="keyword">typedef</span> <span class="title">size_t</span> <span class="params">(*GetMinStack)</span><span class="params">(<span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> *attr)</span></span>;</div><div class="line"></div><div class="line">GetMinStack _get_minstack_func = <span class="literal">NULL</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">get_minstack_init</span><span class="params">()</span> </span>&#123;</div><div class="line">  _get_minstack_func =</div><div class="line">        (GetMinStack)dlsym(RTLD_DEFAULT, <span class="string">"__pthread_get_minstack"</span>);</div><div class="line">  log_info(os, thread)(<span class="string">"Lookup of __pthread_get_minstack %s"</span>,</div><div class="line">                       _get_minstack_func == <span class="literal">NULL</span> ? <span class="string">"failed"</span> : <span class="string">"succeeded"</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// Returns the size of the static TLS area glibc puts on thread stacks.</span></div><div class="line"><span class="comment">// The value is cached on first use, which occurs when the first thread</span></div><div class="line"><span class="comment">// is created during VM initialization.</span></div><div class="line"><span class="function"><span class="keyword">static</span> size_t <span class="title">get_static_tls_area_size</span><span class="params">(<span class="keyword">const</span> <span class="keyword">pthread_attr_t</span> *attr)</span> </span>&#123;</div><div class="line">  <span class="keyword">size_t</span> tls_size = <span class="number">0</span>;</div><div class="line">  <span class="keyword">if</span> (_get_minstack_func != <span class="literal">NULL</span>) &#123;</div><div class="line">    <span class="comment">// Obtain the pthread minstack size by calling __pthread_get_minstack.</span></div><div class="line">    <span class="keyword">size_t</span> minstack_size = _get_minstack_func(attr);</div><div class="line"></div><div class="line">    <span class="comment">// Remove non-TLS area size included in minstack size returned</span></div><div class="line">    <span class="comment">// by __pthread_get_minstack() to get the static TLS size.</span></div><div class="line">    <span class="comment">// In glibc before 2.27, minstack size includes guard_size.</span></div><div class="line">    <span class="comment">// In glibc 2.27 and later, guard_size is automatically added</span></div><div class="line">    <span class="comment">// to the stack size by pthread_create and is no longer included</span></div><div class="line">    <span class="comment">// in minstack size. In both cases, the guard_size is taken into</span></div><div class="line">    <span class="comment">// account, so there is no need to adjust the result for that.</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// Although __pthread_get_minstack() is a private glibc function,</span></div><div class="line">    <span class="comment">// it is expected to have a stable behavior across future glibc</span></div><div class="line">    <span class="comment">// versions while glibc still allocates the static TLS blocks off</span></div><div class="line">    <span class="comment">// the stack. Following is glibc 2.28 __pthread_get_minstack():</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// size_t</span></div><div class="line">    <span class="comment">// __pthread_get_minstack (const pthread_attr_t *attr)</span></div><div class="line">    <span class="comment">// &#123;</span></div><div class="line">    <span class="comment">//   return GLRO(dl_pagesize) + __static_tls_size + PTHREAD_STACK_MIN;</span></div><div class="line">    <span class="comment">// &#125;</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">//</span></div><div class="line">    <span class="comment">// The following 'minstack_size &gt; os::vm_page_size() + PTHREAD_STACK_MIN'</span></div><div class="line">    <span class="comment">// if check is done for precaution.</span></div><div class="line">    <span class="keyword">if</span> (minstack_size &gt; (<span class="keyword">size_t</span>)os::vm_page_size() + PTHREAD_STACK_MIN) &#123;</div><div class="line">      tls_size = minstack_size - os::vm_page_size() - PTHREAD_STACK_MIN;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  log_info(os, thread)(<span class="string">"Stack size adjustment for TLS is "</span> SIZE_FORMAT,</div><div class="line">                       tls_size);</div><div class="line">  <span class="keyword">return</span> tls_size;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-work/company-ghost-story-11" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/07/29/work/company-ghost-story-11/" class="article-date">
@@ -114,7 +179,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/07/29/work/company-ghost-story-11/" data-id="ckvx4dx9502flpgvngw8po1qc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/07/29/work/company-ghost-story-11/" data-id="ckw8q9gp102gfqwvn7m059vhp" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/07/29/work/company-ghost-story-11/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -157,7 +222,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wM9ITXC.jpg" rel="gallery_ckvx4dw8f004ppgvnwq6xc5z5">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wM9ITXC.jpg" rel="gallery_ckw8q9fq1004iqwvnbtjt24pe">
         <img src="https://i.imgur.com/wM9ITXC.jpg" itemprop="image">
       </a>
     
@@ -176,7 +241,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/06/21/diary-202106/" data-id="ckvx4dw8f004ppgvnwq6xc5z5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/06/21/diary-202106/" data-id="ckw8q9fq1004iqwvnbtjt24pe" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/06/21/diary-202106/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -237,7 +302,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/06/21/work/company-ghost-story-10/" data-id="ckvx4dx9t02gdpgvnja4vph7u" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/06/21/work/company-ghost-story-10/" data-id="ckw8q9gp902grqwvnje2x8f1s" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/06/21/work/company-ghost-story-10/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -285,7 +350,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/BGdQLA5.jpg" rel="gallery_ckvx4dw8o005bpgvnenrdjhh2">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/BGdQLA5.jpg" rel="gallery_ckw8q9fqe005aqwvnks2xb7fl">
         <img src="https://i.imgur.com/BGdQLA5.jpg" itemprop="image">
       </a>
     
@@ -304,7 +369,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/05/30/diary-202105/" data-id="ckvx4dw8o005bpgvnenrdjhh2" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/05/30/diary-202105/" data-id="ckw8q9fqe005aqwvnks2xb7fl" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/05/30/diary-202105/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -380,7 +445,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/" data-id="ckvx4dx2b025ppgvnmzz06ue8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/" data-id="ckw8q9gjg029cqwvntt9fd72v" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -449,7 +514,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/" data-id="ckvx4dx2s0265pgvngvvlkqws" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/" data-id="ckw8q9gjs029oqwvnw0panls9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -531,7 +596,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/XSwEsNK.jpg" rel="gallery_ckvx4dw8p005epgvnfzq4ku6q">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/XSwEsNK.jpg" rel="gallery_ckw8q9fqc0056qwvnay0c9qla">
         <img src="https://i.imgur.com/XSwEsNK.jpg" itemprop="image">
       </a>
     
@@ -550,7 +615,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/diary-202101/" data-id="ckvx4dw8p005epgvnfzq4ku6q" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/diary-202101/" data-id="ckw8q9fqc0056qwvnay0c9qla" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/diary-202101/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -618,7 +683,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ZOytC47.jpg" rel="gallery_ckvx4dxa302gopgvnzkojj7y5">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ZOytC47.jpg" rel="gallery_ckw8q9gpq02heqwvn1sba9igm">
         <img src="https://i.imgur.com/ZOytC47.jpg" itemprop="image">
       </a>
     
@@ -637,7 +702,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-globl-var/" data-id="ckvx4dxa302gopgvnzkojj7y5" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-globl-var/" data-id="ckw8q9gpq02heqwvn1sba9igm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -683,7 +748,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wQbFEfC.jpg" rel="gallery_ckvx4dxa502grpgvn9c0gwo8x">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wQbFEfC.jpg" rel="gallery_ckw8q9gpw02hlqwvntknvmech">
         <img src="https://i.imgur.com/wQbFEfC.jpg" itemprop="image">
       </a>
     
@@ -702,7 +767,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-file-extension/" data-id="ckvx4dxa502grpgvn9c0gwo8x" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-file-extension/" data-id="ckw8q9gpw02hlqwvntknvmech" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -717,68 +782,6 @@
           <div class="toggle-content">
             <p>當我以為副檔名有著特殊含義和命名規則，把自動化辨識可存取的副檔名過濾器寫好，同事卻說他們都採用一些後綴習慣，都必須按照原本的行為運行。</p>
 <p>然後，卻在又在　lock 檔案加在前綴，此時我的內心是崩潰的。你們到底想怎樣？</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-work/meme-handover" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/01/31/work/meme-handover/" class="article-date">
-  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/vBxRTJo.jpg" rel="gallery_ckvx4dxa802gvpgvnm1fi4awo">
-        <img src="https://i.imgur.com/vBxRTJo.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/01/31/work/meme-handover/">Handover</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-handover/" data-id="ckvx4dxa802gvpgvnm1fi4awo" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2021/01/31/work/meme-handover/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>
 
           </div>
           <div class="toggle-input article-more-link"><a>Read More +</a></div>
@@ -807,7 +810,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -817,6 +820,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/11/21/diary-20211121-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·肆》</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/11/12/diary-20211112-encrypt/">
@@ -888,14 +899,6 @@
                 <i class="icon-file-o"></i> 
               
             Company Ghost Story 公司鬼故事 12</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/07/29/java/java-jni-tls-error-2/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Java JNI GC Thread Error (EINVAL)</a>
           </li>
         
       </ul>

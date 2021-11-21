@@ -89,6 +89,65 @@
           
           <section id="main">
   
+    <article id="post-uva-1356" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/03/08/uva-1356/" class="article-date">
+  <time datetime="2015-03-08T00:55:36.000Z" itemprop="datePublished">2015-03-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/03/08/uva-1356/">UVa 1356 - Bridge</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/03/08/uva-1356/" data-id="ckw8q9g0t00uhqwvn1oz8318x" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/03/08/uva-1356/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/數值積分/">數值積分</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/辛普森積分/">辛普森積分</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>給吊橋總長、塔與塔之間的纜線限制、塔的高度，纜線在塔與塔之間呈現拋物線，使用最少的塔，請問纜線離地面多高。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line"></div><div class="line">20 101 400 4042</div><div class="line"></div><div class="line">1 2 3 4</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Case 1:</div><div class="line">1.00</div><div class="line"></div><div class="line">Case 2:</div><div class="line">1.60</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>可以藉由貪心得到塔的數量，但是拋物線的方程式並不明確，因此可以考慮二分的高度，來計算纜線夠不夠長。</p>
+<p>得到拋物線方程式後，要計算拋物線長度，使用數值積分的方式得到。為了降低計算誤差，使用自適應辛普森積分法，也就是當預估方法的變異小到一定程度時，停止分段求值。</p>
+<p>integral parabola length</p>
+<span>$$\int{\sqrt{dx^{2} + dy^{2}}} = \int{\sqrt{1 + dy^{2}/dx^{2}} dx}
+\\ = \int{\sqrt{1 + f&apos;(x)^{2}} dx}$$</span><!-- Has MathJax -->
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt; </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">SimpsonIntegral</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-6</span>;</div><div class="line">    <span class="keyword">double</span> a; <span class="comment">// function coefficient</span></div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">f</span><span class="params">(<span class="keyword">double</span> x)</span> </span>&#123; <span class="comment">// usually replace</span></div><div class="line">        <span class="keyword">return</span> <span class="built_in">sqrt</span>(<span class="number">1</span> + <span class="number">4</span> * a * a * x * x);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setCoefficient</span><span class="params">(<span class="keyword">double</span> a)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>-&gt;a = a;</div><div class="line">    &#125; </div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">simpson</span><span class="params">(<span class="keyword">double</span> a, <span class="keyword">double</span> b, <span class="keyword">double</span> fa, <span class="keyword">double</span> fb, <span class="keyword">double</span> fab)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> (fa + <span class="number">4</span> * fab + fb) * (b - a) / <span class="number">6.0</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">integral</span><span class="params">(<span class="keyword">double</span> l, <span class="keyword">double</span> r)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> integral(l, r, eps);</div><div class="line">    &#125;</div><div class="line"><span class="keyword">private</span>:</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">integral</span><span class="params">(<span class="keyword">double</span> a, <span class="keyword">double</span> b, <span class="keyword">double</span> c, <span class="keyword">double</span> eps, <span class="keyword">double</span> A, <span class="keyword">double</span> fa, <span class="keyword">double</span> fb, <span class="keyword">double</span> fc)</span> </span>&#123;</div><div class="line">        <span class="keyword">double</span> ab = (a + b)/<span class="number">2</span>, bc = (b + c)/<span class="number">2</span>;</div><div class="line">        <span class="keyword">double</span> fab = f(ab), fbc = f(bc);</div><div class="line">        <span class="keyword">double</span> L = simpson(a, b, fa, fb, fab), R = simpson(b, c, fb, fc, fbc);</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">fabs</span>(L + R - A) &lt;= <span class="number">15</span> * eps)</div><div class="line">            <span class="keyword">return</span> L + R + (L + R - A) / <span class="number">15.0</span>;</div><div class="line">        <span class="keyword">return</span> integral(a, ab, b, eps/<span class="number">2</span>, L, fa, fab, fb) + integral(b, bc, c, eps/<span class="number">2</span>, R, fb, fbc, fc);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">integral</span><span class="params">(<span class="keyword">double</span> a, <span class="keyword">double</span> b, <span class="keyword">double</span> eps)</span> </span>&#123;</div><div class="line">        <span class="keyword">double</span> ab = (a + b) /<span class="number">2</span>;</div><div class="line">        <span class="keyword">double</span> fa = f(a), fb = f(b), fab = f(ab);</div><div class="line">        <span class="keyword">return</span> integral(a, ab, b, eps, simpson(a, b, fa, fb, fab), fa, fab, fb);</div><div class="line">    &#125;</div><div class="line">&#125; tool;</div><div class="line"><span class="comment">// integral parabola length</span></div><div class="line"><span class="comment">// \int \sqrt_&#123;dx^&#123;2&#125; + dy^&#123;2&#125;&#125; = \int \sqrt_&#123;1 + dy^&#123;2&#125;/dx^&#123;2&#125;&#125; dx</span></div><div class="line"><span class="comment">// = \int \sqrt_&#123;1 + f'(x)^&#123;2&#125;&#125; dx</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> testcase, cases = <span class="number">0</span>;</div><div class="line">    <span class="keyword">double</span> D, H, B, L;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;testcase);</div><div class="line">    <span class="keyword">while</span> (testcase--) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%lf %lf %lf %lf"</span>, &amp;D, &amp;H, &amp;B, &amp;L);</div><div class="line">        <span class="keyword">int</span> n = <span class="built_in">ceil</span>(B / D);</div><div class="line">        <span class="keyword">double</span> w = B / n, plen = L / n; <span class="comment">// for a parabola</span></div><div class="line">        <span class="keyword">double</span> l = <span class="number">0</span>, r = H, len, mid;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> it = <span class="number">0</span>; it &lt; <span class="number">100</span>; it++) &#123;</div><div class="line">            mid = (l + r)/<span class="number">2</span>; <span class="comment">// parabola y = ax^2, pass (w/2, mid)</span></div><div class="line">            tool.setCoefficient(<span class="number">4</span> * mid / w / w);</div><div class="line">            len = <span class="number">2</span> * tool.integral(<span class="number">0</span>, w/<span class="number">2</span>);</div><div class="line">            <span class="keyword">if</span> (len &lt; plen)</div><div class="line">                l = mid;</div><div class="line">            <span class="keyword">else</span></div><div class="line">                r = mid;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (cases)	<span class="built_in">puts</span>(<span class="string">""</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Case %d:\n"</span>, ++cases);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%.2lf\n"</span>, H - l);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-uva-1322" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/03/03/uva-1322/" class="article-date">
@@ -114,7 +173,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-1322/" data-id="ckvx4dwqz01dqpgvnpz3frg4j" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-1322/" data-id="ckw8q9g0m00u2qwvnhkugnh8m" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-1322/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -171,7 +230,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-1312/" data-id="ckvx4dwqp01d8pgvn9sqsn6r1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-1312/" data-id="ckw8q9g0f00trqwvnivbc29ba" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-1312/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -225,7 +284,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-1153/" data-id="ckvx4dwmj015spgvnnfzr3o23" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-1153/" data-id="ckw8q9fx700mfqwvnlqlqa2zi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-1153/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -281,7 +340,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-1151/" data-id="ckvx4dwn90171pgvn7nprg2jy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-1151/" data-id="ckw8q9fxp00npqwvntd49ih6q" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-1151/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -338,7 +397,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-805/" data-id="ckvx4dwtj01hypgvngkie7vyk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-805/" data-id="ckw8q9g2i00y3qwvnypkmzwcb" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-805/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -395,7 +454,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-804/" data-id="ckvx4dwtf01hrpgvnfsviqhhz" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-804/" data-id="ckw8q9g2g00y0qwvn9l30rexw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-804/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -450,7 +509,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/03/uva-754/" data-id="ckvx4dwta01hkpgvntzwed55b" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/03/uva-754/" data-id="ckw8q9g2600xiqwvn7g2ikwr4" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/03/uva-754/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -512,7 +571,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/02/uva-751/" data-id="ckvx4dwt901hhpgvnw9sqya7w" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/02/uva-751/" data-id="ckw8q9g2d00xtqwvnlkabn1az" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/02/uva-751/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -569,7 +628,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/02/uva-509/" data-id="ckvx4dwt001h3pgvn65p99a4y" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/03/02/uva-509/" data-id="ckw8q9g2300xcqwvnuvpa5cgm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/03/02/uva-509/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -603,66 +662,6 @@
 
 
   
-    <article id="post-uva-506" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/03/02/uva-506/" class="article-date">
-  <time datetime="2015-03-01T23:51:02.000Z" itemprop="datePublished">2015-03-02</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/03/02/uva-506/">UVa 506 - System Dependencies</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/03/02/uva-506/" data-id="ckvx4dwsy01gzpgvnrmpn6zcr" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/03/02/uva-506/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/模擬/">模擬</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/遞迴/">遞迴</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><blockquote>
-<p>參照《算法競賽入門經典》一書</p>
-</blockquote>
-<p>軟體安裝時，會同時下載所需要的插件包，而插件包的軟體也有可能繼續安裝所需要的插件包。如此遞迴下去把所需要的元件都安裝好。</p>
-<p>當安裝一個軟體時，分成使用者安裝和系統安裝兩種，使用者只能刪除自己安裝的軟體，其相依的插件包必須由系統來進行刪除，系統刪除時，會檢查是否還有其他軟體需要相依，若不存在相依，則會將此軟體刪除。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">DEPEND   TELNET TCPIP NETCARD</div><div class="line">DEPEND TCPIP NETCARD</div><div class="line">DEPEND DNS TCPIP NETCARD</div><div class="line">DEPEND  BROWSER   TCPIP  HTML</div><div class="line">INSTALL NETCARD</div><div class="line">INSTALL TELNET</div><div class="line">INSTALL foo</div><div class="line">REMOVE NETCARD</div><div class="line">INSTALL BROWSER</div><div class="line">INSTALL DNS</div><div class="line">LIST</div><div class="line">REMOVE TELNET</div><div class="line">REMOVE NETCARD</div><div class="line">REMOVE DNS</div><div class="line">REMOVE NETCARD</div><div class="line">INSTALL NETCARD</div><div class="line">REMOVE TCPIP</div><div class="line">REMOVE BROWSER</div><div class="line">REMOVE TCPIP</div><div class="line">END</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">DEPEND   TELNET TCPIP NETCARD</div><div class="line">DEPEND TCPIP NETCARD</div><div class="line">DEPEND DNS TCPIP NETCARD</div><div class="line">DEPEND  BROWSER   TCPIP  HTML</div><div class="line">INSTALL NETCARD</div><div class="line">   Installing NETCARD</div><div class="line">INSTALL TELNET</div><div class="line">   Installing TCPIP</div><div class="line">   Installing TELNET</div><div class="line">INSTALL foo</div><div class="line">   Installing foo</div><div class="line">REMOVE NETCARD</div><div class="line">   NETCARD is still needed.</div><div class="line">INSTALL BROWSER</div><div class="line">   Installing HTML</div><div class="line">   Installing BROWSER</div><div class="line">INSTALL DNS</div><div class="line">   Installing DNS</div><div class="line">LIST</div><div class="line">   NETCARD</div><div class="line">   TCPIP</div><div class="line">   TELNET</div><div class="line">   foo</div><div class="line">   HTML</div><div class="line">   BROWSER</div><div class="line">   DNS</div><div class="line">REMOVE TELNET</div><div class="line">   Removing TELNET</div><div class="line">REMOVE NETCARD</div><div class="line">   NETCARD is still needed.</div><div class="line">REMOVE DNS</div><div class="line">   Removing DNS</div><div class="line">REMOVE NETCARD</div><div class="line">   NETCARD is still needed.</div><div class="line">INSTALL NETCARD</div><div class="line">   NETCARD is already installed.</div><div class="line">REMOVE TCPIP</div><div class="line">   TCPIP is still needed.</div><div class="line">REMOVE BROWSER</div><div class="line">   Removing BROWSER</div><div class="line">   Removing HTML</div><div class="line">   Removing TCPIP</div><div class="line">REMOVE TCPIP</div><div class="line">   TCPIP is not installed.</div><div class="line">END</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>一道模擬，假想一張 DAG 圖，刪除時暴力檢查其逆向的依存軟體是否存在。</p>
-<p>使用 STL 和遞迴可以讓程式更簡單易懂。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sstream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; getArgs(<span class="keyword">char</span> line[]) &#123;</div><div class="line">    <span class="function"><span class="built_in">stringstream</span> <span class="title">sin</span><span class="params">(line)</span></span>;</div><div class="line">    <span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; ret;</div><div class="line">    <span class="built_in">string</span> token;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">sin</span> &gt;&gt; token)</div><div class="line">        ret.push_back(token);</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="built_in">map</span>&lt;<span class="built_in">string</span>, <span class="keyword">int</span>&gt; name2id;</div><div class="line"><span class="built_in">map</span>&lt;<span class="keyword">int</span>, <span class="built_in">string</span>&gt; id2name;</div><div class="line"><span class="built_in">map</span>&lt;<span class="keyword">int</span>, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &gt; dependInstall, invDependInstall;</div><div class="line"><span class="built_in">map</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; installStatus;</div><div class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; installList;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">getId</span><span class="params">(<span class="built_in">string</span> s)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> &amp;ret = name2id[s];</div><div class="line">    <span class="keyword">if</span> (ret == <span class="number">0</span>) &#123;</div><div class="line">        ret = (<span class="keyword">int</span>) name2id.size();</div><div class="line">        id2name[ret] = s;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="built_in">string</span> <span class="title">getName</span><span class="params">(<span class="keyword">int</span> id)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> id2name[id];</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">isDepended</span><span class="params">(<span class="keyword">int</span> id)</span> </span>&#123;</div><div class="line">    <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;v = invDependInstall[id];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; v.size(); i++) &#123;</div><div class="line">        <span class="keyword">if</span> (installStatus[v[i]])    <span class="keyword">return</span> <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">installSoft</span><span class="params">(<span class="keyword">int</span> id, <span class="keyword">int</span> top)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (installStatus[id] == <span class="number">0</span>) &#123;</div><div class="line">        <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;v = dependInstall[id];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; v.size(); i++)</div><div class="line">            installSoft(v[i], <span class="number">0</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"   Installing %s\n"</span>, getName(id).c_str());</div><div class="line">        installStatus[id] = top ? <span class="number">1</span> : <span class="number">2</span>;</div><div class="line">        installList.push_back(id);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">removeSoft</span><span class="params">(<span class="keyword">int</span> id, <span class="keyword">int</span> top)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> ((top == <span class="number">1</span> || installStatus[id] == <span class="number">2</span>) &amp;&amp; !isDepended(id)) &#123;</div><div class="line">        installStatus[id] = <span class="number">0</span>;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"   Removing %s\n"</span>, getName(id).c_str());</div><div class="line">        <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;v = dependInstall[id];</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; v.size(); i++)</div><div class="line">            removeSoft(v[i], <span class="number">0</span>);</div><div class="line">        installList.erase(find(installList.begin(), installList.end(), id));</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">char</span> line[<span class="number">2048</span>];</div><div class="line">    <span class="keyword">while</span> (gets(line)) &#123;</div><div class="line">        <span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; args = getArgs(line);</div><div class="line">        <span class="built_in">puts</span>(line);</div><div class="line">        <span class="keyword">if</span> (args[<span class="number">0</span>] == <span class="string">"DEPEND"</span>) &#123;</div><div class="line">            <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; softId;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; args.size(); i++) &#123;</div><div class="line">                softId.push_back(getId(args[i]));</div><div class="line">            &#125;</div><div class="line">            <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;v = dependInstall[softId[<span class="number">0</span>]];</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; softId.size(); i++) &#123;</div><div class="line">                v.push_back(softId[i]);</div><div class="line">                invDependInstall[softId[i]].push_back(softId[<span class="number">0</span>]);</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (args[<span class="number">0</span>] == <span class="string">"INSTALL"</span>) &#123;</div><div class="line">            <span class="keyword">if</span> (installStatus[getId(args[<span class="number">1</span>])]) &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"   %s is already installed.\n"</span>, args[<span class="number">1</span>].c_str());</div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                installSoft(getId(args[<span class="number">1</span>]), <span class="number">1</span>);</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (args[<span class="number">0</span>] == <span class="string">"REMOVE"</span>) &#123;</div><div class="line">            <span class="keyword">if</span> (installStatus[getId(args[<span class="number">1</span>])] == <span class="number">0</span>) &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"   %s is not installed.\n"</span>, args[<span class="number">1</span>].c_str());</div><div class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isDepended(getId(args[<span class="number">1</span>]))) &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"   %s is still needed.\n"</span>, args[<span class="number">1</span>].c_str());</div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                removeSoft(getId(args[<span class="number">1</span>]), <span class="number">1</span>);</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (args[<span class="number">0</span>] == <span class="string">"LIST"</span>) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; installList.size(); i++) &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"   %s\n"</span>, getName(installList[i]).c_str());</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (args[<span class="number">0</span>] == <span class="string">"END"</span>) &#123;</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*</span></div><div class="line"><span class="comment"> DEPEND   TELNET TCPIP NETCARD</span></div><div class="line"><span class="comment"> DEPEND TCPIP NETCARD</span></div><div class="line"><span class="comment"> DEPEND DNS TCPIP NETCARD</span></div><div class="line"><span class="comment"> DEPEND  BROWSER   TCPIP  HTML</span></div><div class="line"><span class="comment"> INSTALL NETCARD</span></div><div class="line"><span class="comment"> INSTALL TELNET</span></div><div class="line"><span class="comment"> INSTALL foo</span></div><div class="line"><span class="comment"> REMOVE NETCARD</span></div><div class="line"><span class="comment"> INSTALL BROWSER</span></div><div class="line"><span class="comment"> INSTALL DNS</span></div><div class="line"><span class="comment"> LIST</span></div><div class="line"><span class="comment"> REMOVE TELNET</span></div><div class="line"><span class="comment"> REMOVE NETCARD</span></div><div class="line"><span class="comment"> REMOVE DNS</span></div><div class="line"><span class="comment"> REMOVE NETCARD</span></div><div class="line"><span class="comment"> INSTALL NETCARD</span></div><div class="line"><span class="comment"> REMOVE TCPIP</span></div><div class="line"><span class="comment"> REMOVE BROWSER</span></div><div class="line"><span class="comment"> REMOVE TCPIP</span></div><div class="line"><span class="comment"> END</span></div><div class="line"><span class="comment"> */</span></div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/36/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/35/">35</a><a class="page-number" href="/page/36/">36</a><span class="page-number current">37</span><a class="page-number" href="/page/38/">38</a><a class="page-number" href="/page/39/">39</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/38/">Next &raquo;</a>
@@ -678,7 +677,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -688,6 +687,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2021/11/21/diary-20211121-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·肆》</a>
+          </li>
         
           <li>
             <a class="text" href="/2021/11/12/diary-20211112-encrypt/">
@@ -759,14 +766,6 @@
                 <i class="icon-file-o"></i> 
               
             Company Ghost Story 公司鬼故事 12</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/07/29/java/java-jni-tls-error-2/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Java JNI GC Thread Error (EINVAL)</a>
           </li>
         
       </ul>
@@ -857,6 +856,23 @@
 
 <script src="/js/script.js"></script>
 
-  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
 </body>
 </html>
