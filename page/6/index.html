@@ -89,6 +89,98 @@
           
           <section id="main">
   
+    <article id="post-mproblem-persistent-deque" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/01/01/mproblem-persistent-deque/" class="article-date">
+  <time datetime="2020-01-01T11:59:02.000Z" itemprop="datePublished">2020-01-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/可持久化/">可持久化</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/01/01/mproblem-persistent-deque/">可持久化雙向隊列 Persistent Deque 序</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2020/01/01/mproblem-persistent-deque/" data-id="ckxv1wmg600lka8vnsz1v1bpn" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2020/01/01/mproblem-persistent-deque/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/deque/">deque</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/可持久化/">可持久化</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <p>完成了一般隊列，接下來就是雙向隊列，這個時候操作就沒有強烈的單調方向性質，需要同時維護兩種入隊、出隊的情況。</p>
+<p>沿用可持久化隊列的思路。在隊列時，我們評估情況為前後各一半，預估反轉的結果，均攤每一個操作費用，一旦前半部為空，立即使用反轉完的結果。而雙向的情況更為複雜，我們若按照隊列的方式，那麼在 pop-back 的時候，預估的結果反而成為了阻礙，因為要再反轉一次回來。為此調整鬆弛反轉的限制。</p>
+<h2 id="即時雙向隊列-Realtime"><a href="#即時雙向隊列-Realtime" class="headerlink" title="即時雙向隊列 (Realtime)"></a>即時雙向隊列 (Realtime)</h2><ul>
+<li>REAL-TIME DEQUES, MULTIHEAD TURING MACHINES and PURELY FUNCTIONAL PROGRAMMING, Tyng-Runey Chuang and Benjamin Goldberg, 1993</li>
+</ul>
+<h3 id="定義"><a href="#定義" class="headerlink" title="定義"></a>定義</h3><p>定義雙向隊列為 <span>$Q = \left \langle L, \; R \right \rangle$</span><!-- Has MathJax --></p>
+<p>在操作過程中，可以鏡像狀態，令較大的那一個為 <span>$B$</span><!-- Has MathJax -->，較小的為 <span>$S$</span><!-- Has MathJax -->，意即 <span>$\left \langle B, \; S \right \rangle = \left \langle L, \; R \right \rangle$</span><!-- Has MathJax --> 或者 <span>$\left \langle B, \; S \right \rangle = \left \langle R, \; L \right \rangle$</span><!-- Has MathJax -->。需滿足</p>
+<span>$$\begin{aligned}
+|B| \ge |S| \ge 1, \; \text{and} \; 3|S| \ge |B|
+\end{aligned}$$</span><!-- Has MathJax -->
+<p>若違反上述條件，立即進入 <strong>轉移狀態</strong>，將三分之一的 <span>$B$</span><!-- Has MathJax --> 搬入 <span>$S$</span><!-- Has MathJax -->，此時兩者具有近似的大小。在轉移中，我們可能在過程中將其中一方增減，完成轉移後必要滿足條件式。</p>
+<h3 id="轉移狀態"><a href="#轉移狀態" class="headerlink" title="轉移狀態"></a>轉移狀態</h3><p>令起始轉移狀態為 <span>$\left \langle S, \; B \right \rangle$</span><!-- Has MathJax -->，其中</p>
+<ul>
+<li><span>$S = (p_1, p_2, \cdots, p_m)^\triangleleft$</span><!-- Has MathJax --></li>
+<li><span>$B = (q_1, q_2, \cdots, q_{3m+k})^\triangleright$</span><!-- Has MathJax --></li>
+<li><span>$k \in \left \{ 1, 2, 3\right \}$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>目標狀態 <span>$\left \langle \textit{new}S, \; \textit{new}B \right \rangle$</span><!-- Has MathJax --></p>
+<ul>
+<li><span>$\textit{new}S = (p_1, p_2, \cdots, p_m, q_1, q_2, \cdots, q_{m+1})^\triangleleft$</span><!-- Has MathJax --></li>
+<li><span>$\textit{new}B = (q_{m+2}, q_{m+3}, \cdots, q_{3m+k})^\triangleright$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>必須均攤在 <span>$m$</span><!-- Has MathJax --> 次操作內完成，而舊有的 <span>$S$</span><!-- Has MathJax --> 可能在轉移中被 pop 到空集合，需要標記複製成功的次數，直到 <span>$\textit{new}S$</span><!-- Has MathJax --> 已經匹配了前半部的 <span>$S$</span><!-- Has MathJax -->。</p>
+<ol>
+<li><span>$B = (q_1, q_2, \cdots, q_{3m+k})^\triangleright$</span><!-- Has MathJax --> 拆分成<br> <span>$B = (q_1, q_2, \cdots, q_{m+1})^\triangleright$</span><!-- Has MathJax --> 和 <span>$\textit{aux}B = (q_{m+2}, q_{m+2}, \cdots, q_{3m+k})^\triangleleft$</span><!-- Has MathJax --></li>
+<li><span>$\textit{new}S = (p_1, p_2, \cdots, p_m)^\triangleleft$</span><!-- Has MathJax --> 反轉成<br> <span>$S = ()^\triangleleft$</span><!-- Has MathJax --> 和 <span>$\textit{aux}S = (p_1, p_2, \cdots, p_m)^\triangleright$</span><!-- Has MathJax --></li>
+<li><span>$\textit{aux}B = (q_{m+2}, q_{m+2}, \cdots, q_{3m+k})^\triangleleft$</span><!-- Has MathJax --> 反轉成<br> <span>$\textit{aux}B = ()^\triangleleft$</span><!-- Has MathJax --> 和 <span>$\textit{new}B = (q_{m+2}, q_{m+2}, \cdots, q_{3m+k})^\triangleright$</span><!-- Has MathJax --></li>
+<li><span>$B = (q_1, q_2, \cdots, q_{m+1})^\triangleright$</span><!-- Has MathJax --> 放入為<br> <span>$\textit{new}S = (q_1, q_2, \cdots, q_{m+1})^\triangleleft$</span><!-- Has MathJax --> 和 <span>$B = ()^\triangleright$</span><!-- Has MathJax --></li>
+<li><span>$\textit{aux}S = (p_1, p_2, \cdots, p_m)^\triangleright$</span><!-- Has MathJax --> 也放入為<br> <span>$\textit{new}S = (p_1, p_2, \cdots, p_m, q_1, q_2, \cdots, q_{m+1})^\triangleleft$</span><!-- Has MathJax --> 和 <span>$\textit{aux}S = ()^\triangleright$</span><!-- Has MathJax -->
+</li>
+</ol>
+<p>步驟 1 和 2 同時操作，總數至多為 <span>$2m+3$</span><!-- Has MathJax -->。步驟 3 可以和 4 或 5 其中一種同時操作，總數至多為 <span>$2m+3$</span><!-- Has MathJax -->，因此操作數為 <span>$4m+6$</span><!-- Has MathJax -->。均攤在 <span>$m$</span><!-- Has MathJax --> 次操作內，得到常數因子為 4。</p>
+<h3 id="隊列操作說明"><a href="#隊列操作說明" class="headerlink" title="隊列操作說明"></a>隊列操作說明</h3><p>即使說明了轉移方程，主要的問題還是卡在做到 push/pop</p>
+<ul>
+<li><code>pushFront</code>/<code>pushBack</code> 若<strong>計算完的雙向隊列大小</strong>小於等於 4 時，採用攤平的方式操作，強制不進入上述轉移條件。反之，直接在相應的堆疊上操作。</li>
+<li><code>popFront</code>/<code>popBack</code> 若<strong>計算完的雙向隊列大小</strong>小於 4 時，採用攤平的方式操作，強制不進入上述轉移條件。反之，直接在相應的堆疊上操作。</li>
+</ul>
+<p>額外維護的指針告訴我們複製的 <span>$S$</span><!-- Has MathJax --> 狀態，而 <span>$B$</span><!-- Has MathJax --> 也會在過程中被 pop 出去，因此 <span>$\textit{new}B$</span><!-- Has MathJax --> 有時會需要代入 <span>$\text{Take}$</span><!-- Has MathJax --> 操作。</p>
+<h2 id="Java-實作代碼"><a href="#Java-實作代碼" class="headerlink" title="Java 實作代碼"></a>Java 實作代碼</h2><p>更多細節參閱 <a href="https://github.com/morris821028/immortal-jellyfish" target="_blank" rel="external">morris821028/immortal-jellyfish</a></p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-mproblem-persistent-queue-pre-evaluation" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/12/25/mproblem-persistent-queue-pre-evaluation/" class="article-date">
@@ -114,7 +206,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckxtxqs8f00ckgkvn8j76r1bm" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/" data-id="ckxv1wmg800lna8vnujzqnvgw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/25/mproblem-persistent-queue-pre-evaluation/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -216,7 +308,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/" data-id="ckxtxqs8m00d4gkvno9025ygk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/" data-id="ckxv1wmgi00m7a8vn2h8kii5p" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/24/mproblem-persistent-queue/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -299,7 +391,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckxtxqs8g00cogkvne15wobbp" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/" data-id="ckxv1wmg900loa8vn34u1usgi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/23/mproblem-persistent-stack-operators/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -415,7 +507,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckxtxqs8i00csgkvn4the84xd" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/" data-id="ckxv1wmgc00lua8vnlvlx4bzk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/12/22/mproblem-persistent-stack/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -479,9 +571,9 @@
 
 
   
-    <article id="post-diary-201908" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-note/diary-201908" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2019/08/09/diary-201908/" class="article-date">
+    <a href="/2019/08/09/note/diary-201908/" class="article-date">
   <time datetime="2019-08-09T09:07:42.000Z" itemprop="datePublished">2019-08-09</time>
 </a>
     
@@ -495,7 +587,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g1o7Yud.jpg" rel="gallery_ckxtxqs540049gkvn87p2ds5q">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/g1o7Yud.jpg" rel="gallery_ckxv1wn8d02caa8vnyyz04hsf">
         <img src="https://i.imgur.com/g1o7Yud.jpg" itemprop="image">
       </a>
     
@@ -507,16 +599,16 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2019/08/09/diary-201908/">我們是否交會於一點</a>
+      <a class="article-title" href="/2019/08/09/note/diary-201908/">我們是否交會於一點</a>
     </h1>
   
 
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/08/09/diary-201908/" data-id="ckxtxqs540049gkvn87p2ds5q" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/08/09/note/diary-201908/" data-id="ckxv1wn8d02caa8vnyyz04hsf" class="article-share-link">Share</a>
       
-        <a href="http://morris821028.github.io/2019/08/09/diary-201908/#disqus_thread" class="article-comment-link">Comments</a>
+        <a href="http://morris821028.github.io/2019/08/09/note/diary-201908/#disqus_thread" class="article-comment-link">Comments</a>
       
       
     </footer>
@@ -604,7 +696,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/02/16/zj-e021/" data-id="ckxtxqst301lfgkvntdj26khc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/02/16/zj-e021/" data-id="ckxv1wmu701faa8vn2s5xqejv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/02/16/zj-e021/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -665,9 +757,9 @@
 
 
   
-    <article id="post-diary-201901" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-note/diary-201901" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2019/01/27/diary-201901/" class="article-date">
+    <a href="/2019/01/27/note/diary-201901/" class="article-date">
   <time datetime="2019-01-27T10:57:20.000Z" itemprop="datePublished">2019-01-27</time>
 </a>
     
@@ -681,7 +773,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Klod0Cb.jpg" rel="gallery_ckxtxqs7f00a3gkvnc7xlaig7">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Klod0Cb.jpg" rel="gallery_ckxv1wn8b02c6a8vnkzr282bx">
         <img src="https://i.imgur.com/Klod0Cb.jpg" itemprop="image">
       </a>
     
@@ -693,16 +785,16 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2019/01/27/diary-201901/">敲落的聲響</a>
+      <a class="article-title" href="/2019/01/27/note/diary-201901/">敲落的聲響</a>
     </h1>
   
 
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/27/diary-201901/" data-id="ckxtxqs7f00a3gkvnc7xlaig7" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/27/note/diary-201901/" data-id="ckxv1wn8b02c6a8vnkzr282bx" class="article-share-link">Share</a>
       
-        <a href="http://morris821028.github.io/2019/01/27/diary-201901/#disqus_thread" class="article-comment-link">Comments</a>
+        <a href="http://morris821028.github.io/2019/01/27/note/diary-201901/#disqus_thread" class="article-comment-link">Comments</a>
       
       
     </footer>
@@ -771,7 +863,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/" data-id="ckxtxqs7u00b6gkvne2hx0k3d" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/" data-id="ckxv1wma4007ra8vn2ryc5asv" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/01/26/mproblem-dynamic-point-in-polygon/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -840,7 +932,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/" data-id="ckxtxqs7w00b9gkvn8gfh2ctj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/" data-id="ckxv1wma5007va8vnpgyuv6ry" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2019/01/26/mproblem-dynamic-tree/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -892,98 +984,9 @@
 
 
   
-    <article id="post-diary-201811" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/11/25/diary-201811/" class="article-date">
-  <time datetime="2018-11-24T22:53:05.000Z" itemprop="datePublished">2018-11-25</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/rP2LtTm.jpg" rel="gallery_ckxtxqs5a004lgkvnzhsq0yg4">
-        <img src="https://i.imgur.com/rP2LtTm.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/11/25/diary-201811/">波士頓出差 Cadence, Boston</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2018/11/25/diary-201811/" data-id="ckxtxqs5a004lgkvnzhsq0yg4" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2018/11/25/diary-201811/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="旅程前言"><a href="#旅程前言" class="headerlink" title="旅程前言"></a>旅程前言</h2><p>在碩二實習的時候，有碰到一次到美國波士頓出差的機會，有礙於那時候還是實習且研究生的身分，並沒有與團隊一起去。要是出國消失一周的話，指導教授大概會震怒吧，說不定就沒機會出現在 Cadence。</p>
-<p>在 2016 那時，台灣的團隊才成立約一年，所以旅程的目的在於去學習，基本上就是產品架構的設計細節與概念、產品開發的流程。即使跟著去那兒，英文聽說都很糟糕的我，也只能看著投影片發呆吧。在這兩年中，團隊從四個人到七個人的成長，產品開發的控制越來越多到台灣團隊手上。因此，此行目的便不再是學習，要探討未來的發展和一些議題。</p>
-<p>在出發之前，整理近幾個月的開發議題，手上有兩個舊有產品 OrbitIO 和 Allegro，修改了大幅度的效能問題，但舊有設計架構問題導致一些加速算法無法相容，光是想著這些設計問題，就不知道要怎麼與那邊的團隊討論，這些都是改動十幾年前的設計，我想代碼大多都朝著只增不減的方向邁進，這些問題很少人願意去著手，要去改那些需要十足的勇氣。然後，莫名其妙被加入了  Mission BraveHeart (<strong>任務代號：勇敢的心</strong>)，成功便成英雄。</p>
-<p>另一個新產品的開發便是這次出發的壓軸，其內容跟公司的 EDM (Engineering Data Management) 產品有著異曲同工之妙，這困擾了我好幾個月，其概念就是強化版的批改娘，最大的不同在於多人協作的平台，要如何做得簡單好用「<strong>Simple is Better Than Complex</strong>」。</p>
-<p><img src="https://i.imgur.com/vcOrnbq.jpg" alt="「我要做些什麼」－《昴宿七星》"></p>
-<p>新產品的開發耗時將近一年，途中不斷地有新的工作要做，所以在好幾個產品跳來跳去。在 Java, C, Python, Javascript, HTML 跳來跳去，精神都快要達到臨界點。由於需求調整，一路上重新構造了好幾次架構，不斷地懷疑自己到底能不能把這個產品拉出來。由於公司與 DARPA (Defense Advanced Research Projects Agency, 國防高等研究計劃署)<br>的合作計畫，加速了這一個產品開發，在九月多時輪廓總算釐清了，目標在一個多月內把產品最低需求完成。</p>
-<p>很多 EDA Tools 都經歷了好幾年的開發，如 OrbitIO 和 Allegro 更是幾十年的產品，支線需求直接在平台上開發比較沒什麼壓力。這次則要完全跳離所有依賴關係，團隊成員中沒有系統架構的經驗，而我這種半吊子只寫過一點點的網站，一點點的系統，一次就要走這麼遠，壓力不容小覷，這一段日子裡都不怎麼好睡。</p>
-<p><img src="https://i.imgur.com/bJvPU50.jpg" alt="「感覺我好像越來越不行了」－《青春豬頭少年不會夢到兔女郎學姊》"></p>
-<p>隔了一個多月，我們做到了嗎？做到哪裡？</p>
-<p>開發過程中一直想找人來幫忙，面了一些高手，但面試的標準無從根據，導致錄取的進展不斷延後，於是先下定決心自己來吧，網頁後台各種從零開始，著手架構好的後台與前端網頁，試圖完成像 Github 與 git 這等偉大的目標。急急忙忙地切分模組出來給小夥伴開發，過程中又不斷地與其他成員說明系統的架構朝什麼發展，甚至一連開了整天的會議說明方向。</p>
-<p>出發前一周仍然在調整各個模組的名稱，好讓介紹時快速切入要領。不得不佩服同事們的合作，介紹這方面的能力從以前開始都倚靠著別人，終於準備好上路了。</p>
-<p><img src="https://i.imgur.com/MDmP4or.jpg" alt="「這個世界，沒有我的容身之地」－《異世界魔王與召喚少女的奴隸魔術》"></p>
-<h2 id="啟程須知"><a href="#啟程須知" class="headerlink" title="啟程須知"></a>啟程須知</h2><p>給第二次出國的我 (第一次出國在泰國比賽)</p>
-<p>礙於研發替代役的角色，出發前到外交部領事事務局申辦護照，不再是以前的三年版本，一次到手十年期限的護照。除了要額外帶著役男身分證外，其餘項目皆與一般申請護照無異，只需要一周的工作天，便可以領取護照。接著拿到新的護照，便向公司的 HR 發出出差申請，附上護照明細與旅途時間，通過後大約在一天左右，就可以從役政署的研發替代役網站列印許可通知書。接著，入境美國申請 ESTA，線上填妥細節繳費，列印好拿著這些就可以入境美國。</p>
-<p>若需要國外駕車，可額外申請國際駕照，直接拿汽車駕照去監理站換發就好。不過國外租車的額外駕駛需要額外的保險，加一個額外駕駛就額外多一個費用，原則上對於我這種新手，最後沒有用到。</p>
-<p>十一月初的波士頓到了將近攝氏零度的氣候，這一次旅程長達十四天，差不多要帶個六天的衣物，由於這麼冷的天氣基本上也不太需要太多外衣，內衣之類的還是需要帶多一點，直接在旅館內乾洗晾乾就好，大部分時間都有暖氣，所以只需要帶一件足夠厚的外套就行，也因為暖氣會不斷地除溼，保濕乳液之類的必須帶好。這次旅程意外地發現自己並不太怕冷，帶太多衣服穿不到，感覺有點傻了，毛襪不帶也沒關係，穿了反而不帶適應走路的步伐而不舒服。圍巾、手套帶著比較好，一下雪整個寒意就透過去。</p>
-<h2 id="波士頓之旅"><a href="#波士頓之旅" class="headerlink" title="波士頓之旅"></a>波士頓之旅</h2><p>做了近 20 小時的飛機，終於到了美國波士頓，公司在比較偏遠的郊區 Chelmsford，隔天我們便到波士頓市中心附近的 MIT 和 Harvard 參觀，這時間點在感恩節前兩周，又正值假日，基本上都沒什麼學生。看著別人的生活環境，冷到一個很不舒服的季節。</p>
-<p><img src="https://i.imgur.com/YEClMNn.jpg" alt="MIT"></p>
-<p>在市中心晃了好一陣子，傍晚才前往到哈佛大學，然後開始排隊與那個金鞋合照。</p>
-<p><img src="https://i.imgur.com/kea69zk.jpg" alt="Harvard University"></p>
-<p>工作的第一天，聽著不太明白的產品與客戶發展介紹，第一次與 email 對面的人碰面聊天，上頭的上頭們全都來了，勉勉強強用殘破的英文亂說一通，還好有同事罩著，後面講的介紹一句也不懂，只能東猜猜西猜猜，猜出個什麼來再應付。下午便在討論「勇敢的心」細節，原則上是一個複雜度很難壓低的幾何計算，咱什麼時候變成幾何計算的顧問了？我其實也不算懂啊。</p>
-<p>工作的第二天，兵分兩路被拆開到各自的主攻產品討論議題，陸陸續續邀請不同議題的相關成員會面，個人覺得是相當大的陣仗，區區的 Morris 開的議題邀了好幾個不同團隊的成員。由當地的同事主持會議，大多的時間都在聽他們討論，只花了幾分鐘介紹問題的原因、要解決的問題、可能的解決方向，為何需要這麼做？接著的應答就靠神一般同事翻譯。嗚嗚，<strong>我好沒用</strong>。晚上的時候，波士頓的第一場雪來了。</p>
-<p><img src="https://i.imgur.com/NeSBcKB.jpg" alt="First Snow in Chelmsford"></p>
-<p>工作的第三天，新產品決鬥的開始，Made in Taiwan 的武力展示，相當沒有信心去展示那些成果，大部分的架構還不確定能不能發展到那樣子，語言的特性決定發展能力，簡單、好用是否能兩全其美呢，覺得自己的眼界還不夠寬廣，深怕被那些非常非常資深的工程師擊飛，最後倖存！</p>
-<p>工作的第四天，趕上公司的三十周年慶，公司租了一台遊艇在波士頓河岸繞了兩個小時，各個同事都在船上閒聊。結果我們台灣的都在玩船外的 table football 而忘了拍團體照 …</p>
-<p><img src="https://i.imgur.com/W4cQZds.jpg" alt="Cadence 30th Celebration"></p>
-<p>工作的第五天，討論要怎麼解決大數據的情況，數據一大只要會動就好，那麼效能就不再重要，但是舊有的操作又不能太慢，毫無用武之地的我，決定來個幻想之旅。最後一晚的聚餐，照片上的兇手替我點了 50 美元的龍蝦，看不懂菜單總是令人宰割。</p>
-<p><img src="https://i.imgur.com/eLLHpA8.jpg" alt="$50 Lobster"></p>
-<h2 id="紐約之旅"><a href="#紐約之旅" class="headerlink" title="紐約之旅"></a>紐約之旅</h2><p>在忙完一周的工作後，我們便到了第二周的紐約自由行。老實說，一開始的行程是回台灣休息，但是大部分的人都不在台灣，如果回台灣也處於無同事或目標的狀況，所以就跟著跑去紐約了。如此瘋狂的行程，大概就這一次！</p>
-<p><img src="https://i.imgur.com/Tv2uioT.jpg" alt="「我真的沒有想做的事啊」－《來自繽紛世界的明日》"></p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/5/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/7/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/page/5/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/87/">87</a><a class="extend next" rel="next" href="/page/7/">Next &raquo;</a>
     </nav>
   
 </section>
@@ -996,7 +999,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">55</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1008,7 +1011,15 @@
       <ul>
         
           <li>
-            <a class="text" href="/2021/12/31/diary-20211231-encrypt/">
+            <a class="text" href="/2022/01/01/note/clove-letter/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《獻上給某工程師的情書》</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/12/31/note/diary-20211231-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1016,7 +1027,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/12/26/diary-20211226-encrypt/">
+            <a class="text" href="/2021/12/26/note/diary-20211226-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1024,7 +1035,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/11/21/diary-20211121-encrypt/">
+            <a class="text" href="/2021/11/21/note/diary-20211121-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1032,7 +1043,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/11/12/diary-20211112-encrypt/">
+            <a class="text" href="/2021/11/12/note/diary-20211112-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1040,7 +1051,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/31/diary-20211031-encrypt/">
+            <a class="text" href="/2021/10/31/note/diary-20211031-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1048,7 +1059,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/28/diary-202110-encrypt/">
+            <a class="text" href="/2021/10/28/note/diary-202110-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1056,7 +1067,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/28/diary-202110/">
+            <a class="text" href="/2021/10/28/note/diary-202110/">
               
                 <i class="icon-file-o"></i> 
               
@@ -1077,14 +1088,6 @@
                 <i class="icon-file-o"></i> 
               
             Shiny People 感謝</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/09/12/work/company-ghost-story-13/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 13</a>
           </li>
         
       </ul>
@@ -1127,7 +1130,7 @@
       
     </div>
     <div id="footer-info" class="inner">
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2022 Shiang-Yun Yang 
     </div>
   </div>
 </footer>

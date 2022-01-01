@@ -89,6 +89,61 @@
           
           <section id="main">
   
+    <article id="post-oj/uva/uva-12793" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/30/oj/uva/uva-12793/" class="article-date">
+  <time datetime="2014-09-30T10:02:25.000Z" itemprop="datePublished">2014-09-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/09/30/oj/uva/uva-12793/">UVa 12793 - Confederation</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2014/09/30/oj/uva/uva-12793/" data-id="ckxv1wo0d03c9a8vnrv2icbr3" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2014/09/30/oj/uva/uva-12793/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/RS-hash/">RS hash</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>在三維空間中劃分區域，給定 N 個平面，對於每一個點而言形成 N-tuple 的資訊 (0/1 左側、右側)。請問哪一個 N-tuple 具有最多點，輸出最多的點個數即可。</p>
+<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">2 5</div><div class="line">1 0 0 1</div><div class="line">2 0 0 8</div><div class="line">0 1 0</div><div class="line">2 2 2</div><div class="line">3 3 3</div><div class="line">5 5 5</div><div class="line">2 18 4</div><div class="line">4 8</div><div class="line">0 0 1 1</div><div class="line">1 0 1 2</div><div class="line">-1 1 1 3</div><div class="line">-1 -1 1 3</div><div class="line">0 0 5</div><div class="line">0 0 4</div><div class="line">0 0 -2</div><div class="line">1 0 5</div><div class="line">40 19 104</div><div class="line">13 26 84</div><div class="line">89 -45 18</div><div class="line">3 1 0</div></pre></td></tr></table></figure>
+<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">3</div><div class="line">5</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>直接將平面帶入每一個點，得到 N-tuple 資訊，接著對這個資訊做 RS hash 下，直接壓 int 去做 count，這樣會快於 <code>map&lt;string, int&gt;</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt; </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt; </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> n, m, x, y, z;</div><div class="line">    <span class="keyword">int</span> A[<span class="number">512</span>], B[<span class="number">512</span>], C[<span class="number">512</span>], D[<span class="number">512</span>];</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;n, &amp;m) == <span class="number">2</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d %d"</span>, A+i, B+i, C+i, D+i);</div><div class="line">        <span class="built_in">map</span>&lt;<span class="keyword">unsigned</span> <span class="keyword">int</span>, <span class="keyword">int</span>&gt; R;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; i++) &#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;x, &amp;y, &amp;z);</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> a = <span class="number">63689</span>, b = <span class="number">378551</span>;</div><div class="line">            <span class="keyword">unsigned</span> <span class="keyword">int</span> value = <span class="number">0</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (A[j] * x + B[j] * y + C[j] * z &gt; D[j])</div><div class="line">                    value = value * a + <span class="number">1</span>;</div><div class="line">                <span class="keyword">else</span></div><div class="line">                    value = value * a + <span class="number">0</span>;</div><div class="line">                a *= b;</div><div class="line">            &#125;</div><div class="line">            R[value]++;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="built_in">map</span>&lt;<span class="keyword">unsigned</span> <span class="keyword">int</span>, <span class="keyword">int</span>&gt;::iterator it = R.begin();</div><div class="line">            it != R.end(); it++)</div><div class="line">                ret = max(ret, it-&gt;second);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ret);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*</span></div><div class="line"><span class="comment"></span></div><div class="line"><span class="comment">*/</span></div></pre></td></tr></table></figure>
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-oj/uva/uva-12796" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/09/30/oj/uva/uva-12796/" class="article-date">
@@ -114,7 +169,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/30/oj/uva/uva-12796/" data-id="ckxtxqtv0035ggkvntb5x12gj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/30/oj/uva/uva-12796/" data-id="ckxv1wo0h03cda8vn1pplukfr" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/30/oj/uva/uva-12796/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -170,7 +225,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/30/latex-acm-icpc/" data-id="ckxtxqs7p00atgkvn5xw44ccj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/30/latex-acm-icpc/" data-id="ckxv1wma0007ia8vnykk2w3it" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/30/latex-acm-icpc/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -222,7 +277,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-split/" data-id="ckxtxqs8l00d1gkvnmqrrl39w" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-split/" data-id="ckxv1wmgf00m1a8vn5u9wpbee" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/30/mproblem-split/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -285,7 +340,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-river/" data-id="ckxtxqs8k00cygkvn382xfrcf" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-river/" data-id="ckxv1wmge00lxa8vn1ex0lu94" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/30/mproblem-river/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -347,7 +402,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-tree/" data-id="ckxtxqs8p00dagkvnnt9la5sv" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/30/mproblem-tree/" data-id="ckxv1wmgk00maa8vn4084w7je" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/30/mproblem-tree/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -408,7 +463,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/24/front-of-the-class/" data-id="ckxtxqs5j0052gkvn9idymiw7" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/24/front-of-the-class/" data-id="ckxv1wm7w0021a8vnu6gn1ksb" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/24/front-of-the-class/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -472,7 +527,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/1Yxq2ht.jpg" rel="gallery_ckxtxqsgi00x4gkvngfl9tfym">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/1Yxq2ht.jpg" rel="gallery_ckxv1wmih00r0a8vnouh81aq0">
         <img src="http://i.imgur.com/1Yxq2ht.jpg" itemprop="image">
       </a>
     
@@ -491,7 +546,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/15/top-book/" data-id="ckxtxqsgi00x4gkvngfl9tfym" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/15/top-book/" data-id="ckxv1wmih00r0a8vnouh81aq0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/15/top-book/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -561,7 +616,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/15/oj/uva/uva-12792/" data-id="ckxtxqtuf034wgkvnx9f4mf5p" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/15/oj/uva/uva-12792/" data-id="ckxv1wo0903c6a8vnuq9ws6us" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/15/oj/uva/uva-12792/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -616,7 +671,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/15/oj/uva/uva-12797/" data-id="ckxtxqtux035dgkvna06yd7yi" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2014/09/15/oj/uva/uva-12797/" data-id="ckxv1wo0k03cga8vnri8247nb" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2014/09/15/oj/uva/uva-12797/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -646,64 +701,9 @@
 
 
   
-    <article id="post-oj/uva/uva-12791" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/09/15/oj/uva/uva-12791/" class="article-date">
-  <time datetime="2014-09-15T00:04:19.000Z" itemprop="datePublished">2014-09-15</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/09/15/oj/uva/uva-12791/">UVa 12791 - Lap</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2014/09/15/oj/uva/uva-12791/" data-id="ckxtxqtuj0350gkvnyw88h28r" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2014/09/15/oj/uva/uva-12791/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/二分/">二分</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>在賽車運動中，常用 <strong> Lap </strong> 表示套一圈賽道所消耗的時間，現在有多名賽車手，給予最快一圈多久、最慢一圈多久，請問在最快車手第幾圈的時候，可以倒追最慢的車手。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">1 10</div><div class="line">4 8</div><div class="line">5 7</div><div class="line">6875 7109</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">2</div><div class="line">2</div><div class="line">4</div><div class="line">31</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>懶得推導公式，二分倒追的時間，找到何時會產生倒追，再計算第幾圈即可。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt; </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> X, Y;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;X, &amp;Y) == <span class="number">2</span>) &#123;</div><div class="line">        <span class="keyword">double</span> l = <span class="number">0</span>, r = <span class="number">1e+30</span>, mid;</div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> eps 1e-8</span></div><div class="line">        <span class="keyword">while</span> (<span class="built_in">fabs</span>(l - r) &gt; eps) &#123;</div><div class="line">            mid = (l + r)/<span class="number">2</span>;</div><div class="line">            <span class="keyword">if</span> (mid * (<span class="number">1.0</span>/X - <span class="number">1.0</span>/Y) &gt;= <span class="number">1</span>)</div><div class="line">                r = mid;</div><div class="line">            <span class="keyword">else</span></div><div class="line">                l = mid;</div><div class="line">        &#125;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%.0lf\n"</span>, <span class="built_in">ceil</span>(mid/X));</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/60/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="page-number" href="/page/60/">60</a><span class="page-number current">61</span><a class="page-number" href="/page/62/">62</a><a class="page-number" href="/page/63/">63</a><span class="space">&hellip;</span><a class="page-number" href="/page/86/">86</a><a class="extend next" rel="next" href="/page/62/">Next &raquo;</a>
+      <a class="extend prev" rel="prev" href="/page/60/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/59/">59</a><a class="page-number" href="/page/60/">60</a><span class="page-number current">61</span><a class="page-number" href="/page/62/">62</a><a class="page-number" href="/page/63/">63</a><span class="space">&hellip;</span><a class="page-number" href="/page/87/">87</a><a class="extend next" rel="next" href="/page/62/">Next &raquo;</a>
     </nav>
   
 </section>
@@ -716,7 +716,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">55</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -728,7 +728,15 @@
       <ul>
         
           <li>
-            <a class="text" href="/2021/12/31/diary-20211231-encrypt/">
+            <a class="text" href="/2022/01/01/note/clove-letter/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《獻上給某工程師的情書》</a>
+          </li>
+        
+          <li>
+            <a class="text" href="/2021/12/31/note/diary-20211231-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -736,7 +744,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/12/26/diary-20211226-encrypt/">
+            <a class="text" href="/2021/12/26/note/diary-20211226-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -744,7 +752,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/11/21/diary-20211121-encrypt/">
+            <a class="text" href="/2021/11/21/note/diary-20211121-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -752,7 +760,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/11/12/diary-20211112-encrypt/">
+            <a class="text" href="/2021/11/12/note/diary-20211112-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -760,7 +768,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/31/diary-20211031-encrypt/">
+            <a class="text" href="/2021/10/31/note/diary-20211031-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -768,7 +776,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/28/diary-202110-encrypt/">
+            <a class="text" href="/2021/10/28/note/diary-202110-encrypt/">
               
                 <i class="icon-file-o"></i> 
               
@@ -776,7 +784,7 @@
           </li>
         
           <li>
-            <a class="text" href="/2021/10/28/diary-202110/">
+            <a class="text" href="/2021/10/28/note/diary-202110/">
               
                 <i class="icon-file-o"></i> 
               
@@ -797,14 +805,6 @@
                 <i class="icon-file-o"></i> 
               
             Shiny People 感謝</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/09/12/work/company-ghost-story-13/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 13</a>
           </li>
         
       </ul>
@@ -847,7 +847,7 @@
       
     </div>
     <div id="footer-info" class="inner">
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2021 Shiang-Yun Yang 
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and Theme by <a href="https://github.com/morris821028/hexo-theme-landscape" target="_blank" title="landscape">landscape</a> &copy; 2022 Shiang-Yun Yang 
     </div>
   </div>
 </footer>
