@@ -89,6 +89,93 @@
           
           <section id="main">
   
+    <article id="post-mproblem-find-median-limited-memory" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/22/mproblem-find-median-limited-memory/" class="article-date">
+  <time datetime="2016-01-22T04:55:38.000Z" itemprop="datePublished">2016-01-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/出題解題/">出題解題</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+<div class="article-gallery">
+  <div class="article-gallery-photos">
+    
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/plPcy1p.jpg" rel="gallery_ckxvrrvbk0081jgvnjtzhej91">
+        <img src="http://i.imgur.com/plPcy1p.jpg" itemprop="image">
+      </a>
+    
+  </div>
+</div>
+
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/01/22/mproblem-find-median-limited-memory/">[讀檔操作] 有限記憶體找中位數</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/" data-id="ckxvrrvbk0081jgvnjtzhej91" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/01/22/mproblem-find-median-limited-memory/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/二分搜尋/">二分搜尋</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化輸入/">優化輸入</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分桶/">分桶</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/巨量資料/">巨量資料</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/讀檔/">讀檔</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>現在的系統架構中，內存 (Memory，台灣翻譯：記憶體，大陸翻譯：內存) 的大小仍無法完全像硬碟機一樣。如檔案大小 64GB，內存只有 4GB，處理檔案無法全部 In Memory，當然最近的硬體技術也逐漸朝著 All In Memory 的方式進行加速。回過頭來，在內存不足的情況下，來練習如何處理檔案大小遠大於內存的情況吧。</p>
+<h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>給予一個 binary file 的檔案名稱，裡面用 4 個位元組為一個 signed 32-bits 整數，有數個直到 <code>EOF</code>，保證恰好有奇數個，請輸出中位數為何？</p>
+<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>標準輸入串流只有一行一個字串，表示檔案名稱 <span>$F$</span><!-- Has MathJax -->。檔案大小最多 16 MB，而你的程序被限制最多使用 4 MB 的內存。</p>
+<p>每個整數 <span>$x$</span><!-- Has MathJax -->，限制條件 <span>$0 \le x \le 10^9$</span><!-- Has MathJax --></p>
+<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>輸出一行整數 <span>$Median$</span><!-- Has MathJax --> 為 binary file 的中位數。</p>
+<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">p10067-in.dat</div></pre></td></tr></table></figure>
+<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">97537111</div></pre></td></tr></table></figure>
+<h2 id="提示"><a href="#提示" class="headerlink" title="提示"></a>提示</h2><p>二分搜尋，分桶</p>
+<p>download <a href="/downloads/p10067-in.dat">p10067-in.dat</a></p>
+<h3 id="p10067-in-dat"><a href="#p10067-in-dat" class="headerlink" title="p10067-in.dat"></a>p10067-in.dat</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">10825098</div><div class="line">97537111</div><div class="line">208681850</div></pre></td></tr></table></figure>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>這一個問題很久以前見過，對岸通常叫做「海量資料找中位數」約束在記憶體不夠的情況下，如何高效率找到中位數，操作時允許重複讀檔。</p>
+<p>遲遲沒有 Online Judge 進行記憶體用量檢測以及開放讀寫檔案，如今有機會擔任台灣大學計算機程式設計的課程助教，架了一個允許亂來的 Online Judge - Judge Girl (中文翻譯：批改娘系統)，讀寫檔案也不會被封鎖！洽詢 <a href="http://judgegirl.csie.org/" target="_blank" rel="external">網站</a>，目前只針對課堂學生開放。</p>
+<p>回到問題，題目給訂 16MB 的整數序列，最多 <span>$n = 4 \times 10^6$</span><!-- Has MathJax -->，由於記憶體不足沒辦法直接宣告陣列大小為 <span>$n$</span><!-- Has MathJax --> 的整數陣列，又由於數字可能會重複，就沒辦法利用 bitmask 進行壓縮，只能倚靠不斷地讀檔案進行計算。若以數值範圍 <span>$[0, V]$</span><!-- Has MathJax -->，大致放分成兩種策略</p>
+<ul>
+<li>二分搜尋 (AC, 250ms)，效率 <span>$\mathcal{O}(V \log V)$</span><!-- Has MathJax -->，開檔次數 <span>$\mathcal{O}(\log V)$</span><!-- Has MathJax -->。</li>
+<li>分桶算法 (AC, 70ms)，效率 <span>$\mathcal{O}(N)$</span><!-- Has MathJax -->，開檔次數 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->。</li>
+</ul>
+<p>讀取檔案時，在有限記憶體空間，配置一塊作為緩衝區，一次讀入一坨子序列，一個一個讀取效率非常差，別輕忽從磁碟讀取資料的速度。剩餘空間再進行紀錄用途。從效能比較 <strong>二分搜尋</strong> 慢於 <strong>分桶算法</strong>。</p>
+<h3 id="二分搜尋"><a href="#二分搜尋" class="headerlink" title="二分搜尋"></a>二分搜尋</h3><p>二分答案 <span>$x$</span><!-- Has MathJax -->，接著線性掃描序列，計算有多少個整數小於等於 <span>$x$</span><!-- Has MathJax -->，藉此找到中位數。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">fsize</span><span class="params">(FILE *fp)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> prev = ftell(fp);</div><div class="line">    fseek(fp, <span class="number">0L</span>, SEEK_END);</div><div class="line">    <span class="keyword">int</span> size = ftell(fp);</div><div class="line">    fseek(fp, prev, SEEK_SET);</div><div class="line">    <span class="keyword">return</span> size;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXELE (3&lt;&lt;20)/4</span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">countLess</span><span class="params">(FILE *fp, <span class="keyword">int</span> ans)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> A[MAXELE];</div><div class="line">    <span class="keyword">int</span> ret = <span class="number">0</span>, x, n = <span class="number">0</span>;</div><div class="line">    fseek(fp, <span class="number">0</span>, SEEK_SET);</div><div class="line">    <span class="keyword">while</span> ((n = fread(A, <span class="keyword">sizeof</span>(<span class="keyword">int</span>), MAXELE, fp))) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            ret += A[i] &lt;= ans;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">char</span> fName[<span class="number">128</span>];</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%s"</span>, fName);</div><div class="line">    FILE *fin = fopen(fName, <span class="string">"rb"</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> n = fsize(fin) / <span class="keyword">sizeof</span>(<span class="keyword">int</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> m = n/<span class="number">2</span> + <span class="number">1</span>;</div><div class="line">    <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">1000000000</span>, mid, ret = <span class="number">0</span>;</div><div class="line">    </div><div class="line">    <span class="keyword">while</span> (l &lt;= r) &#123;</div><div class="line">        mid = (l + r)/<span class="number">2</span>;</div><div class="line">        <span class="keyword">int</span> tn = countLess(fin, mid);</div><div class="line">        <span class="keyword">if</span> (tn &lt; m)</div><div class="line">            l = mid + <span class="number">1</span>, ret = mid+<span class="number">1</span>;</div><div class="line">        <span class="keyword">else</span></div><div class="line">            r = mid - <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ret);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="分桶算法"><a href="#分桶算法" class="headerlink" title="分桶算法"></a>分桶算法</h3><p>分桶算法分成兩次掃瞄，假設內存分配最多 <span>$I$</span><!-- Has MathJax --> 個 32bits 整數 (<span>$I \ll N$</span><!-- Has MathJax -->)。</p>
+<ul>
+<li>由於記憶體限制大小關係，將數值範圍分成 <span>$I$</span><!-- Has MathJax --> 堆，如 <code>[0, V/I-1]</code>、<code>[V/I, 2V/I-1]</code>、… 等，計算區間範圍內的個數，讀取一次檔案，可以得到中位數介於 <code>[iV/I, (i+1)V/I-1]</code>。</li>
+<li>接著再劃分一次，直到區間長度為 1，中位數便可得到。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;assert.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">fsize</span><span class="params">(FILE *fp)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> prev = ftell(fp);</div><div class="line">    fseek(fp, <span class="number">0L</span>, SEEK_END);</div><div class="line">    <span class="keyword">int</span> size = ftell(fp);</div><div class="line">    fseek(fp, prev, SEEK_SET);</div><div class="line">    <span class="keyword">return</span> size;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXELE ((1&lt;&lt;20)/4)</span></div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> A[MAXELE];</div><div class="line"><span class="keyword">static</span> <span class="keyword">int</span> B[MAXELE];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">countLess</span><span class="params">(FILE *fp, <span class="keyword">int</span> ans)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ret = <span class="number">0</span>, x, n = <span class="number">0</span>;</div><div class="line">    fseek(fp, <span class="number">0</span>, SEEK_SET);</div><div class="line">    <span class="keyword">while</span> ((n = fread(A, <span class="keyword">sizeof</span>(<span class="keyword">int</span>), MAXELE, fp))) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++)</div><div class="line">            ret += A[i] &lt;= ans;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">char</span> fName[<span class="number">128</span>];</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%s"</span>, fName);</div><div class="line">    FILE *fin = fopen(fName, <span class="string">"rb"</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> n = fsize(fin) / <span class="keyword">sizeof</span>(<span class="keyword">int</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> m = n/<span class="number">2</span> + <span class="number">1</span>;</div><div class="line">    <span class="keyword">int</span> l = <span class="number">0</span>, r = <span class="number">1000000000</span>, mid, ret = <span class="number">0</span>;</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> WIDTH = r, SHIFT;</div><div class="line">    </div><div class="line">    <span class="keyword">for</span> (SHIFT = <span class="number">1</span>; (<span class="number">1</span>&lt;&lt;SHIFT) &lt; MAXELE; SHIFT++);</div><div class="line">    WIDTH = r / (<span class="number">1</span>&lt;&lt;SHIFT);</div><div class="line">    </div><div class="line">    <span class="built_in">memset</span>(B, <span class="number">0</span>, <span class="keyword">sizeof</span>(B));</div><div class="line">    fseek(fin, <span class="number">0</span>, SEEK_SET);</div><div class="line">    <span class="keyword">while</span> ((n = fread(A, <span class="keyword">sizeof</span>(<span class="keyword">int</span>), MAXELE, fin))) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">            assert((A[i]&gt;&gt;SHIFT) &lt; MAXELE);</div><div class="line">            B[A[i]&gt;&gt;SHIFT]++;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> BASE = <span class="number">0</span>, SELECT;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = m; i &lt; MAXELE; i++) &#123;</div><div class="line">        sum -= B[i];</div><div class="line">        <span class="keyword">if</span> (sum &lt;= <span class="number">0</span>) &#123;</div><div class="line">            BASE = i * (<span class="number">1</span>&lt;&lt;SHIFT);</div><div class="line">            SELECT = sum + B[i];</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="built_in">memset</span>(B, <span class="number">0</span>, <span class="keyword">sizeof</span>(B));</div><div class="line">    fseek(fin, <span class="number">0</span>, SEEK_SET);</div><div class="line">    <span class="keyword">while</span> ((n = fread(A, <span class="keyword">sizeof</span>(<span class="keyword">int</span>), MAXELE, fin))) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (A[i] - BASE &lt; MAXELE &amp;&amp; A[i] &gt;= BASE)</div><div class="line">                B[A[i] - BASE]++;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, sum = SELECT; i &lt; MAXELE; i++) &#123;</div><div class="line">        sum -= B[i];</div><div class="line">        <span class="keyword">if</span> (sum &lt;= <span class="number">0</span>) &#123;</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, i + BASE);</div><div class="line">            <span class="keyword">break</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-rendering-bvh-contract-and-traversal" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/01/21/rendering-bvh-contract-and-traversal/" class="article-date">
@@ -114,7 +201,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="ckxv7t8vk00b6lkvnor3kzkyk" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/" data-id="ckxvrrvcu00bajgvn2mp25vbe" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-bvh-contract-and-traversal/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -290,7 +377,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="ckxv7t8vl00b9lkvneatunabh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-environment-lights/" data-id="ckxvrrvcv00bejgvn3brk5h9p" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-environment-lights/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -423,7 +510,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="ckxv7t8vo00bflkvnyafrsnev" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/" data-id="ckxvrrvcz00bmjgvnphmphbmw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-realistic-camera/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -694,7 +781,7 @@ Y_c = \frac{\sum^{}_{(x, y) \in \mathit{region}} L^2_{(x, y)} \; y}{\sum^{}_{(x,
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckxv7t8vm00bclkvnqbo2wt3b" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/rendering-height-field/" data-id="ckxvrrvcx00bijgvnn0zytrin" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/rendering-height-field/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -789,7 +876,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_ckxv7t8ve00aulkvnjeavvcgb">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/3eq7W2z.jpg" rel="gallery_ckxvrrvcq00ayjgvn9dvi5alk">
         <img src="http://i.imgur.com/3eq7W2z.jpg" itemprop="image">
       </a>
     
@@ -808,7 +895,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="ckxv7t8ve00aulkvnjeavvcgb" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/" data-id="ckxvrrvcq00ayjgvn9dvi5alk" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-add-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -891,7 +978,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_ckxv7t8vj00b3lkvndifkqe20">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2sHgITS.jpg" rel="gallery_ckxvrrvcs00b2jgvn54jikdee">
         <img src="http://i.imgur.com/2sHgITS.jpg" itemprop="image">
       </a>
     
@@ -910,7 +997,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="ckxv7t8vj00b3lkvndifkqe20" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-qemu/" data-id="ckxvrrvcs00b2jgvn54jikdee" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-qemu/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -993,7 +1080,7 @@ N_y = \begin{bmatrix}
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_ckxv7t8vi00b0lkvnaqpcxw6e">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/2L6Zmwa.jpg" rel="gallery_ckxvrrvct00b6jgvndtsbbpqr">
         <img src="http://i.imgur.com/2L6Zmwa.jpg" itemprop="image">
       </a>
     
@@ -1012,7 +1099,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="ckxv7t8vi00b0lkvnaqpcxw6e" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/" data-id="ckxvrrvct00b6jgvndtsbbpqr" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/21/realtime-system-using-scheduler/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1098,7 +1185,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="ckxv7t8re000elkvnwbpbtisc" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/" data-id="ckxvrrv8o000fjgvnt1lkc5xo" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/18/2016-facebook-hacker-cup-round-1/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1169,7 +1256,7 @@ N_y = \begin{bmatrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="ckxv7t8rc000blkvnamfuw4w8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/" data-id="ckxvrrv8n000cjgvn6r3qsniy" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/01/13/2016-facebook-hacker-cup-qualification/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1209,79 +1296,6 @@ N_y = \begin{bmatrix}
 
 
   
-    <article id="post-note/diary-20151030" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/30/note/diary-20151030/" class="article-date">
-  <time datetime="2015-10-30T09:18:34.000Z" itemprop="datePublished">2015-10-30</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/手札日記/">手札日記</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/pjV0MV0.jpg" rel="gallery_ckxv7t9rr02gvlkvn1so9z9mm">
-        <img src="http://i.imgur.com/pjV0MV0.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/30/note/diary-20151030/">神境求生六十天</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/10/30/note/diary-20151030/" data-id="ckxv7t9rr02gvlkvn1so9z9mm" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/10/30/note/diary-20151030/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>過了好幾個月沒有寫 Blog，原來說來話長，但絕不是沒有內容可寫，部分生存活動可以在 Github commit 上面見到。大部分時間都在處理批改娘系統 (Judge Girl Online Judge) 的架設，接著都在弄大一程式設計課程的練習題設置，由於追加功能的關係，寫網頁耗掉大量時間，強迫症總是讓我想討戰極限，套一句最近常講的「做好做滿」如果不能做好做滿，敷衍了事就對不起自己的靈魂！</p>
-<p>進了台大什麼都不會、什麼都聽不懂，這些事情都已習慣。大學畢業之後，剩下的求學生涯都是 Bonus Time，那段等待死亡的時間看清自己能力的侷限，因此哪敢在這裡奢求什麼，大部分的人都是來求碩士畢業，而我呢？到底是來這裡做些什麼事情？</p>
-<h2 id="助教人生"><a href="#助教人生" class="headerlink" title="助教人生"></a>助教人生</h2><p><img src="http://i.imgur.com/lNwdpLg.jpg" alt="《迷糊餐廳》"></p>
-<p>開學前幾週才跟幼琳老師 (翼世界站長) 把系統架好，架好之後陸陸續續開始有學生開始上來寫程式，既然是台大學生肯定是很厲害的，畢竟在這四年不斷地被台大學生擊潰，學生中起碼有幾位有如神一樣的存在。有趣的事情有很多，如「雞兔螃蟹同籠問題，好多因為螃蟹十隻腳算不出答案來詢問 …　不是八隻嗎？」看到新血們的努力，心中澎湃的情緒湧出，這些傢伙很快就比我更厲害了。</p>
-<p><img src="http://i.imgur.com/GP7uNIi.jpg" alt="《迷糊餐廳》"></p>
-<p>但這件事情還沒有結束，由於幼琳老師換實驗室 (原因在這裡不能說，台大各種黑暗面)，而其他學長因為其他雜事不接 TA 的工作，變得老師開得課只有我一個是實驗室的，其他助教是由老師從別的實驗室找來，但操作文件不夠完善，其他 TA 能幫忙的事情並不多，幼琳老師又要應付新實驗室的計畫，然後就開始活著孤立無援的生活。感謝的是，有幾位待畢業的學長 (待畢業原因不能說) 和已經順利畢業的學長偶爾會來實驗室，有問題還可以請他們幫忙看。</p>
-<p><img src="http://i.imgur.com/FvY3NR8.jpg" alt="《野良神》"></p>
-<p>逐漸地發現這雜事相當耗時間，儘管這類疲勞是快感，但其他助教幫不上忙讓我有點生氣，明明都是有領錢的，而且它們還有台大原生種，雖然系統上不會操作，但修改題目描述、寫 C 程式驗證和生測資總是沒有下文，原本以為會主動冒出來的，看來總覺得我一個人幹就好，最後幾天看不下去，只好認賠殺出，他們都沒有競賽經驗，這一點令人擔憂。</p>
-<p>老師出的小考題目有點競賽水準，絕不是以前大學亂學的語法小考，這一點讓我很興奮也很失望，原來台大學生這麼厲害，幾週內就把好幾個學期的內容學完，失望的地方在哪呢？準備小考題目事件繁重的任務，每一週小考生殺大權都在都在我手上，兩班快兩百人的分數，要是測資沒有處理好，抱怨聲會席捲而來。一個人處理這些事情，心裡好慌好無助，原來大家都為了畢業而努力，其他小事先擱著吧，而我為此犧牲吧。</p>
-<h2 id="巧遇劇場"><a href="#巧遇劇場" class="headerlink" title="巧遇劇場"></a>巧遇劇場</h2><p><img src="http://i.imgur.com/vcyoTYV.jpg" alt="《全部成為 F》"></p>
-<p>在台大碰巧遇到高中學弟，一下就是四年不見。</p>
-<p>「好久不見」<br>「你怎麼會在這？」似乎沒法理解我為何在這裡<br>「我也在想『我為什麼會在這 …』」</p>
-<h2 id="暗地裡訴說"><a href="#暗地裡訴說" class="headerlink" title="暗地裡訴說"></a>暗地裡訴說</h2><p><img src="http://i.imgur.com/bwKdyIR.jpg" alt="《四月是你的謊言》"></p>
-<p>因為題目太難而抱怨被學生責 <strong> 怪 </strong>，你們是最強的也要成為最強的不是嗎？而真正強的人都忙著自己的事情無法教你們，只能由我來了，真的對不起啊。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/16/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><a class="page-number" href="/page/16/">16</a><span class="page-number current">17</span><a class="page-number" href="/page/18/">18</a><a class="page-number" href="/page/19/">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/87/">87</a><a class="extend next" rel="next" href="/page/18/">Next &raquo;</a>
@@ -1297,7 +1311,7 @@ N_y = \begin{bmatrix}
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">56</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">57</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1307,6 +1321,14 @@ N_y = \begin{bmatrix}
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2022/01/01/note/diary-20220101-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·柒》</a>
+          </li>
         
           <li>
             <a class="text" href="/2022/01/01/note/diary-20220101/">
@@ -1378,14 +1400,6 @@ N_y = \begin{bmatrix}
                 <i class="icon-file-o"></i> 
               
             好多個 28 在這個時刻</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/10/28/work/company-ghost-story-14/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Company Ghost Story 公司鬼故事 14</a>
           </li>
         
       </ul>
