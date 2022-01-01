@@ -89,6 +89,97 @@
           
           <section id="main">
   
+    <article id="post-java/java-memory-optimization-1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/05/30/java/java-memory-optimization-1/" class="article-date">
+  <time datetime="2021-05-30T04:00:00.000Z" itemprop="datePublished">2021-05-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Java/">Java</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/05/30/java/java-memory-optimization-1/">Java 優化內存使用 結構篇</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/" data-id="ckxv7t9mi02a2lkvnfcx8w7e9" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/05/30/java/java-memory-optimization-1/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/memory/">memory</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/performance/">performance</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/內存/">內存</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/效能/">效能</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/記憶體/">記憶體</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h2><p>首先，針對 JVM 這一類的語言設計，所有事物皆為物件，那麼就表示每一個物件都必須額外紀錄 object header，也就是說一個物件在 64 位元的作業系統環境下，通常會額外帶有 12 bytes 資料 (mark word:4 bytes 和 klass word:8 bytes)，但 64 位元計算機架構需對齊 8 bytes 的規範，使得每一個物件都大上許多。</p>
+<p>例如，一個 <code>struct Point</code> 在 C 語言裡面，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Point</span> &#123;</span></div><div class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></div><div class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我們輕易地就明白單一物件大小為 16 bytes，而在 Java 撰寫時，卻會變成 <span>$32 \; \text{bytes} \;(\text{header:}12 + \text{x:}8 + \text{y:}8 + \text{padding:}4)$</span><!-- Has MathJax -->。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span> </span>&#123; <span class="comment">// object header 12 byte</span></div><div class="line">    <span class="keyword">long</span> x; <span class="comment">// 8 byte</span></div><div class="line">    <span class="keyword">long</span> y; <span class="comment">// 8 byte</span></div><div class="line">    <span class="comment">// padding 4 byte</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>這樣看起來並不妙。相同的演算法、配上相同的數據，Java 處理時的內容硬是比 C 還多出整整兩倍。物件導向有其優點，必然存在一些缺點，可以很彈性地開發、豐富的權限管理、方便追蹤剖析，卻容易在非常基礎的大量計算中暴露記憶體方面的問題。</p>
+<h2 id="打包物件-packed-object"><a href="#打包物件-packed-object" class="headerlink" title="打包物件 (packed object)"></a>打包物件 (packed object)</h2><p>對於基礎物件，就只能倚靠撰寫 JNI 或者修改 JVM 的參數，來降低每一個單一物件的大小。對於底層不夠熟悉的開發者而言，還是可以透過一些實作方法來完成。但必須犧牲一點物件導向的方法論，喪失維護性，面對真實問題。</p>
+<p>例如，我們儲存一個矩形，需要一個左上角和右下角的點。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</div><div class="line">    Point a; <span class="comment">// pointer: 8 bytes</span></div><div class="line">    Point b; <span class="comment">// pointer: 8 bytes</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>資深工程師總會很直覺地 <strong>重複使用</strong>，這個原則並沒有錯，但對於大量的基礎物件而言，宣告一個矩形實際上會占用 <span>$32 + 2 \times 32 = 96 \; \text{bytes}$</span><!-- Has MathJax -->。接著，老是有人跟我唱反調說「效能分析工具 (Profiler) 只給出 <span>$32 \; \text{bytes}$</span><!-- Has MathJax -->，你肯定算錯了！」別忘了，你寫的不是 C/C++，是一切皆為指標的 Java。</p>
+<p>那我們要怎麼打包物件呢？或者說 <strong>攤平</strong>，目標要減少 <code>Point</code> 多出來的 object header。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rectangle</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> lx;</div><div class="line">    <span class="keyword">long</span> ly;</div><div class="line">    <span class="keyword">long</span> rx;</div><div class="line">    <span class="keyword">long</span> ry;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>返璞歸真，直接將欄位往上提取，破壞一點基礎建設，在一些 API 上犧牲一點效能。這樣就變成了 <span>$48 \; \text{bytes} = 12 + 8 \times 4 + 4 \; \text{bytes}$</span><!-- Has MathJax --> 的物件。如此一來，減少了一半的內存用量。</p>
+<h2 id="原始型別-Primitive-Type"><a href="#原始型別-Primitive-Type" class="headerlink" title="原始型別 (Primitive Type)"></a>原始型別 (Primitive Type)</h2><p>在很多不經意的操作下，很容易將原始型別 (primitive type) 儲存成物件型別 (object type)，也就是物件導向最容易造成的問題，從整體用法來分析，並不影響程式正確性，但會造成記憶體用量飆高。如 <code>long</code> 原本為 8-byte 物件，轉換成 <code>Long</code> 會變成 24-byte 物件。</p>
+<h3 id="繼承與泛型影響"><a href="#繼承與泛型影響" class="headerlink" title="繼承與泛型影響"></a>繼承與泛型影響</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> <span class="keyword">extends</span> <span class="title">Pair</span>&lt;<span class="title">Long</span>, <span class="title">Long</span>&gt; </span>&#123;&#125;</div></pre></td></tr></table></figure>
+<p>當想重複使用類別，透過繼承的泛型很容易自動轉換成物件型別。這個問題在 C# 內並不存在，CIL 能允許宣告 <code>Pair&lt;long, long&gt;</code>，並且不透過型別抹除，分別建立相應的代碼，能解決此問題。在 Java 上要解決這個問題，只能更樸素一點。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Version</span> </span>&#123;</div><div class="line">    <span class="keyword">long</span> major;</div><div class="line">    <span class="keyword">long</span> minor;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>代碼多了一點，取而代之的是記憶體量減少，物件轉換次數的降低。</p>
+<h3 id="多形使用"><a href="#多形使用" class="headerlink" title="多形使用"></a>多形使用</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">List&lt;Object&gt; list;</div><div class="line">list.add(<span class="number">1</span>);</div><div class="line">Map&lt;Object, Object&gt; map;</div><div class="line">map.put(<span class="number">2</span>, <span class="number">3</span>);</div></pre></td></tr></table></figure>
+<p>多形操作下，將好幾種不同類別的物件一起使用，隱式轉換問題就會發生，一般要追到底層才知道最後發生什麼事情。由於 Java 官方的庫並沒有預設大量的原生型別的資料結構，我們只能透過像 trove4j、eclipse collections 等插件來補足，必要時自己刻一個。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">TLongObjectMap&lt;T&gt; a;</div><div class="line">TLongArrayList b;</div><div class="line">...</div></pre></td></tr></table></figure>
+<h2 id="資料結構-Data-Structure"><a href="#資料結構-Data-Structure" class="headerlink" title="資料結構 (Data Structure)"></a>資料結構 (Data Structure)</h2><h3 id="雜湊表-Hash-Table"><a href="#雜湊表-Hash-Table" class="headerlink" title="雜湊表 (Hash Table)"></a>雜湊表 (Hash Table)</h3><p>在大多數的實作下，雜湊表佔據線性空間 <span>$\mathcal{O}(n)$</span><!-- Has MathJax -->，存取時間 <span>$\mathcal{O}(1)$</span><!-- Has MathJax -->，理論分析上也近乎完美。在處理碰撞的技巧上，影響常數級別的空間用量。通常分成以下兩種</p>
+<h4 id="開放定址法-Open-Addressing"><a href="#開放定址法-Open-Addressing" class="headerlink" title="開放定址法 (Open Addressing)"></a>開放定址法 (Open Addressing)</h4><p>trove4j 和 eclipse collections 採用此方法。</p>
+<ul>
+<li>使用記憶體空間最小<br>  僅有兩個陣列 <code>key[]</code> 和 <code>value[]</code>，沒有多餘的 object header。</li>
+<li>存取常數大，調整時間較長<br>  通常會有兩個以上的 probing 操作，中間穿插刪除操作時，容易造成退化。</li>
+</ul>
+<h4 id="串鏈法-Chaining"><a href="#串鏈法-Chaining" class="headerlink" title="串鏈法 (Chaining)"></a>串鏈法 (Chaining)</h4><p>jdk 預設採用此方法。</p>
+<ul>
+<li>使用記憶體空間最大<br>  <code>HashNode {val, next, prev}</code> 佔據了大部分的記憶體，且大量的 object header 出現。</li>
+<li>存取常數較小</li>
+</ul>
+<p>從穩定性分析上，串鏈法在某種程度上可以複合許多結構，如 unrolled linked list (bucket) 或者是 binary tree 來降低最慘複雜度。而開放定址法，雖然有記憶體用量小，快取能力更高，但數據量一大，很容易在 rehash 的階段花太久的時間，而且不容易做到刪除操作。</p>
+<h3 id="固定長度陣列-Fixed-length-Array"><a href="#固定長度陣列-Fixed-length-Array" class="headerlink" title="固定長度陣列 (Fixed-length Array)"></a>固定長度陣列 (Fixed-length Array)</h3><p>Java 開發久了，連宣告陣列都很吃技術。有時候，並沒仔細探討固定長度與不固定長度的差異。劈頭就寫一個</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    ArrayList&lt;Field&gt; fields;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>這樣的設計擴充性佳，具有彈性。在底層設計時，卻會發現 <code>ArrayList</code> 至少包含了 <code>size</code> 和 <code>val[]</code> 兩個欄位，而 <code>val[]</code> 包含了真正的 <code>array pointer</code> 和 <code>length</code> 兩個欄位。如果已知固定長度且不再變更，或者變更的使用量極低，且能保證 <code>size == val.length</code>，那不如直接宣告</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme</span> </span>&#123;</div><div class="line">    Field[] fields;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如此一來，一個 <code>Scheme</code> 物件便能減少 <span>$16 \; \text{bytes}$</span><!-- Has MathJax -->。更進一步，我們可以利用封裝 (Encapsulation) 和多型技術，再降低 <span>$8 \; \text{bytes}$</span><!-- Has MathJax -->。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme1</span> </span>&#123;</div><div class="line">    Field f1;</div><div class="line">&#125;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Scheme2</span> </span>&#123;</div><div class="line">    Field f1;</div><div class="line">    Field f2;</div><div class="line">&#125;</div><div class="line">...</div></pre></td></tr></table></figure>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>根據實際應用的數據分布，對最常用的物件進行優化。醜了點，但能解決問題。雖然並不是黑魔法，更能了解實作。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-note/diary-202101" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/01/31/note/diary-202101/" class="article-date">
@@ -105,7 +196,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/XSwEsNK.jpg" rel="gallery_ckxv6fp8z02iif4vnhfc1jiza">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/XSwEsNK.jpg" rel="gallery_ckxv7t9sx02iklkvnd29a0b38">
         <img src="https://i.imgur.com/XSwEsNK.jpg" itemprop="image">
       </a>
     
@@ -124,7 +215,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/note/diary-202101/" data-id="ckxv6fp8z02iif4vnhfc1jiza" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/note/diary-202101/" data-id="ckxv7t9sx02iklkvnd29a0b38" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/note/diary-202101/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -192,7 +283,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wQbFEfC.jpg" rel="gallery_ckxv6fpbn02lwf4vn1xhphloj">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/wQbFEfC.jpg" rel="gallery_ckxv7t9vq02m5lkvnxtsid98p">
         <img src="https://i.imgur.com/wQbFEfC.jpg" itemprop="image">
       </a>
     
@@ -211,7 +302,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-file-extension/" data-id="ckxv6fpbn02lwf4vn1xhphloj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-file-extension/" data-id="ckxv7t9vq02m5lkvnxtsid98p" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-file-extension/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -255,7 +346,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ZOytC47.jpg" rel="gallery_ckxv6fpbp02lzf4vnxpkthtov">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ZOytC47.jpg" rel="gallery_ckxv7t9vs02m8lkvn5tk637z2">
         <img src="https://i.imgur.com/ZOytC47.jpg" itemprop="image">
       </a>
     
@@ -274,7 +365,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-globl-var/" data-id="ckxv6fpbp02lzf4vnxpkthtov" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-globl-var/" data-id="ckxv7t9vs02m8lkvn5tk637z2" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-globl-var/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -320,7 +411,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/vBxRTJo.jpg" rel="gallery_ckxv6fpbs02m2f4vnjxrlmzdm">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/vBxRTJo.jpg" rel="gallery_ckxv7t9vv02malkvnprr7dny2">
         <img src="https://i.imgur.com/vBxRTJo.jpg" itemprop="image">
       </a>
     
@@ -339,7 +430,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-handover/" data-id="ckxv6fpbs02m2f4vnjxrlmzdm" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-handover/" data-id="ckxv7t9vv02malkvnprr7dny2" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-handover/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -353,133 +444,6 @@
         
           <div class="toggle-content">
             <p>交接工作就是這麼簡單，打開卻不得了，一大堆初步的 linter 問題都沒解決。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-work/meme-lang" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/01/31/work/meme-lang/" class="article-date">
-  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/DwsY43g.jpg" rel="gallery_ckxv6fpbv02m6f4vnnlrs65mw">
-        <img src="https://i.imgur.com/DwsY43g.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/01/31/work/meme-lang/">Programming Language Impostors</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-lang/" data-id="ckxv6fpbv02m6f4vnnlrs65mw" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2021/01/31/work/meme-lang/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <blockquote>
-<p>“There are many Impostors among us”</p>
-</blockquote>
-<p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-work/meme-interview-recursion" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/01/31/work/meme-interview-recursion/" class="article-date">
-  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ADKLpWX.jpg" rel="gallery_ckxv6fpby02maf4vnoifcfte5">
-        <img src="https://i.imgur.com/ADKLpWX.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/01/31/work/meme-interview-recursion/">Interview &amp; Recursion</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/" data-id="ckxv6fpby02maf4vnoifcfte5" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>
 
           </div>
           <div class="toggle-input article-more-link"><a>Read More +</a></div>
@@ -509,7 +473,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Rncwacg.jpg" rel="gallery_ckxv6fpc002mef4vnas12e3f8">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/Rncwacg.jpg" rel="gallery_ckxv7t9vz02mflkvnw9x065do">
         <img src="https://i.imgur.com/Rncwacg.jpg" itemprop="image">
       </a>
     
@@ -528,7 +492,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-job-build/" data-id="ckxv6fpc002mef4vnas12e3f8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-job-build/" data-id="ckxv7t9vz02mflkvnw9x065do" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-job-build/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -559,6 +523,133 @@
 
 
   
+    <article id="post-work/meme-interview-recursion" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/01/31/work/meme-interview-recursion/" class="article-date">
+  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+<div class="article-gallery">
+  <div class="article-gallery-photos">
+    
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/ADKLpWX.jpg" rel="gallery_ckxv7t9w102milkvnjd8igbtf">
+        <img src="https://i.imgur.com/ADKLpWX.jpg" itemprop="image">
+      </a>
+    
+  </div>
+</div>
+
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/01/31/work/meme-interview-recursion/">Interview &amp; Recursion</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/" data-id="ckxv7t9w102milkvnjd8igbtf" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/01/31/work/meme-interview-recursion/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <p>在面試過程中，不管是筆試或者白板題上，發現新一代的人對於遞迴的理解並不深，這也是一堆效能崩壞的問題頻繁出現，不得不問的問題之一。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-work/meme-lang" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/01/31/work/meme-lang/" class="article-date">
+  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+<div class="article-gallery">
+  <div class="article-gallery-photos">
+    
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/DwsY43g.jpg" rel="gallery_ckxv7t9w402mnlkvn0cw7el02">
+        <img src="https://i.imgur.com/DwsY43g.jpg" itemprop="image">
+      </a>
+    
+  </div>
+</div>
+
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/01/31/work/meme-lang/">Programming Language Impostors</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-lang/" data-id="ckxv7t9w402mnlkvn0cw7el02" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2021/01/31/work/meme-lang/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <blockquote>
+<p>“There are many Impostors among us”</p>
+</blockquote>
+<p>收到履歷時，看到擅長的程式語言逐漸地出現了一些 CSS、HTML、Markdown、YAML，有時候微軟文書家族也會出現。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-work/meme-machine-learning-newbie" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/01/31/work/meme-machine-learning-newbie/" class="article-date">
@@ -575,7 +666,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/dnZgtba.jpg" rel="gallery_ckxv6fpc302mif4vnkh48j4gx">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/dnZgtba.jpg" rel="gallery_ckxv7t9w702mplkvn2goflytg">
         <img src="https://i.imgur.com/dnZgtba.jpg" itemprop="image">
       </a>
     
@@ -594,7 +685,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/" data-id="ckxv6fpc302mif4vnkh48j4gx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/" data-id="ckxv7t9w702mplkvn2goflytg" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-machine-learning-newbie/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -609,68 +700,6 @@
           <div class="toggle-content">
             <p>最近面一些 python 為主要語言的 ML 高手，也許知道 stackoverflow，卻不知道 stack overflow，所以開始懷疑 CS 的專業已經有大幅度的概念調整，不了解底層的確可以做事，但也要有人替你打下手。</p>
 <p>然後，得知這一年的台灣大學資訊工程學系，大一課程不學 C，直接 python，越來越接近西方的美式教育。</p>
-
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-work/meme-parallel-gc" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/01/31/work/meme-parallel-gc/" class="article-date">
-  <time datetime="2021-01-31T05:00:00.000Z" itemprop="datePublished">2021-01-31</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工作應用/">工作應用</a>/<a class="article-category-link" href="/categories/工作應用/Meme/">Meme</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-<div class="article-gallery">
-  <div class="article-gallery-photos">
-    
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/IJafmdW.jpg" rel="gallery_ckxv6fpc702mmf4vnpdl8bfni">
-        <img src="https://i.imgur.com/IJafmdW.jpg" itemprop="image">
-      </a>
-    
-  </div>
-</div>
-
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/01/31/work/meme-parallel-gc/">Parallel &amp; Garbage Collection</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/" data-id="ckxv6fpc702mmf4vnpdl8bfni" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2021/01/31/work/meme-parallel-gc/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Meme/">Meme</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <p>有時候發現 GC 過度頻繁，導致 GC 暫停 JVM 時間過長，這些問題不是開平行就能解決，有時候真的是垃圾太多，得清理一下。甚至有些項目是為了變成可平行才造成效能嚴重退化。</p>
 
           </div>
           <div class="toggle-input article-more-link"><a>Read More +</a></div>
@@ -700,7 +729,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="https://i.imgur.com/xnepHe7.jpg" rel="gallery_ckxv6fpca02mpf4vn23nh07kh">
+      <a class="article-gallery-img fancybox" href="https://i.imgur.com/xnepHe7.jpg" rel="gallery_ckxv7t9wa02mtlkvnyozthylm">
         <img src="https://i.imgur.com/xnepHe7.jpg" itemprop="image">
       </a>
     
@@ -719,7 +748,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/" data-id="ckxv6fpca02mpf4vn23nh07kh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/" data-id="ckxv7t9wa02mtlkvnyozthylm" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2021/01/31/work/meme-parallel-unstable/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -761,7 +790,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">55</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">56</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -771,6 +800,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2022/01/01/note/diary-20220101/">
+              
+                <i class="icon-file-o"></i> 
+              
+            二八 ‧ 年尾</a>
+          </li>
         
           <li>
             <a class="text" href="/2022/01/01/note/clove-letter/">
@@ -842,14 +879,6 @@
                 <i class="icon-file-o"></i> 
               
             Company Ghost Story 公司鬼故事 14</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/09/12/work/appreciation-letter/">
-              
-                <i class="icon-file-o"></i> 
-              
-            Shiny People 感謝</a>
           </li>
         
       </ul>
@@ -940,6 +969,23 @@
 
 <script src="/js/script.js"></script>
 
-  </div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  </div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
 </body>
 </html>
