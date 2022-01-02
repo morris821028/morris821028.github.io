@@ -89,6 +89,72 @@
           
           <section id="main">
   
+    <article id="post-parallel-opt" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/31/parallel-opt/" class="article-date">
+  <time datetime="2016-07-31T12:15:17.000Z" itemprop="datePublished">2016-07-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/31/parallel-opt/">平行優化技巧－基礎篇</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2016/07/31/parallel-opt/" data-id="ckxx8t23b00aesovnvwir3v7e" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2016/07/31/parallel-opt/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CUDA/">CUDA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenCL/">OpenCL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenMP/">OpenMP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/優化/">優化</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <p>在撰寫平行程式時，仍會使用到編譯器的技巧，大幅度地減少指令個數，有時候這些優化甚至會把寫壞的分享記憶體 (shared memory) 存取給移除掉，如果能充分理解這些不好的設計，就不會造成實驗上發生的謬誤，還以為自己跑得很慢，平行根本沒加速到，這樣草草交出的報告，助教也收到煩了 (這裡不討論實驗方法本身就是錯的情況)。</p>
+<h2 id="內存篇"><a href="#內存篇" class="headerlink" title="內存篇"></a>內存篇</h2><p>首先，來談談 cache line 是什麼吧？現在的機器都有著記憶體階層架構 (memory hierarchy)，按照大小排序，其中最小的就是 cache line，接下來才是 L1, L2, L3 cache，最後是最大的主記憶體 (main memory)，但某些超級電腦的設計就不是如此，而有些輔助處理器 (如 intel xeon phi) 缺少 L3 cache，而像 GPU 則沒有 cache 設計，但有提供有 bank 存取資料。這些都跟處理問題的類型有關，才導致有那些特殊設計。</p>
+<h3 id="Multicore"><a href="#Multicore" class="headerlink" title="Multicore"></a>Multicore</h3><h4 id="Cache-Size"><a href="#Cache-Size" class="headerlink" title="Cache Size"></a>Cache Size</h4><p>為什麼 cache line 很重要？因為存取速度最快，但能存放的資料也很小，通常是 64 bytes 或者 32 bytes。在快取設計中，一次把位址連續的資料一起搬靠近 CPU，這樣簡單的設計，導致我們在撰寫程式時，若能將結構定義得好便能讓使用率高，這非常仰賴編成者對於系統架構的了解。例如色彩 RGB，可以宣告成 <code>struct RGB {flaot R, G, B};</code> 或者 <code>float R[], G[], B[]</code>，如果 RGB 三者會共同計算，例如色彩轉換通常是三者交互作用的表達式，因此前者構造方式較為妥當。</p>
+<blockquote>
+<p>例題：批改娘 10087. Sparse Matrix Multiplication (OpenMP) </p>
+</blockquote>
+<h4 id="Cache-Hierarchy"><a href="#Cache-Hierarchy" class="headerlink" title="Cache Hierarchy"></a>Cache Hierarchy</h4><p>然而，有些情況充分使用反而不好，沒錯，就是平行程式，通常平行程式不外乎會有分享記憶體，這時候充分利用反而是一件壞事，因為我們需要讓數個核心 (core) 同時運行，因為每一個 core 都有各自的 cache line，若在不同 core 上同時修改相近的位址時，很容易產生 dirty bit，這導致要掉回 L3 cache (同一個 CPU，但分享在不同的 core 上) 進行同步。通常編譯器能做到 independent 分析，那麼就會利用暫存器配置來避開這問題，如果不行，就要靠自己手動來調整。</p>
+<blockquote>
+<p>例題：批改娘 10085. Parallel Count (debug)</p>
+</blockquote>
+<h3 id="GPU"><a href="#GPU" class="headerlink" title="GPU"></a>GPU</h3><p>GPU 的記憶體設計分成四種，經常分成 on-chip 和 off-chip，差別在於是不是內建焊死，因此 on-chip 內建記憶體有比較好的效能，而 off-chip 則是外接記憶體，存取速度相對於 on-chip 慢個三倍以上。特別注意，有好就有壞，提供越快存取速度的記憶體能存放的容量越小，因此非常不容易配置。</p>
+<p>在編寫 CUDA 或者是 OpenCL 時，提供 shared memory 的設計，如果請求數量過大，將會自動轉入 global memory，這一點沒有明確告知，只有在執行時期才會發現突然變慢。若採用存取速度較快的寫法，有時候不見得比較快，</p>
+<blockquote>
+<p>例題：批改娘 10101. Fast Game of Life (CUDA) </p>
+</blockquote>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-note/diary-201606-2" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/06/30/note/diary-201606-2/" class="article-date">
@@ -105,7 +171,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/iMNzqYL.jpg" rel="gallery_ckxwy6spc02gqesvn5pni2638">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/iMNzqYL.jpg" rel="gallery_ckxx8t2zt02gvsovn0imnz3q8">
         <img src="http://i.imgur.com/iMNzqYL.jpg" itemprop="image">
       </a>
     
@@ -124,7 +190,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/30/note/diary-201606-2/" data-id="ckxwy6spc02gqesvn5pni2638" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/30/note/diary-201606-2/" data-id="ckxx8t2zt02gvsovn0imnz3q8" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/30/note/diary-201606-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -225,7 +291,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/eHvfV1i.jpg" rel="gallery_ckxwy6spt02heesvnivhcs080">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/eHvfV1i.jpg" rel="gallery_ckxx8t2zv02gysovntrokl9aw">
         <img src="http://i.imgur.com/eHvfV1i.jpg" itemprop="image">
       </a>
     
@@ -244,7 +310,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/29/note/diary-201606/" data-id="ckxwy6spt02heesvnivhcs080" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/29/note/diary-201606/" data-id="ckxx8t2zv02gysovntrokl9aw" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/29/note/diary-201606/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -334,7 +400,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10116/" data-id="ckxwy6rru0075esvnh10bm53m" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10116/" data-id="ckxx8t21s006msovngk5yck1b" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10116/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -470,7 +536,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10113/" data-id="ckxwy6rrn006oesvni8m5790q" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10113/" data-id="ckxx8t21r006jsovnnr66nyl9" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10113/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -532,7 +598,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10112/" data-id="ckxwy6rrl006iesvneap509hh" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10112/" data-id="ckxx8t21q006fsovnz3zk3rj0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10112/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -593,7 +659,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10111/" data-id="ckxwy6rri006besvnsu7tpjjx" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10111/" data-id="ckxx8t21p006dsovn2hbbevw6" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10111/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -656,7 +722,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10110/" data-id="ckxwy6rrg0065esvnaajgjswn" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10110/" data-id="ckxx8t21n0069sovnwgc4z8x0" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10110/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -747,7 +813,7 @@ dp[x][y] = \left\{\begin{matrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10109/" data-id="ckxwy6rrj006eesvncdur5dep" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10109/" data-id="ckxx8t21n0066sovn8d29f7xi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10109/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -812,7 +878,7 @@ dp[x][y] = \left\{\begin{matrix}
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10108/" data-id="ckxwy6rre0061esvns5wk4t5q" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2016/06/28/jg-10108/" data-id="ckxx8t21l0062sovndte0lnwi" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2016/06/28/jg-10108/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -846,169 +912,6 @@ dp[x][y] = \left\{\begin{matrix}
 
 
   
-    <article id="post-jg-10107" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/06/28/jg-10107/" class="article-date">
-  <time datetime="2016-06-28T02:33:27.000Z" itemprop="datePublished">2016-06-28</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/平行程式/">平行程式</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/06/28/jg-10107/">批改娘 10107. Sparse Matrix Multiplication (CUDA)</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2016/06/28/jg-10107/" data-id="ckxwy6rrb005uesvnvu9o62e2" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2016/06/28/jg-10107/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CUDA/">CUDA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/批改娘/">批改娘</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="題目描述"><a href="#題目描述" class="headerlink" title="題目描述"></a>題目描述</h2><p>稀疏矩陣為大部份元素皆為零的矩陣，在科學與工程領域中求解線性模型時經常出現大型的稀疏矩陣。現在給予最常見的 Coordinate Format (簡稱 COO 格式)，請問兩個矩陣相乘結果為何。</p>
-<p>給予矩陣 $A<em>{n, m}$ 和 $B</em>{m, r}$，請計算稀疏矩陣相乘。</p>
-<span>$$A_{4,4} = \begin{bmatrix}
-0 &amp; 0 &amp; 0 &amp; 0 \\
-5 &amp; 8 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 3 &amp; 0 \\
-0 &amp; 6 &amp; 0 &amp; 0 \\
-\end{bmatrix}, \qquad
-B_{4,4} = \begin{bmatrix}
-0 &amp; 0 &amp; 1 &amp; 3 \\
-0 &amp; 5 &amp; 2 &amp; 0 \\
-3 &amp; 5 &amp; 0 &amp; 0 \\
-0 &amp; 2 &amp; 0 &amp; 0 \\
-\end{bmatrix}$$</span><!-- Has MathJax -->
-<p>根據 COO 格式，分別轉換矩陣 $A$ 和 $B$ 的所有非零元素，如下表所示</p>
-<h3 id="COO-of-Matrix-A"><a href="#COO-of-Matrix-A" class="headerlink" title="COO of Matrix $A$"></a>COO of Matrix $A$</h3><table>
-<thead>
-<tr>
-<th><code>row_index</code></th>
-<th><code>col_index</code></th>
-<th><code>value</code></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>0</td>
-<td>5</td>
-</tr>
-<tr>
-<td>1</td>
-<td>1</td>
-<td>8</td>
-</tr>
-<tr>
-<td>2</td>
-<td>2</td>
-<td>3</td>
-</tr>
-<tr>
-<td>3</td>
-<td>1</td>
-<td>6</td>
-</tr>
-</tbody>
-</table>
-<h3 id="COO-of-Matrix-B"><a href="#COO-of-Matrix-B" class="headerlink" title="COO of Matrix $B$"></a>COO of Matrix $B$</h3><table>
-<thead>
-<tr>
-<th><code>row_index</code></th>
-<th><code>col_index</code></th>
-<th><code>value</code></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>0</td>
-<td>2</td>
-<td>1</td>
-</tr>
-<tr>
-<td>0</td>
-<td>3</td>
-<td>3</td>
-</tr>
-<tr>
-<td>1</td>
-<td>1</td>
-<td>5</td>
-</tr>
-<tr>
-<td>1</td>
-<td>2</td>
-<td>2</td>
-</tr>
-<tr>
-<td>2</td>
-<td>0</td>
-<td>3</td>
-</tr>
-<tr>
-<td>2</td>
-<td>1</td>
-<td>5</td>
-</tr>
-<tr>
-<td>3</td>
-<td>1</td>
-<td>2</td>
-</tr>
-</tbody>
-</table>
-<h2 id="輸入格式"><a href="#輸入格式" class="headerlink" title="輸入格式"></a>輸入格式</h2><p>測資只有一組，第一行會有三個整數 $N, \; M, \; R$，分別表示矩陣 $A, \; B$ 的大小。下一行會有兩個整數 $N_A, \; N_B$，接下來會有 $N_A$ 行，每一行表示矩陣 $A$ 的 COO 格式，隨後會有 $N_B$ 行，每一行表示矩陣 $B$ 的 COO 格式。</p>
-<ul>
-<li>$0 &lt; N, \; M, \; R \le 10^6$</li>
-<li>$0 &lt; N_A, \; N_B \le 10^6$</li>
-</ul>
-<p>給予 COO 格式時，先按照 <code>row_index</code> 由小到大，相同情況由 <code>col_index</code> 由小到大的方式給定，保證不會有重複，每一個元素值 $v$ 介於 $1$ 到 $2^{31}-1$ 之間。</p>
-<h2 id="輸出格式"><a href="#輸出格式" class="headerlink" title="輸出格式"></a>輸出格式</h2><p>輸出 <span>$C_{n, r} = A_{n, m} \times B_{m, r}$</span><!-- Has MathJax --> 的雜湊值。</p>
-<p>定義 <span>$\mathit{hash}(C_{n, r}) = \sum\nolimits_{e_{i, j} \in C \text{ and } e_{i, j} \neq 0} \mathit{encrypt}((i+1)*(j+1), e_{i, j})$</span><!-- Has MathJax -->，實際運作的 <strong>流程</strong> 可參考以下作法，當然你沒辦法宣告 $N \times M$ 的空間使用：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1024</span></div><div class="line"><span class="keyword">uint32_t</span> A[MAXN][MAXN], B[MAXN][MAXN];</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> x, y, v;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R);</div><div class="line">    <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;x, &amp;y, &amp;v), A[x][y] = v;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;x, &amp;y, &amp;v), B[x][y] = v;</div><div class="line">    </div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; R; j++) &#123;</div><div class="line">            <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; M; k++)</div><div class="line">                sum += A[i][k] * B[k][j];</div><div class="line">            <span class="keyword">if</span> (sum)</div><div class="line">                hash += encrypt((i+<span class="number">1</span>)*(j+<span class="number">1</span>), sum);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="範例輸入"><a href="#範例輸入" class="headerlink" title="範例輸入"></a>範例輸入</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">4 4 4</div><div class="line">4 7</div><div class="line"></div><div class="line">1 0 5</div><div class="line">1 1 8</div><div class="line">2 2 3</div><div class="line">3 1 6</div><div class="line"></div><div class="line">0 2 1</div><div class="line">0 3 3</div><div class="line">1 1 5</div><div class="line">1 2 2</div><div class="line">2 0 3</div><div class="line">2 1 5</div><div class="line">3 1 2</div></pre></td></tr></table></figure>
-<h2 id="範例輸出"><a href="#範例輸出" class="headerlink" title="範例輸出"></a>範例輸出</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">13093438</div></pre></td></tr></table></figure>
-<h2 id="範例解釋"><a href="#範例解釋" class="headerlink" title="範例解釋"></a>範例解釋</h2><span>$$A_{n, m} \times B_{m, r} = C_{4,4}=\begin{bmatrix}
-0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 40 &amp; 21 &amp; 15 \\
-9 &amp; 15 &amp; 0 &amp; 0 \\
-0 &amp; 30 &amp; 12 &amp; 0 \\
-\end{bmatrix}$$</span><!-- Has MathJax -->
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><h3 id="轉置版本"><a href="#轉置版本" class="headerlink" title="轉置版本"></a>轉置版本</h3><p>需要將矩陣 $B$ 轉置後排序，整理成 COO 格式，宣告足夠多的 thread，每一個 thread 分配一個列所有的值，接著使用類似合併排序的方式將答案統計出來。這個版本的效率不算高，因為太多的 branch 以及資料部分上導致 load balance 非常不好，再者是一堆 global memory access。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1048576</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (MAXN&lt;&lt;2)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> CheckErr(status) &#123; gpuAssert((status), __FILE__, __LINE__); &#125;</span></div><div class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">gpuAssert</span><span class="params">(cudaError_t code, <span class="keyword">const</span> <span class="keyword">char</span> *file, <span class="keyword">int</span> line, <span class="keyword">int</span> <span class="built_in">abort</span>=<span class="literal">true</span>)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (code != cudaSuccess) &#123;</div><div class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,<span class="string">"GPUassert: %s %s %d\n"</span>, cudaGetErrorString(code), file, line);</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">abort</span>) <span class="built_in">exit</span>(code);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">__<span class="function">device__ uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line">__<span class="function">device__ uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i[MAXL], j[MAXL];</div><div class="line">    <span class="keyword">uint32_t</span> v[MAXL];</div><div class="line">&#125; ELE;</div><div class="line">ELE LA, LB, LT;</div><div class="line"><span class="keyword">int</span> D[MAXL];</div><div class="line">__<span class="function">global__ <span class="keyword">void</span> <span class="title">SpMM</span><span class="params">(ELE *LA, ELE *LB, ELE *LC, <span class="keyword">int</span> aoff[], <span class="keyword">int</span> boff[], <span class="keyword">int</span> mb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> i = blockIdx.x * blockDim.x + threadIdx.x;</div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; mb; j++) &#123;</div><div class="line">        <span class="keyword">int</span> idx1 = aoff[i], idx2 = boff[j];</div><div class="line">        <span class="keyword">int</span> top1 = aoff[i+<span class="number">1</span>], top2 = boff[j+<span class="number">1</span>];</div><div class="line">        <span class="keyword">uint32_t</span> sum = <span class="number">0</span>;</div><div class="line">        <span class="keyword">int</span> r = LA-&gt;i[idx1], c = LB-&gt;i[idx2];</div><div class="line">        <span class="keyword">while</span> (idx1 &lt; top1 &amp;&amp; idx2 &lt; top2) &#123;</div><div class="line">            <span class="keyword">if</span> (LA-&gt;j[idx1] &lt; LB-&gt;j[idx2])</div><div class="line">                idx1++;</div><div class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (LA-&gt;j[idx1] &gt; LB-&gt;j[idx2])</div><div class="line">                idx2++;					</div><div class="line">            <span class="keyword">else</span></div><div class="line">                sum += LA-&gt;v[idx1] * LB-&gt;v[idx2], idx1++, idx2++;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">if</span> (sum) &#123;</div><div class="line">            hash += encrypt((r+<span class="number">1</span>)*(c+<span class="number">1</span>), sum);</div><div class="line">        &#125;</div><div class="line">    &#125;	</div><div class="line">    LC-&gt;v[i] = hash;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE &amp;LA, <span class="keyword">int</span> na, ELE &amp;LB, <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> ma = <span class="number">0</span>, mb = <span class="number">0</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">int</span> aoff[MAXN], boff[MAXN];</div><div class="line"></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LA.i[i] != p)</div><div class="line">            aoff[ma++] = i, p = LA.i[i];</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; nb; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (LB.i[i] != p)</div><div class="line">            boff[mb++] = i, p = LB.i[i];</div><div class="line">    &#125;</div><div class="line">    aoff[ma] = na, boff[mb] = nb;</div><div class="line"></div><div class="line">    ELE *cuMA, *cuMB, *cuMC;</div><div class="line">    <span class="keyword">int</span> *cuAoff, *cuBoff;</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuMA, <span class="keyword">sizeof</span>(ELE));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuMB, <span class="keyword">sizeof</span>(ELE));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuMC, <span class="keyword">sizeof</span>(ELE));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuAoff, (ma+<span class="number">1</span>)*<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuBoff, (mb+<span class="number">1</span>)*<span class="keyword">sizeof</span>(<span class="keyword">int</span>));</div><div class="line"></div><div class="line">    cudaMemcpy(cuMA, &amp;LA, <span class="keyword">sizeof</span>(ELE), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuMB, &amp;LB, <span class="keyword">sizeof</span>(ELE), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuAoff, aoff, <span class="keyword">sizeof</span>(<span class="keyword">int</span>)*(ma+<span class="number">1</span>), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuBoff, boff, <span class="keyword">sizeof</span>(<span class="keyword">int</span>)*(mb+<span class="number">1</span>), cudaMemcpyHostToDevice);</div><div class="line"></div><div class="line">    <span class="keyword">int</span> localSz = <span class="number">1</span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">1024</span>; i++)	&#123;</div><div class="line">        <span class="keyword">if</span> (ma%i == <span class="number">0</span>) &#123;</div><div class="line">            localSz = i;</div><div class="line">        &#125;</div><div class="line">    &#125;	</div><div class="line">    <span class="function">dim3 <span class="title">cuBlock</span><span class="params">(localSz)</span></span>;</div><div class="line">    <span class="function">dim3 <span class="title">cuGrid</span><span class="params">(ma/localSz)</span></span>;</div><div class="line">    SpMM&lt;&lt;&lt;cuGrid, cuBlock&gt;&gt;&gt;(cuMA, cuMB, cuMC, cuAoff, cuBoff, mb);</div><div class="line">    CheckErr(cudaGetLastError());</div><div class="line">    cudaMemcpy(&amp;LA, cuMC, <span class="keyword">sizeof</span>(ELE), cudaMemcpyDeviceToHost);</div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ma; i++)</div><div class="line">        hash += LA.v[i];</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line">    cudaFree(cuMA);</div><div class="line">    cudaFree(cuMB);</div><div class="line">    cudaFree(cuMC);</div><div class="line"></div><div class="line">    cudaFree(cuAoff);</div><div class="line">    cudaFree(cuBoff);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (LT.i[a] != LT.i[b])</div><div class="line">        <span class="keyword">return</span> LT.i[a] &lt; LT.i[b];</div><div class="line">    <span class="keyword">return</span> LT.j[a] &lt; LT.j[b];</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;N, &amp;M, &amp;R) == <span class="number">3</span>) &#123;</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d %d"</span>, &amp;nA, &amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LA.i[i], &amp;LA.j[i], &amp;LA.v[i]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%d %d %d"</span>, &amp;LT.j[i], &amp;LT.i[i], &amp;LT.v[i]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            D[i] = i;</div><div class="line">        sort(D, D+nB, cmp);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            LB.i[i] = LT.i[D[i]], LB.j[i] = LT.j[D[i]], LB.v[i] = LT.v[D[i]];</div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h3 id="額外空間"><a href="#額外空間" class="headerlink" title="額外空間"></a>額外空間</h3><p>每一個 thread 計算 <span>$C_{i, [L, R]}$</span><!-- Has MathJax -->，然後用額外的空間進行 mapping，並且把這個空間宣告在 private memory，也就是 register 上來加速。這一個做法比上述作法還快個三到四倍。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdint.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;omp.h&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXN 1000005</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXINT 256</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXBLK 1024</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXL (MAXN)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> CheckErr(status) &#123; gpuAssert((status), __FILE__, __LINE__); &#125;</span></div><div class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">gpuAssert</span><span class="params">(cudaError_t code, <span class="keyword">const</span> <span class="keyword">char</span> *file, <span class="keyword">int</span> line, <span class="keyword">int</span> <span class="built_in">abort</span>=<span class="literal">true</span>)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (code != cudaSuccess) &#123;</div><div class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>,<span class="string">"GPUassert: %s %s %d\n"</span>, cudaGetErrorString(code), file, line);</div><div class="line">        <span class="keyword">if</span> (<span class="built_in">abort</span>) <span class="built_in">exit</span>(code);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ELE</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> i[MAXL], j[MAXL];</div><div class="line">    <span class="keyword">uint32_t</span> v[MAXL];</div><div class="line">&#125; ELE;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">AUX</span> &#123;</span></div><div class="line">    <span class="keyword">int</span> aoff[MAXL], boff[MAXL], bmap[MAXL];</div><div class="line">    <span class="keyword">int</span> ma, mb, na, nb;</div><div class="line">&#125; AUX;</div><div class="line">ELE LA, LB;</div><div class="line">AUX AU;</div><div class="line"><span class="keyword">uint32_t</span> H[MAXL];</div><div class="line">__<span class="function">device__ <span class="keyword">inline</span> uint32_t <span class="title">rotate_left</span><span class="params">(<span class="keyword">uint32_t</span> x, <span class="keyword">uint32_t</span> n)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span>  (x &lt;&lt; n) | (x &gt;&gt; (<span class="number">32</span>-n));</div><div class="line">&#125;</div><div class="line">__<span class="function">device__ <span class="keyword">inline</span> uint32_t <span class="title">encrypt</span><span class="params">(<span class="keyword">uint32_t</span> m, <span class="keyword">uint32_t</span> key)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (rotate_left(m, key&amp;<span class="number">31</span>) + key)^key;</div><div class="line">&#125;</div><div class="line">__<span class="function">global__ <span class="keyword">void</span> <span class="title">SpMM</span><span class="params">(ELE *LA, ELE *LB, <span class="keyword">uint32_t</span> *H, AUX *AU, <span class="keyword">int</span> T)</span> </span>&#123;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> INTSZ MAXINT</span></div><div class="line">    __shared__ <span class="keyword">uint32_t</span> buff[MAXBLK];</div><div class="line">    <span class="keyword">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;</div><div class="line">    <span class="keyword">int</span> x = idx / T, y = idx % T;</div><div class="line">    <span class="keyword">int</span> L = y * INTSZ;</div><div class="line">    <span class="keyword">int</span> R = L + INTSZ;</div><div class="line">    <span class="keyword">uint32_t</span> tmp[INTSZ];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; INTSZ; i++)</div><div class="line">        tmp[i] = <span class="number">0</span>;</div><div class="line">    <span class="keyword">int</span> lx = AU-&gt;aoff[x], rx = AU-&gt;aoff[x+<span class="number">1</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = lx; i &lt; rx; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (AU-&gt;bmap[LA-&gt;j[i]] != <span class="number">-1</span>) &#123;</div><div class="line">            <span class="keyword">int</span> k = AU-&gt;bmap[LA-&gt;j[i]];</div><div class="line">            <span class="keyword">uint32_t</span> val = LA-&gt;v[i];</div><div class="line">            <span class="keyword">int</span> ly = AU-&gt;boff[k], ry = AU-&gt;boff[k+<span class="number">1</span>];</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = ly; j &lt; ry; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (L &lt;= LB-&gt;j[j] &amp;&amp; LB-&gt;j[j] &lt; R)</div><div class="line">                    tmp[LB-&gt;j[j] - L] += val * LB-&gt;v[j];</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line">    <span class="keyword">uint32_t</span> X = LA-&gt;i[AU-&gt;aoff[x]];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; INTSZ; i++) &#123;</div><div class="line">        <span class="keyword">if</span> (tmp[i])</div><div class="line">            hash += encrypt((X+<span class="number">1</span>)*(i+L+<span class="number">1</span>), tmp[i]);</div><div class="line">    &#125;</div><div class="line">    buff[threadIdx.x] = hash;</div><div class="line">    __syncthreads();</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = blockDim.x&gt;&gt;<span class="number">1</span>; i; i &gt;&gt;= <span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">if</span> (threadIdx.x &lt; i)</div><div class="line">            buff[threadIdx.x] += buff[threadIdx.x + i];</div><div class="line">        __syncthreads();</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (threadIdx.x == <span class="number">0</span>)</div><div class="line">        H[blockIdx.x] = buff[<span class="number">0</span>];</div><div class="line"><span class="meta">#<span class="meta-keyword">undef</span> INTSZ</span></div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">SpMV</span><span class="params">(<span class="keyword">int</span> N, <span class="keyword">int</span> M, <span class="keyword">int</span> R, ELE &amp;LA, <span class="keyword">int</span> na, ELE &amp;LB, <span class="keyword">int</span> nb)</span> </span>&#123;</div><div class="line">    AU.ma = <span class="number">0</span>, AU.mb = <span class="number">0</span>;</div><div class="line">    AU.na = na, AU.nb = nb;</div><div class="line">    <span class="built_in">memset</span>(AU.bmap, <span class="number">-1</span>, <span class="keyword">sizeof</span>(AU.bmap));</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp parallel sections</span></div><div class="line">    &#123;</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp section </span></div><div class="line">        &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; na; i++) &#123;</div><div class="line">                <span class="keyword">if</span> (LA.i[i] != p)</div><div class="line">                    AU.aoff[AU.ma++] = i, p = LA.i[i];</div><div class="line">            &#125;</div><div class="line">            AU.aoff[AU.ma] = na;</div><div class="line">        &#125;</div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp section</span></div><div class="line">        &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, p = <span class="number">-1</span>; i &lt; nb; i++) &#123;</div><div class="line">                <span class="keyword">if</span> (LB.i[i] != p) &#123;</div><div class="line">                    AU.bmap[LB.i[i]] = AU.mb;</div><div class="line">                    AU.boff[AU.mb++] = i, p = LB.i[i];</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            AU.boff[AU.mb] = nb;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">uint32_t</span> *cuHH;</div><div class="line">    ELE *cuMA, *cuMB;</div><div class="line">    AUX *cuAU;</div><div class="line"></div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuHH, <span class="keyword">sizeof</span>(H));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuMA, <span class="keyword">sizeof</span>(ELE));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuMB, <span class="keyword">sizeof</span>(ELE));</div><div class="line">    cudaMalloc((<span class="keyword">void</span> **) &amp;cuAU, <span class="keyword">sizeof</span>(AUX));</div><div class="line"></div><div class="line">    cudaMemcpy(cuHH, &amp;H, <span class="keyword">sizeof</span>(H), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuMA, &amp;LA, <span class="keyword">sizeof</span>(ELE), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuMB, &amp;LB, <span class="keyword">sizeof</span>(ELE), cudaMemcpyHostToDevice);</div><div class="line">    cudaMemcpy(cuAU, &amp;AU, <span class="keyword">sizeof</span>(AUX), cudaMemcpyHostToDevice);</div><div class="line"></div><div class="line">    <span class="keyword">int</span> roundR = (R + MAXINT<span class="number">-1</span>) / MAXINT * MAXINT;</div><div class="line">    <span class="keyword">int</span> TOT = N * roundR;</div><div class="line">    <span class="keyword">while</span> (TOT / MAXINT % MAXBLK)</div><div class="line">        TOT ++;</div><div class="line">    <span class="function">dim3 <span class="title">cuBlock</span><span class="params">(MAXBLK)</span></span>;	<span class="comment">// MAXTHREAD</span></div><div class="line">    <span class="function">dim3 <span class="title">cuGrid</span><span class="params">(TOT / MAXINT / MAXBLK)</span></span>;</div><div class="line">    <span class="comment">// printf("%d\n", TOT/MAXINT);</span></div><div class="line">    SpMM&lt;&lt;&lt;cuGrid, cuBlock&gt;&gt;&gt;(cuMA, cuMB, cuHH, cuAU, roundR / MAXINT);</div><div class="line">    CheckErr(cudaGetLastError());</div><div class="line">    cudaMemcpy(H, cuHH, <span class="keyword">sizeof</span>(H), cudaMemcpyDeviceToHost);</div><div class="line">    <span class="keyword">uint32_t</span> hash = <span class="number">0</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _OPENMP</span></div><div class="line">    omp_set_num_threads(<span class="number">4</span>);</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">pragma</span> omp parallel for reduction(+: hash)</span></div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; TOT/MAXINT/MAXBLK; i++)</div><div class="line">        hash += H[i];</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"%u\n"</span>, hash);</div><div class="line"></div><div class="line">    cudaFree(cuMA);</div><div class="line">    cudaFree(cuMB);</div><div class="line">    cudaFree(cuHH);</div><div class="line">    cudaFree(cuAU);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">readchar</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">const</span> <span class="keyword">int</span> N = <span class="number">1048576</span>;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">char</span> buf[N];</div><div class="line">    <span class="keyword">static</span> <span class="keyword">char</span> *p = buf, *end = buf;</div><div class="line">    <span class="keyword">if</span>(p == end) &#123;</div><div class="line">        <span class="keyword">if</span>((end = buf + fread(buf, <span class="number">1</span>, N, <span class="built_in">stdin</span>)) == buf) <span class="keyword">return</span> EOF;</div><div class="line">        p = buf;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> *p++;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">ReadInt</span><span class="params">(<span class="keyword">int</span> *x)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">char</span> c, neg;</div><div class="line">    <span class="keyword">while</span>((c = readchar()) &lt; <span class="string">'-'</span>)    &#123;<span class="keyword">if</span>(c == EOF) <span class="keyword">return</span> <span class="number">0</span>;&#125;</div><div class="line">    neg = (c == <span class="string">'-'</span>) ? <span class="number">-1</span> : <span class="number">1</span>;</div><div class="line">    *x = (neg == <span class="number">1</span>) ? c-<span class="string">'0'</span> : <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span>((c = readchar()) &gt;= <span class="string">'0'</span>)</div><div class="line">        *x = (*x &lt;&lt; <span class="number">3</span>) + (*x &lt;&lt; <span class="number">1</span>) + c-<span class="string">'0'</span>;</div><div class="line">    *x *= neg;</div><div class="line">    <span class="keyword">return</span> <span class="number">1</span>;</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">inline</span> uint32_t <span class="title">ReadUint</span><span class="params">(<span class="keyword">uint32_t</span> *x)</span> </span>&#123;</div><div class="line">    <span class="keyword">static</span> <span class="keyword">char</span> c, neg;</div><div class="line">    <span class="keyword">while</span>((c = readchar()) &lt; <span class="string">'-'</span>)    &#123;<span class="keyword">if</span>(c == EOF) <span class="keyword">return</span> <span class="number">0</span>;&#125;</div><div class="line">    neg = (c == <span class="string">'-'</span>) ? <span class="number">-1</span> : <span class="number">1</span>;</div><div class="line">    *x = (neg == <span class="number">1</span>) ? c-<span class="string">'0'</span> : <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span>((c = readchar()) &gt;= <span class="string">'0'</span>)</div><div class="line">        *x = (*x &lt;&lt; <span class="number">3</span>) + (*x &lt;&lt; <span class="number">1</span>) + c-<span class="string">'0'</span>;</div><div class="line">    *x *= neg;</div><div class="line">    <span class="keyword">return</span> <span class="number">1</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> N, M, R, nA, nB;</div><div class="line"><span class="comment">//	scanf("%d %d %d", &amp;N, &amp;M, &amp;R);</span></div><div class="line"><span class="comment">//	scanf("%d %d", &amp;nA, &amp;nB);</span></div><div class="line">    ReadInt(&amp;N), ReadInt(&amp;M), ReadInt(&amp;R);</div><div class="line">    ReadInt(&amp;nA), ReadInt(&amp;nB);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nA; i++)</div><div class="line">            ReadInt(&amp;LA.i[i]), ReadInt(&amp;LA.j[i]), ReadUint(&amp;LA.v[i]);</div><div class="line"><span class="comment">//			scanf("%d%d%d", &amp;LA.i[i], &amp;LA.j[i], &amp;LA.v[i]);</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nB; i++)</div><div class="line">            ReadInt(&amp;LB.i[i]), ReadInt(&amp;LB.j[i]), ReadUint(&amp;LB.v[i]);</div><div class="line"><span class="comment">//			scanf("%d%d%d", &amp;LB.i[i], &amp;LB.j[i], &amp;LB.v[i]);</span></div><div class="line">        SpMV(N, M, R, LA, nA, LB, nB);</div><div class="line"><span class="comment">//	&#125;</span></div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/9/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="page-number" href="/page/9/">9</a><span class="page-number current">10</span><a class="page-number" href="/page/11/">11</a><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/87/">87</a><a class="extend next" rel="next" href="/page/11/">Next &raquo;</a>
@@ -1024,7 +927,7 @@ B_{4,4} = \begin{bmatrix}
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">57</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">58</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1034,6 +937,14 @@ B_{4,4} = \begin{bmatrix}
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2022/01/02/note/diary-20220102-encrypt/">
+              
+                <i class="icon-file-o"></i> 
+              
+            《批改娘串起得那段經歷·捌 風暴》</a>
+          </li>
         
           <li>
             <a class="text" href="/2022/01/01/note/diary-20220101-encrypt/">
@@ -1105,14 +1016,6 @@ B_{4,4} = \begin{bmatrix}
                 <i class="icon-file-o"></i> 
               
             《批改娘串起得那段經歷·序 遇見》</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/10/28/note/diary-202110/">
-              
-                <i class="icon-file-o"></i> 
-              
-            好多個 28 在這個時刻</a>
           </li>
         
       </ul>
