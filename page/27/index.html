@@ -89,6 +89,107 @@
           
           <section id="main">
   
+    <article id="post-security-notes5" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/12/security-notes5/" class="article-date">
+  <time datetime="2015-06-11T23:20:54.000Z" itemprop="datePublished">2015-06-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/學校課程/">學校課程</a>/<a class="article-category-link" href="/categories/學校課程/資訊安全/">資訊安全</a>
+  </div>
+
+  </div>
+  <div class="article-inner ">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/06/12/security-notes5/">近代加密 數位簽章 DSA 筆記</a>
+    </h1>
+  
+
+      </header>
+    
+    <footer class="article-footer">
+      <a data-url="http://morris821028.github.io/2015/06/12/security-notes5/" data-id="cl4l9y5y800cc1gvnfimgyp0u" class="article-share-link">Share</a>
+      
+        <a href="http://morris821028.github.io/2015/06/12/security-notes5/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/密碼學/">密碼學</a></li></ul>
+
+    </footer>
+    <div class="article-entry article-index" itemprop="articleBody">
+      
+          
+        
+          <div class="toggle-content">
+            <h2 id="DSA"><a href="#DSA" class="headerlink" title="DSA"></a>DSA</h2><p>Digital Signature Standard (DSS) 數位憑證標準，而有一個 DSA 演算法來完成憑證。</p>
+<p>每一次憑證傳送三個參數 <span>$(r, s, M)$</span><!-- Has MathJax -->，利用私用金鑰進行加密。讓對方使用公鑰進行驗證。</p>
+<ul>
+<li><span>$r = (g^k \mod p) \mod q$</span><!-- Has MathJax --></li>
+<li><span>$s = k^{-1}(SHA(M) + x \times r) \mod q$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>give receiver <span>$(r, s, M)$</span><!-- Has MathJax -->, we have random (one-time) <span>$k$</span><!-- Has MathJax --> &amp; private key <span>$x$</span><!-- Has MathJax --></p>
+<p>每一次簽名時，最好使用隨機亂數 <span>$k$</span><!-- Has MathJax --> 作為簽章用途，隨用即棄，若發生重複使用，將會發生被攻擊，被攻擊者拿到私鑰後，攻擊者就能進行偽裝。</p>
+<h3 id="Attack"><a href="#Attack" class="headerlink" title="Attack"></a>Attack</h3><p>if reused <span>$k$</span><!-- Has MathJax --></p>
+<p>如果重複使用隨機變數 <span>$k$</span><!-- Has MathJax -->，可以藉由夾擊的方式得到，雖然不知道加密的隨機亂數 <span>$k$</span><!-- Has MathJax --> 究竟是什麼，藉由夾擊可以把 <span>$k$</span><!-- Has MathJax --> 消除，利用乘法反元素反求 <span>$x$</span><!-- Has MathJax --> 是多少，公式如下所述。</p>
+<ul>
+<li><span>$k = s1^{-1} (SHA(M1) + x \times r) \mod q$</span><!-- Has MathJax --> - (1)</li>
+<li><span>$k = s2^{-1} (SHA(M2) + x \times r) \mod q$</span><!-- Has MathJax --> - (2)</li>
+</ul>
+<p>subtract (1) - (2)</p>
+<ul>
+<li><span>$0 = s1^{-1} SHA(M1) - s2^{-1} SHA(M2) + (s1^{-1} - s2^{-1}) x \times r \mod q$</span><!-- Has MathJax --></li>
+<li><span>$s1^{-1} SHA(M1) - s2^{-1} SHA(M2) = (s2^{-1} - s1^{-1}) x \times r \mod q$</span><!-- Has MathJax --></li>
+<li><span>$x = (s1^{-1} SHA(M1) - s2^{-1} SHA(M2)) \times (s2^{-1} - s1^{-1})^{-1} \times r^{-1} \mod q$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>get private key. Dangerous !</p>
+<h3 id="Verify"><a href="#Verify" class="headerlink" title="Verify"></a>Verify</h3><p>驗證的正確性與否，接收者需要計算以下四個步驟來完成驗證。</p>
+<ul>
+<li><span>$w = s^{-1} \mod q$</span><!-- Has MathJax --></li>
+<li><span>$u1 = (SHA(M) \times w) \mod q$</span><!-- Has MathJax --></li>
+<li><span>$u2 = r \times w \mod q$</span><!-- Has MathJax --></li>
+<li><span>$v = g^{u1} y^{u2} \mod q$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>test <span>$v = r$</span><!-- Has MathJax -->, why correct ?</p>
+<p>理論的正確性可以參考以下證明，把公開的 <span>$y = g^x \mod p$</span><!-- Has MathJax --> 拿出來，這個安全性取決於離散對數的算法難度。</p>
+<ul>
+<li>known <span>$y = g^x \mod p$</span><!-- Has MathJax -->, <span>$x$</span><!-- Has MathJax --> is a private key</li>
+<li>because <span>$s = k^{-1}(SHA(M) + x \times r) \mod q$</span><!-- Has MathJax --></li>
+<li>then <span>$k = s^{-1}(SHA(M) + x \times r) \mod q$</span><!-- Has MathJax --></li>
+</ul>
+<p>want <span>$r = (g^k \mod p) \mod q$</span><!-- Has MathJax --></p>
+<ul>
+<li><span>$r = (g^k \mod p) \mod q = g^{s^{-1}(SHA(M) + x \times r)} \mod q$</span><!-- Has MathJax --></li>
+<li><span>$r = g^{s^{-1} SHA(M)} \times g^{x (s^{-1} \times r)} \mod q$</span><!-- Has MathJax --></li>
+<li><span>$r = g^{s^{-1} SHA(M)} \times g^{x^{(s^{-1} \times r)}} \mod q$</span><!-- Has MathJax --></li>
+<li><span>$r = g^{s^{-1} SHA(M)} \times y^{(s^{-1} \times r)} \mod q$</span><!-- Has MathJax -->
+</li>
+</ul>
+<p>而我們事實上就是在處理指數部分，</p>
+<h2 id="離散對數"><a href="#離散對數" class="headerlink" title="離散對數"></a>離散對數</h2><p>解決問題 <span>$y = g^x \mod p$</span><!-- Has MathJax -->，當已知 <span>$y, g, p$</span><!-- Has MathJax -->，要解出 <span>$x$</span><!-- Has MathJax --> 的難度大為提升，不像國高中學的指數計算，可以藉由 <code>log()</code> 運算來完成，離散對數可以的複雜度相當高，當 <span>$p$</span><!-- Has MathJax --> 是一個相當大的整數時，通常會取用到 256 bits 以上，複雜度則會在 <span>$O(2^{100})$</span><!-- Has MathJax --> 以上。</p>
+<p>實際上有一個有趣的算法 body-step, giant-step algorithm，中文翻譯為 <strong> 小步大步算法 </strong>，在 ACM-ICPC 競賽中也可以找到一些題目來玩玩，算法的時間複雜度為 <span>$O(\sqrt{p})$</span><!-- Has MathJax -->，空間複雜度也是 <span>$O(\sqrt{p})$</span><!-- Has MathJax -->。相信除了這個外，還有更好的算法可以完成。</p>
+<p>小步大步算法其實很類似塊狀表的算法，分塊處理，每一塊的大小為 <span>$\sqrt{p}$</span><!-- Has MathJax -->，為了找尋答案計算其中一塊的所有資訊，每一塊就是一小步，接著就是利用數學運算，拉動數線，把這一塊往前推動 (或者反過來把目標搜尋結果相對往塊的地方推動)。因此需要走 <span>$\sqrt{p}$</span><!-- Has MathJax --> 大步完成。</p>
+
+          </div>
+          <div class="toggle-input article-more-link"><a>Read More +</a></div>
+        
+      
+    </div>
+
+  </div>
+  
+</article>
+
+
+  
     <article id="post-vr-note3" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/06/06/vr-note3/" class="article-date">
@@ -114,7 +215,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/06/vr-note3/" data-id="cl4l93hu800xj6cvng4eshyz8" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/06/vr-note3/" data-id="cl4l9y67z00xu1gvnt6tx5vyh" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/06/vr-note3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -228,7 +329,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/05/poj-1151/" data-id="cl4l93hke00bq6cvn4xd8j943" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/05/poj-1151/" data-id="cl4l9y5xi00al1gvnaxmb4jmn" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/05/poj-1151/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -285,7 +386,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/05/mproblem-obstacle/" data-id="cl4l93hjb008z6cvnu8tvnoeo" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/05/mproblem-obstacle/" data-id="cl4l9y5ws008t1gvnw8qe7w7x" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/05/mproblem-obstacle/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -357,7 +458,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/05/mproblem-k-dominate/" data-id="cl4l93hj4008h6cvnflcfr3s1" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/05/mproblem-k-dominate/" data-id="cl4l9y5wn008i1gvn58g19qcp" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/05/mproblem-k-dominate/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -510,7 +611,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/clcnqvp.png" rel="gallery_cl4l93hfo00086cvnq8mn430u">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/clcnqvp.png" rel="gallery_cl4l9y5tc00081gvn2ik7gv9d">
         <img src="http://i.imgur.com/clcnqvp.png" itemprop="image">
       </a>
     
@@ -529,7 +630,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/02/2015-google-code-jam-2/" data-id="cl4l93hfo00086cvnq8mn430u" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/02/2015-google-code-jam-2/" data-id="cl4l9y5tc00081gvn2ik7gv9d" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/02/2015-google-code-jam-2/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -604,7 +705,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/06/02/cognitive-style-note3/" data-id="cl4l93hgi001v6cvn854h5ycj" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/06/02/cognitive-style-note3/" data-id="cl4l9y5u4001w1gvnl6gl6w7p" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/06/02/cognitive-style-note3/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1014,7 +1115,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/05/29/security-notes4/" data-id="cl4l93hkn00cb6cvn5a7ew8vy" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/05/29/security-notes4/" data-id="cl4l9y5y700c91gvnwywdaj4v" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/05/29/security-notes4/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1137,7 +1238,7 @@
 <div class="article-gallery">
   <div class="article-gallery-photos">
     
-      <a class="article-gallery-img fancybox" href="http://i.imgur.com/bNf9kdg.jpg" rel="gallery_cl4l93hh0003a6cvnydx968k9">
+      <a class="article-gallery-img fancybox" href="http://i.imgur.com/bNf9kdg.jpg" rel="gallery_cl4l9y5uj00341gvnshwjebr8">
         <img src="http://i.imgur.com/bNf9kdg.jpg" itemprop="image">
       </a>
     
@@ -1156,7 +1257,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/05/21/itsa-2015-4th/" data-id="cl4l93hh0003a6cvnydx968k9" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/05/21/itsa-2015-4th/" data-id="cl4l9y5uj00341gvnshwjebr8" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/05/21/itsa-2015-4th/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1255,7 +1356,7 @@
       </header>
     
     <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/05/19/uva-1402/" data-id="cl4l93hs100sy6cvnsfe5xw2h" class="article-share-link">Share</a>
+      <a data-url="http://morris821028.github.io/2015/05/19/uva-1402/" data-id="cl4l9y65g00sy1gvn4zd3dali" class="article-share-link">Share</a>
       
         <a href="http://morris821028.github.io/2015/05/19/uva-1402/#disqus_thread" class="article-comment-link">Comments</a>
       
@@ -1286,64 +1387,6 @@
 
 
   
-    <article id="post-uva-1438" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/05/19/uva-1438/" class="article-date">
-  <time datetime="2015-05-18T23:52:57.000Z" itemprop="datePublished">2015-05-19</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/解題區/">解題區</a>/<a class="article-category-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a>
-  </div>
-
-  </div>
-  <div class="article-inner ">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/05/19/uva-1438/">UVa 1438 - Asteroids</a>
-    </h1>
-  
-
-      </header>
-    
-    <footer class="article-footer">
-      <a data-url="http://morris821028.github.io/2015/05/19/uva-1438/" data-id="cl4l93hs600tb6cvndv03uyh1" class="article-share-link">Share</a>
-      
-        <a href="http://morris821028.github.io/2015/05/19/uva-1438/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/三維凸包/">三維凸包</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/計算幾何/">計算幾何</a></li></ul>
-
-    </footer>
-    <div class="article-entry article-index" itemprop="articleBody">
-      
-          
-        
-          <div class="toggle-content">
-            <h2 id="Problem"><a href="#Problem" class="headerlink" title="Problem"></a>Problem</h2><p>兩個行星碰撞，請問質量中心能夠距離最近為何。</p>
-<p>兩個行星會呈現凸多面體的形式，給予行星多面體上的頂點。</p>
-<h2 id="Sample-Input"><a href="#Sample-Input" class="headerlink" title="Sample Input"></a>Sample Input</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">8</div><div class="line">0 0 0</div><div class="line">0 0 1</div><div class="line">0 1 0</div><div class="line">0 1 1</div><div class="line">1 0 0</div><div class="line">1 0 1</div><div class="line">1 1 0</div><div class="line">1 1 1</div><div class="line">5</div><div class="line">0 0 5</div><div class="line">1 0 6</div><div class="line">-1 0 6</div><div class="line">0 1 6</div><div class="line">0 -1 6</div></pre></td></tr></table></figure>
-<h2 id="Sample-Output"><a href="#Sample-Output" class="headerlink" title="Sample Output"></a>Sample Output</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">0.75</div></pre></td></tr></table></figure>
-<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>題目雖然已經給定所有在凸面體上的頂點，應該是要做一次三維凸包。</p>
-<p>質心之間能多近，就是兩質心連線的最短距離，連線後不保證線上每一點都在其中一個凸多面體內部。因此找到凸面體的質心後，窮舉每一個表面拉出的平面，求點到面的最短距離。兩個答案相加即可。</p>
-<p>複習下三維凸包算法，維護 conflict graph 去玩的那個，參照網路上的模板繞過一圈，代碼還真是相當簡潔有力 (雖然時間跟空間使用上都沒有辦法好計算，基於期望值 …)！利用空間共平面的順逆時針，來維護外部點判定，解決了之前上課中的困擾。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div><div class="line">216</div><div class="line">217</div><div class="line">218</div><div class="line">219</div><div class="line">220</div><div class="line">221</div><div class="line">222</div><div class="line">223</div><div class="line">224</div><div class="line">225</div><div class="line">226</div><div class="line">227</div><div class="line">228</div><div class="line">229</div><div class="line">230</div><div class="line">231</div><div class="line">232</div><div class="line">233</div><div class="line">234</div><div class="line">235</div><div class="line">236</div><div class="line">237</div><div class="line">238</div><div class="line">239</div><div class="line">240</div><div class="line">241</div><div class="line">242</div><div class="line">243</div><div class="line">244</div><div class="line">245</div><div class="line">246</div><div class="line">247</div><div class="line">248</div><div class="line">249</div><div class="line">250</div><div class="line">251</div><div class="line">252</div><div class="line">253</div><div class="line">254</div><div class="line">255</div><div class="line">256</div><div class="line">257</div><div class="line">258</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt; </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;math.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-8</span>;</div><div class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">1024</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">cmpZero</span><span class="params">(<span class="keyword">double</span> x)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (<span class="built_in">fabs</span>(x) &lt; eps)	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">    <span class="keyword">return</span> x &lt; <span class="number">0</span> ? <span class="number">-1</span> : <span class="number">1</span>;</div><div class="line">&#125;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConvexHull3D</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Point3D</span> &#123;</span></div><div class="line">        <span class="keyword">double</span> x, y, z;</div><div class="line">        Point3D(<span class="keyword">double</span> a = <span class="number">0</span>, <span class="keyword">double</span> b = <span class="number">0</span>, <span class="keyword">double</span> c = <span class="number">0</span>):</div><div class="line">            x(a), y(b), z(c) &#123;&#125;</div><div class="line">        Point3D <span class="keyword">operator</span>+(<span class="keyword">const</span> Point3D &amp;a) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> Point3D(x + a.x, y + a.y, z + a.z);</div><div class="line">        &#125;</div><div class="line">        Point3D <span class="keyword">operator</span>-(<span class="keyword">const</span> Point3D &amp;a) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> Point3D(x - a.x, y - a.y, z - a.z);</div><div class="line">        &#125;</div><div class="line">        Point3D <span class="keyword">operator</span>/(<span class="keyword">double</span> a) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> Point3D(x/a, y/a, z/a);</div><div class="line">        &#125;</div><div class="line">        Point3D <span class="keyword">operator</span>*(<span class="keyword">double</span> a) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> Point3D(x*a, y*a, z*a);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">bool</span> <span class="keyword">operator</span>!=(<span class="keyword">const</span> Point3D &amp;a) <span class="keyword">const</span> &#123;</div><div class="line">            <span class="keyword">return</span> cmpZero(x - a.x) || cmpZero(y - a.y) || cmpZero(z - a.z);</div><div class="line">        &#125;</div><div class="line">        <span class="function">Point3D <span class="title">cross</span><span class="params">(<span class="keyword">const</span> Point3D &amp;a)</span> <span class="keyword">const</span> </span>&#123; <span class="comment">// outer product</span></div><div class="line">            <span class="keyword">return</span> Point3D(y*a.z - z*a.y, z*a.x - x*a.z, x*a.y - y*a.x);</div><div class="line">        &#125;</div><div class="line">        <span class="function"><span class="keyword">double</span> <span class="title">dot</span><span class="params">(<span class="keyword">const</span> Point3D &amp;a)</span> <span class="keyword">const</span> </span>&#123;</div><div class="line">            <span class="keyword">return</span> x*a.x + y*a.y + z*a.z;</div><div class="line">        &#125;</div><div class="line">        <span class="function"><span class="keyword">double</span> <span class="title">length</span><span class="params">()</span> </span>&#123;</div><div class="line">            <span class="keyword">return</span> <span class="built_in">sqrt</span>(x*x+y*y+z*z);</div><div class="line">        &#125;</div><div class="line">        <span class="function"><span class="keyword">void</span> <span class="title">read</span><span class="params">()</span> </span>&#123;</div><div class="line">            <span class="built_in">scanf</span>(<span class="string">"%lf %lf %lf"</span>, &amp;x, &amp;y, &amp;z);</div><div class="line">        &#125;</div><div class="line">    &#125;;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Face</span> &#123;</span></div><div class="line">        <span class="keyword">int</span> a, b, c; 	<span class="comment">// point3d id</span></div><div class="line">        <span class="keyword">bool</span> flag; 		<span class="comment">// on Convex Hull</span></div><div class="line">    &#125;;</div><div class="line">    </div><div class="line">    <span class="keyword">int</span> n, tri_num;</div><div class="line">    Point3D pt[MAXN];</div><div class="line">    Face faces[MAXN*<span class="number">8</span>];</div><div class="line">    Face* g[MAXN][MAXN];</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">tri_area</span><span class="params">(Point3D a, Point3D b, Point3D c)</span> </span>&#123; 	<span class="comment">// value &gt;= 0</span></div><div class="line">        <span class="keyword">return</span> ((a - c).cross(b - c)).length()/<span class="number">2</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">volume</span><span class="params">(Point3D a, Point3D b, Point3D c, Point3D d)</span> </span>&#123; <span class="comment">// directed</span></div><div class="line">        <span class="keyword">return</span> ((b - a).cross(c - a)).dot(d - a)/<span class="number">6</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">pt2Face</span><span class="params">(Point3D a, Point3D b, Point3D c, Point3D p)</span> </span>&#123;</div><div class="line">        Point3D n = (b - a).cross(c - a);</div><div class="line">        Point3D t = p - a;</div><div class="line">        <span class="keyword">double</span> v = n.dot(t) / n.length();</div><div class="line">        <span class="keyword">return</span> <span class="built_in">fabs</span>(v);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">ptWithFace</span><span class="params">(Point3D &amp;p, Face &amp;f)</span> </span>&#123; <span class="comment">// 0: p in f, &lt;0, &gt;0: above or below</span></div><div class="line">        Point3D a, b, c;</div><div class="line">        a = pt[f.b] - pt[f.a];</div><div class="line">        b = pt[f.c] - pt[f.a];</div><div class="line">        c = p - pt[f.a];</div><div class="line">        <span class="keyword">return</span> (a.cross(b)).dot(c);</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">samePlane</span><span class="params">(Face &amp;s, Face &amp;t)</span> </span>&#123;</div><div class="line">        Point3D a, b, c;</div><div class="line">        <span class="keyword">bool</span> ret = <span class="literal">true</span>;</div><div class="line">        a = pt[s.a], b = pt[s.b], c = pt[s.c];</div><div class="line">        ret = cmpZero(volume(a, b, c, pt[t.a])) == <span class="number">0</span> &amp;&amp;</div><div class="line">                cmpZero(volume(a, b, c, pt[t.b])) == <span class="number">0</span> &amp;&amp;</div><div class="line">                cmpZero(volume(a, b, c, pt[t.c])) == <span class="number">0</span>;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">deal</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b, <span class="keyword">int</span> p)</span> </span>&#123;</div><div class="line">        Face *f = g[a][b];</div><div class="line">        <span class="keyword">if</span> (f-&gt;flag) &#123;</div><div class="line">            <span class="keyword">if</span> (cmpZero(ptWithFace(pt[p], *f)) &gt; <span class="number">0</span>) &#123;</div><div class="line">                dfs(p, f);</div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                Face &amp;add = faces[tri_num++];</div><div class="line">                add.a = b, add.b = a, add.c = p;</div><div class="line">                add.flag = <span class="number">1</span>;</div><div class="line">                g[b][a] = g[a][p] = g[p][b] = &amp;add;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> p, Face *f)</span> </span>&#123;</div><div class="line">        f-&gt;flag = <span class="number">0</span>;	<span class="comment">// remove this face.</span></div><div class="line">        deal(f-&gt;b, f-&gt;a, p);</div><div class="line">        deal(f-&gt;a, f-&gt;c, p);</div><div class="line">        deal(f-&gt;c, f-&gt;b, p);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">make</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (n &lt; <span class="number">4</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">0</span>;		</div><div class="line">        <span class="comment">// find a tetrahedron</span></div><div class="line">        <span class="keyword">bool</span> ok;</div><div class="line">        ok = <span class="literal">false</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (pt[<span class="number">0</span>] != pt[i]) &#123;</div><div class="line">                swap(pt[<span class="number">1</span>], pt[i]);</div><div class="line">                ok = <span class="literal">true</span>;</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (!ok)	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">        ok = <span class="literal">false</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (cmpZero(tri_area(pt[<span class="number">0</span>], pt[<span class="number">1</span>], pt[i]))) &#123;</div><div class="line">                swap(pt[<span class="number">2</span>], pt[i]);</div><div class="line">                ok = <span class="literal">true</span>;</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (!ok)	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">        ok = <span class="literal">false</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">3</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (cmpZero(volume(pt[<span class="number">0</span>], pt[<span class="number">1</span>], pt[<span class="number">2</span>], pt[i]))) &#123;</div><div class="line">                swap(pt[<span class="number">3</span>], pt[i]);</div><div class="line">                ok = <span class="literal">true</span>;</div><div class="line">                <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (!ok)	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">        </div><div class="line">        tri_num = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++) &#123; <span class="comment">// init 4 faces. </span></div><div class="line">            Face &amp;f = faces[tri_num++];</div><div class="line">            f.a = (i+<span class="number">1</span>)%<span class="number">4</span>, f.b = (i+<span class="number">2</span>)%<span class="number">4</span>, f.c = (i+<span class="number">3</span>)%<span class="number">4</span>;</div><div class="line">            f.flag = <span class="number">1</span>;</div><div class="line">            <span class="keyword">if</span> (cmpZero(ptWithFace(pt[i], f)) &gt; <span class="number">0</span>)</div><div class="line">                swap(f.b, f.c);</div><div class="line">            g[f.a][f.b] = g[f.b][f.c] = g[f.c][f.a] = &amp;f;</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// add point into convex hull</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">4</span>; i &lt; n; i++) &#123;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; tri_num; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (faces[j].flag &amp;&amp; cmpZero(ptWithFace(pt[i], faces[j])) &gt; <span class="number">0</span>) &#123;</div><div class="line">                    dfs(i, &amp;faces[j]);</div><div class="line">                    <span class="keyword">break</span>;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// remove unused face, trash g[][]</span></div><div class="line">        <span class="keyword">int</span> tri_n = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++) &#123;</div><div class="line">            <span class="keyword">if</span> (faces[i].flag)</div><div class="line">                faces[tri_n++] = faces[i];</div><div class="line">        &#125;</div><div class="line">        tri_num = tri_n; </div><div class="line">        <span class="keyword">return</span> <span class="number">1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">area</span><span class="params">()</span> </span>&#123; <span class="comment">// surface</span></div><div class="line">        <span class="keyword">double</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">if</span> (n == <span class="number">3</span>)</div><div class="line">            <span class="keyword">return</span> tri_area(pt[<span class="number">0</span>], pt[<span class="number">1</span>], pt[<span class="number">2</span>]);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++)</div><div class="line">            ret += tri_area(pt[faces[i].a], pt[faces[i].b], pt[faces[i].c]);</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">volume</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">double</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="function">Point3D <span class="title">o</span><span class="params">(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++)</div><div class="line">            ret += volume(o, pt[faces[i].a], pt[faces[i].b], pt[faces[i].c]);</div><div class="line">        <span class="keyword">return</span> <span class="built_in">fabs</span>(ret);</div><div class="line">    &#125;</div><div class="line">    <span class="function">Point3D <span class="title">getCenter</span><span class="params">()</span> </span>&#123;</div><div class="line">        Point3D ret(0, 0, 0), o = pt[faces[0].a], p;</div><div class="line">        <span class="keyword">double</span> sum, v;</div><div class="line">        sum = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++) &#123;</div><div class="line">            v = volume(o, pt[faces[i].a], pt[faces[i].b], pt[faces[i].c]);</div><div class="line">            p = (pt[faces[i].a] + pt[faces[i].b] + pt[faces[i].c] + o)/<span class="number">4.0</span>;</div><div class="line">            <span class="keyword">if</span> (cmpZero(v) &gt; <span class="number">0</span>) &#123;</div><div class="line">                p = p * v;</div><div class="line">                ret = ret + p, sum += v;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        ret = ret / sum;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getFaceCount</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++) &#123;</div><div class="line">            <span class="keyword">int</span> ok = <span class="number">1</span>;</div><div class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; i &amp;&amp; ok; j++) &#123;</div><div class="line">                <span class="keyword">if</span> (samePlane(faces[i], faces[j]))</div><div class="line">                    ok = <span class="number">0</span>;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> (ok)</div><div class="line">                ret++;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125;</div><div class="line">    <span class="function"><span class="keyword">double</span> <span class="title">getInnerClosestDist</span><span class="params">(Point3D p)</span> </span>&#123; <span class="comment">// p in Conver Hull</span></div><div class="line">        <span class="keyword">double</span> ret = <span class="number">-1</span>;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tri_num; i++) &#123;</div><div class="line">            Point3D a, b, c;</div><div class="line">            a = pt[faces[i].a], b = pt[faces[i].b], c = pt[faces[i].c];</div><div class="line">            </div><div class="line">            <span class="keyword">double</span> t = tri_area(a, b, c);</div><div class="line">            <span class="keyword">double</span> v = <span class="built_in">fabs</span>(volume(a, b, c, p));</div><div class="line">            </div><div class="line">            <span class="keyword">if</span> (ret &lt; <span class="number">0</span> || v*<span class="number">3</span>/t &lt; ret)</div><div class="line">                ret = v*<span class="number">3</span>/t;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> ret;</div><div class="line">    &#125; </div><div class="line">&#125; A, B;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;A.n) == <span class="number">1</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; A.n; i++)</div><div class="line">            A.pt[i].read();</div><div class="line">        </div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;B.n);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; B.n; i++)</div><div class="line">            B.pt[i].read();</div><div class="line">            </div><div class="line">        A.make();</div><div class="line">        B.make();</div><div class="line">        </div><div class="line">        <span class="keyword">double</span> d1, d2;</div><div class="line">        d1 = A.getInnerClosestDist(A.getCenter());</div><div class="line">        d2 = B.getInnerClosestDist(B.getCenter());</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"%lf\n"</span>, d1 + d2);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div><div class="line"><span class="comment">/*</span></div><div class="line"><span class="comment">8</span></div><div class="line"><span class="comment">0 0 0</span></div><div class="line"><span class="comment">0 0 1</span></div><div class="line"><span class="comment">0 1 0</span></div><div class="line"><span class="comment">0 1 1</span></div><div class="line"><span class="comment">1 0 0</span></div><div class="line"><span class="comment">1 0 1</span></div><div class="line"><span class="comment">1 1 0</span></div><div class="line"><span class="comment">1 1 1</span></div><div class="line"><span class="comment">5</span></div><div class="line"><span class="comment">0 0 5</span></div><div class="line"><span class="comment">1 0 6</span></div><div class="line"><span class="comment">-1 0 6</span></div><div class="line"><span class="comment">0 1 6</span></div><div class="line"><span class="comment">0 -1 6</span></div><div class="line"><span class="comment">*/</span></div></pre></td></tr></table></figure>
-          </div>
-          <div class="toggle-input article-more-link"><a>Read More +</a></div>
-        
-      
-    </div>
-
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/26/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="page-number" href="/page/26/">26</a><span class="page-number current">27</span><a class="page-number" href="/page/28/">28</a><a class="page-number" href="/page/29/">29</a><span class="space">&hellip;</span><a class="page-number" href="/page/87/">87</a><a class="extend next" rel="next" href="/page/28/">Next &raquo;</a>
@@ -1359,7 +1402,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">38</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">60</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/">學校課程</a><span class="category-list-count">115</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/介面設計/">介面設計</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/作業系統/">作業系統</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/即時系統/">即時系統</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/大學專題/">大學專題</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/巨量資料/">巨量資料</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/平行程式/">平行程式</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/敏捷方法/">敏捷方法</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/數位影像生成/">數位影像生成</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/編譯器/">編譯器</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/自然語言/">自然語言</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/虛擬實境/">虛擬實境</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算型智慧/">計算型智慧</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算幾何/">計算幾何</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/計算機圖學/">計算機圖學</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資料庫系統/">資料庫系統</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/資訊安全/">資訊安全</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/學校課程/通識課程/">通識課程</a><span class="category-list-count">14</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/">工作應用</a><span class="category-list-count">39</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Java/">Java</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/Meme/">Meme</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/其他/">其他</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/可持久化/">可持久化</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/工作應用/鬼故事/">鬼故事</a><span class="category-list-count">15</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/手札日記/">手札日記</a><span class="category-list-count">60</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/">網頁設計</a><span class="category-list-count">15</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/About-This-Blog/">About This Blog</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/HTML5/">HTML5</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/JQuery/">JQuery</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/Markdown/">Markdown</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/網頁設計/NodeJs/">NodeJs</a><span class="category-list-count">2</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/">解題區</a><span class="category-list-count">633</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/Latex/">Latex</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/出題解題/">出題解題</a><span class="category-list-count">23</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-POJ/">解題區 - POJ</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-UVa/">解題區 - UVa</a><span class="category-list-count">483</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-Zerojudge/">解題區 - Zerojudge</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-其他題目/">解題區 - 其他題目</a><span class="category-list-count">45</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/解題區/解題區-未解題目/">解題區 - 未解題目</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/雜言筆記/">雜言筆記</a><span class="category-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -1369,6 +1412,14 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a class="text" href="/2022/06/19/work/company-ghost-story-15/">
+              
+                <i class="icon-file-o"></i> 
+              
+            Company Ghost Story 公司鬼故事 15</a>
+          </li>
         
           <li>
             <a class="text" href="/2022/03/27/note/diary-20220327/">
@@ -1440,14 +1491,6 @@
                 <i class="icon-file-o"></i> 
               
             《批改娘串起得那段經歷·肆 雨中》</a>
-          </li>
-        
-          <li>
-            <a class="text" href="/2021/11/12/note/diary-20211112-encrypt/">
-              
-                <i class="icon-file-o"></i> 
-              
-            《批改娘串起得那段經歷·參 來遇》</a>
           </li>
         
       </ul>
